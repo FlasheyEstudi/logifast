@@ -19,6 +19,7 @@ import { TiendaReportesManager } from './TiendaReportesManager';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 
 export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
   const [tabActiva, setTabActiva] = useState<'generar' | 'guardados'>('generar');
@@ -93,9 +94,9 @@ export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
         <button
           type="button"
           onClick={() => setTabActiva('generar')}
-          className={`py-2.5 px-5 rounded-full text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+          className={`h-11 sm:h-10 px-5 rounded-full text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer ${
             tabActiva === 'generar'
-              ? 'bg-primary text-white shadow-[var(--lf-shadow-card)]'
+              ? 'bg-primary text-primary-foreground shadow-[var(--lf-shadow-card)]'
               : 'text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--bg-alt)]'
           }`}
         >
@@ -106,18 +107,18 @@ export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
         <button
           type="button"
           onClick={() => setTabActiva('guardados')}
-          className={`py-2.5 px-5 rounded-full text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+          className={`h-11 sm:h-10 px-5 rounded-full text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer ${
             tabActiva === 'guardados'
-              ? 'bg-primary text-white shadow-[var(--lf-shadow-card)]'
+              ? 'bg-primary text-primary-foreground shadow-[var(--lf-shadow-card)]'
               : 'text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--bg-alt)]'
           }`}
         >
           <Download size={16} />
           <span>Reportes Guardados</span>
           <span
-            className={`px-2 py-0.5 rounded-full text-[11px] font-mono font-extrabold ${
+            className={`px-2 py-0.5 rounded-full text-[11px] font-mono font-bold ${
               tabActiva === 'guardados'
-                ? 'bg-white/20 text-white'
+                ? 'bg-primary-foreground/20 text-primary-foreground'
                 : 'bg-primary/10 text-primary'
             }`}
           >
@@ -184,9 +185,9 @@ export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
                           key={p.d}
                           type="button"
                           onClick={() => setDias(p.d)}
-                          className={`h-8 px-3.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                          className={`h-11 sm:h-10 px-3.5 rounded-full text-xs font-bold transition-colors cursor-pointer ${
                             active
-                              ? 'bg-primary text-white shadow-[var(--lf-shadow-card)]'
+                              ? 'bg-primary text-primary-foreground shadow-[var(--lf-shadow-card)]'
                               : 'text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface)]'
                           }`}
                         >
@@ -207,70 +208,96 @@ export function TiendaReportesExcel({ isDark }: { isDark: boolean }) {
 
           {/* ─── Grid de Opciones de Descarga ─── */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {opciones.map((op) => (
-              <Card
-                key={op.id}
-                className="rounded-[var(--lf-card-radius)] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--lf-shadow-card)] hover:shadow-[var(--lf-shadow-card)]/90 transition-all flex flex-col justify-between overflow-hidden"
-              >
-                <CardContent className="p-6 flex flex-col justify-between h-full">
-                  <div>
-                    <div className="flex items-center gap-3 mb-3">
-                      <div
-                        className={`w-12 h-12 rounded-[var(--lf-card-radius)] bg-gradient-to-br ${op.color} border flex items-center justify-center shrink-0`}
-                      >
-                        {op.icon}
+            {opciones.map((op) => {
+              const estaGenerando = descargando !== null && descargando.startsWith(`${op.id}-`);
+
+              return (
+                <Card
+                  key={op.id}
+                  className="rounded-[var(--lf-card-radius)] border border-[var(--border)] bg-[var(--surface)] py-0 shadow-[var(--lf-shadow-card)] transition-shadow hover:shadow-[var(--lf-shadow-float)]"
+                >
+                  <CardContent className="flex h-full flex-col justify-between p-4 sm:p-5">
+                    <div>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div
+                            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--lf-card-radius)] bg-gradient-to-br ${op.color}`}
+                          >
+                            {op.icon}
+                          </div>
+                          <div className="min-w-0">
+                            <h3 className="text-base font-semibold tracking-tight text-[var(--text)] leading-snug">
+                              {op.titulo}
+                            </h3>
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] font-mono">
+                              Excel · PDF · CSV
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Estado de la exportación, como Badge del sistema */}
+                        {estaGenerando ? (
+                          <Badge
+                            variant="outline"
+                            className="shrink-0 rounded-full border-[var(--warning)] text-[var(--warning)] text-[11px] font-bold gap-1"
+                          >
+                            <Download size={11} className="animate-pulse" /> Generando
+                          </Badge>
+                        ) : (
+                          <Badge
+                            variant="outline"
+                            className="shrink-0 rounded-full border-[var(--exito)] text-[var(--exito)] text-[11px] font-bold gap-1"
+                          >
+                            <CheckCircle size={11} /> Listo
+                          </Badge>
+                        )}
                       </div>
-                      <div>
-                        <h3 className="text-sm font-black tracking-tight text-[var(--text)] leading-snug">
-                          {op.titulo}
-                        </h3>
-                        <span className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--exito)] font-mono">
-                          Excel · PDF · CSV
-                        </span>
-                      </div>
+
+                      <p className="text-xs text-[var(--text-muted)] leading-relaxed mt-3">
+                        {op.descripcion}
+                      </p>
                     </div>
 
-                    <p className="text-xs text-[var(--text-muted)] leading-relaxed mt-2">
-                      {op.descripcion}
-                    </p>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="space-y-2 mt-6 pt-4 border-t border-[var(--border)]">
-                    <div className="flex gap-2">
+                    {/* Exportar es la única acción primaria; los demás formatos son secundarios */}
+                    <div className="mt-6 space-y-2 pt-4 border-t border-[var(--border)]">
                       <Button
                         onClick={() => descargarReporte(op.id, 'xlsx')}
                         disabled={descargando !== null}
-                        className="flex-1 h-11 rounded-full text-xs font-bold gap-1.5 shadow-[var(--lf-shadow-card)] shadow-primary/20"
+                        className="w-full h-11 rounded-full text-xs font-bold gap-1.5 shadow-[var(--lf-shadow-card)]"
                       >
                         <FileSpreadsheet size={16} />
                         <span>{descargando === `${op.id}-xlsx` ? 'Guardando…' : 'Excel (.xlsx)'}</span>
                       </Button>
 
-                      <Button
-                        variant="outline"
-                        onClick={() => descargarReporte(op.id, 'pdf')}
-                        disabled={descargando !== null}
-                        className="flex-1 h-11 rounded-full text-xs font-bold gap-1.5 border-[var(--border)]"
-                      >
-                        <Download size={16} />
-                        <span>{descargando === `${op.id}-pdf` ? 'Guardando…' : 'PDF'}</span>
-                      </Button>
-                    </div>
+                      <div className="flex flex-col gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => descargarReporte(op.id, 'pdf')}
+                          disabled={descargando !== null}
+                          className="w-full h-11 rounded-full text-xs font-bold gap-1.5 border-[var(--border)] hover:bg-[var(--bg-alt)]"
+                        >
+                          <Download size={16} />
+                          <span>{descargando === `${op.id}-pdf` ? 'Guardando…' : 'PDF'}</span>
+                        </Button>
 
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => descargarReporte(op.id, 'csv')}
-                      disabled={descargando !== null}
-                      className="w-full h-9 rounded-full text-[11px] font-bold border border-dashed border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)]"
-                    >
-                      {descargando === `${op.id}-csv` ? 'Guardando CSV…' : 'Descargar datos en CSV'}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                        <Button
+                          variant="ghost"
+                          onClick={() => descargarReporte(op.id, 'csv')}
+                          disabled={descargando !== null}
+                          className="w-full h-11 rounded-full text-xs font-bold border border-dashed border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--bg-alt)] hover:text-[var(--text)]"
+                        >
+                          <span>{descargando === `${op.id}-csv` ? 'Guardando CSV…' : 'Descargar datos en CSV'}</span>
+                        </Button>
+                      </div>
+
+                      {estaGenerando && (
+                        <Progress value={100} aria-label="Generando reporte" className="h-1.5 animate-pulse" />
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </>
       )}

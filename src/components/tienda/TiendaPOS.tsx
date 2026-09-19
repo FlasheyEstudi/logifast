@@ -434,7 +434,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
           carrito.map((it) => (
             <div
               key={it.producto.id}
-              className="group p-3 sm:p-3.5 rounded-[var(--lf-card-radius)] bg-[var(--bg-alt)]/60 border border-[var(--border)] flex items-center justify-between gap-3 transition-colors hover:border-[var(--border)]/90"
+              className="group p-3 sm:p-3.5 rounded-[var(--lf-card-radius)] bg-[var(--bg-alt)]/60 border border-[var(--border)] flex items-center justify-between gap-3 transition-colors hover:bg-[var(--bg-alt)]"
             >
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold text-[var(--text)] truncate">
@@ -568,7 +568,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
                 variant="outline"
                 size="sm"
                 onClick={() => addCashAmount(50)}
-                className="h-8 px-3 rounded-full text-xs font-bold text-[var(--exito)] border-[var(--exito)] hover:bg-[var(--exito)]/10 shadow-[var(--lf-shadow-card)]"
+                className="h-8 px-3 rounded-full text-xs font-bold text-[var(--text)] border-[var(--border)] hover:bg-[var(--bg-alt)] shadow-[var(--lf-shadow-card)]"
               >
                 +C$50
               </Button>
@@ -577,7 +577,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
                 variant="outline"
                 size="sm"
                 onClick={() => addCashAmount(100)}
-                className="h-8 px-3 rounded-full text-xs font-bold text-[var(--exito)] border-[var(--exito)] hover:bg-[var(--exito)]/10 shadow-[var(--lf-shadow-card)]"
+                className="h-8 px-3 rounded-full text-xs font-bold text-[var(--text)] border-[var(--border)] hover:bg-[var(--bg-alt)] shadow-[var(--lf-shadow-card)]"
               >
                 +C$100
               </Button>
@@ -586,7 +586,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
                 variant="outline"
                 size="sm"
                 onClick={() => addCashAmount(500)}
-                className="h-8 px-3 rounded-full text-xs font-bold text-[var(--exito)] border-[var(--exito)] hover:bg-[var(--exito)]/10 shadow-[var(--lf-shadow-card)]"
+                className="h-8 px-3 rounded-full text-xs font-bold text-[var(--text)] border-[var(--border)] hover:bg-[var(--bg-alt)] shadow-[var(--lf-shadow-card)]"
               >
                 +C$500
               </Button>
@@ -594,30 +594,36 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
           </div>
         )}
 
-        {/* Totals Breakdown */}
-        <div className="p-3.5 rounded-[var(--lf-card-radius)] bg-[var(--bg-alt)]/60 border border-[var(--border)] space-y-1.5">
-          <div className="flex justify-between items-center text-xs text-[var(--text-muted)] font-medium">
-            <span>Subtotal</span>
-            <span className="font-mono">C$ {subtotalSum.toFixed(2)}</span>
+        {/* Totals Breakdown — el total manda sobre sus componentes */}
+        <div className="rounded-[var(--lf-card-radius)] border border-[var(--border)] overflow-hidden shadow-[var(--lf-shadow-card)]">
+          <div className="px-3.5 py-2.5 space-y-1.5 bg-[var(--bg-alt)]/60">
+            <div className="flex justify-between items-center text-xs text-[var(--text-muted)] font-medium">
+              <span>Subtotal</span>
+              <span className="font-mono text-[var(--text)]">C$ {subtotalSum.toFixed(2)}</span>
+            </div>
+
+            {descNum > 0 && (
+              <div className="flex justify-between items-center text-xs text-[var(--warning)] font-semibold">
+                <span>Descuento aplicado</span>
+                <span className="font-mono">- C$ {descNum.toFixed(2)}</span>
+              </div>
+            )}
+
+            {metodoPago === 'efectivo' && (
+              <div className="flex justify-between items-center text-xs text-[var(--exito)] font-semibold">
+                <span>Cambio a devolver</span>
+                <span className="font-mono">C$ {cambio.toFixed(2)}</span>
+              </div>
+            )}
           </div>
 
-          {descNum > 0 && (
-            <div className="flex justify-between items-center text-xs text-[var(--warning)] font-semibold">
-              <span>Descuento aplicado</span>
-              <span className="font-mono">- C$ {descNum.toFixed(2)}</span>
-            </div>
-          )}
-
-          {metodoPago === 'efectivo' && (
-            <div className="flex justify-between items-center text-xs text-[var(--exito)] font-bold pt-1.5 border-t border-[var(--border)]">
-              <span>Cambio a devolver</span>
-              <span className="font-mono text-sm">C$ {cambio.toFixed(2)}</span>
-            </div>
-          )}
-
-          <div className="flex justify-between items-center text-base font-black text-primary pt-1.5 border-t border-[var(--border)]">
-            <span className="font-syne">TOTAL COBRAR</span>
-            <span className="font-mono text-lg tracking-tight">C$ {totalSum.toFixed(2)}</span>
+          <div className="flex justify-between items-baseline gap-3 px-3.5 py-3 border-t border-[var(--border)] bg-[var(--surface)]">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] font-syne">
+              Total a cobrar
+            </span>
+            <span className="font-mono text-2xl font-black text-[var(--primario)] tracking-tight">
+              C$ {totalSum.toFixed(2)}
+            </span>
           </div>
         </div>
 
@@ -973,9 +979,9 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
                       <span
                         className={`flex-1 truncate font-medium ${
                           e.estado === 'ok'
-                            ? 'text-[var(--exito)] text-[var(--exito)]'
+                            ? 'text-[var(--exito)]'
                             : e.estado === 'ambiguo'
-                            ? 'text-[var(--warning)] text-[var(--warning)]'
+                            ? 'text-[var(--warning)]'
                             : 'text-[var(--peligro)]'
                         }`}
                       >

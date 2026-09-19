@@ -23,6 +23,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface TiendaEtiquetasModalProps {
   abierto?: boolean;
@@ -161,28 +162,28 @@ export function TiendaEtiquetasModal({
       >
         <Card
           onClick={(e) => e.stopPropagation()}
-          className="w-full max-w-2xl bg-[var(--surface)] rounded-[var(--lf-card-radius)] border border-[var(--border)] shadow-[var(--lf-shadow-float)] max-h-[92vh] overflow-y-auto"
+          className="w-full max-w-2xl bg-[var(--surface)] rounded-[var(--lf-sheet-radius)] border border-[var(--border)] shadow-[var(--lf-shadow-sheet)] max-h-[92vh] overflow-y-auto"
         >
           <CardContent className="p-5 sm:p-6 space-y-5">
             {/* Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-[var(--lf-card-radius)] bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <div className="flex items-start justify-between gap-3 pb-4 border-b border-[var(--border)]">
+              <div className="flex items-start gap-3 min-w-0">
+                <div className="w-11 h-11 rounded-[var(--lf-input-radius)] bg-[var(--primario)]/10 text-[var(--primario)] flex items-center justify-center shrink-0">
                   <Tag size={20} />
                 </div>
-                <div>
-                  <h3 className="text-base sm:text-lg font-black tracking-tight text-[var(--text)] m-0">
+                <div className="min-w-0">
+                  <h3 className="text-lg font-bold tracking-tight text-[var(--text)] font-syne m-0">
                     Generador de Etiquetas & Códigos
                   </h3>
                   <p className="text-xs text-[var(--text-muted)] mt-0.5 truncate max-w-md m-0">
-                    Producto: <b className="text-[var(--text)]">{producto.nombre}</b> · Precio: <b className="text-primary font-mono">C$ {producto.precio.toFixed(2)}</b>
+                    Producto: <b className="text-[var(--text)] font-semibold">{producto.nombre}</b> · Precio: <b className="text-[var(--primario)] font-mono">C$ {producto.precio.toFixed(2)}</b>
                   </p>
                 </div>
               </div>
 
               <button
                 onClick={handleCerrar}
-                className="w-9 h-9 rounded-full hover:bg-[var(--bg-alt)] text-[var(--text-muted)] hover:text-[var(--text)] flex items-center justify-center transition-colors"
+                className="w-11 h-11 sm:w-9 sm:h-9 rounded-full hover:bg-[var(--bg-alt)] text-[var(--text-muted)] hover:text-[var(--text)] flex items-center justify-center transition-colors shrink-0"
                 aria-label="Cerrar modal"
               >
                 <X size={18} />
@@ -190,82 +191,80 @@ export function TiendaEtiquetasModal({
             </div>
 
             {/* Selector de Tipo de Código & Formato de Impresión */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="rounded-[var(--lf-card-radius)] bg-[var(--bg-alt)]/50 border border-[var(--border)] p-4 space-y-4">
               {/* Tipo de código: Barras o QR */}
-              <div className="p-3.5 rounded-[var(--lf-card-radius)] bg-[var(--bg-alt)]/70 border border-[var(--border)] space-y-2">
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] block ml-1">
+              <div className="space-y-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] block">
                   1. Tipo de Código
                 </span>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button
-                    type="button"
-                    variant={tipoCodigo === 'barras' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setTipoCodigo('barras')}
-                    className="h-11 rounded-xl text-xs font-bold gap-1.5"
-                  >
-                    <Barcode size={17} />
-                    <span>Código Barras</span>
-                  </Button>
+                <Tabs
+                  value={tipoCodigo}
+                  onValueChange={(v) => setTipoCodigo(v as 'barras' | 'qr')}
+                  className="gap-0"
+                >
+                  <TabsList className="w-full h-auto gap-1 rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] p-1">
+                    <TabsTrigger
+                      value="barras"
+                      className="h-11 gap-1.5 rounded-[var(--lf-input-radius)] text-xs font-bold text-[var(--text-muted)] data-[state=active]:bg-[var(--primario)]/10 data-[state=active]:text-[var(--primario)] data-[state=active]:shadow-none"
+                    >
+                      <Barcode size={17} />
+                      <span>Código Barras</span>
+                    </TabsTrigger>
 
-                  <Button
-                    type="button"
-                    variant={tipoCodigo === 'qr' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setTipoCodigo('qr')}
-                    className="h-11 rounded-xl text-xs font-bold gap-1.5"
-                  >
-                    <QrCode size={16} />
-                    <span>Código QR 2D</span>
-                  </Button>
-                </div>
+                    <TabsTrigger
+                      value="qr"
+                      className="h-11 gap-1.5 rounded-[var(--lf-input-radius)] text-xs font-bold text-[var(--text-muted)] data-[state=active]:bg-[var(--primario)]/10 data-[state=active]:text-[var(--primario)] data-[state=active]:shadow-none"
+                    >
+                      <QrCode size={16} />
+                      <span>Código QR 2D</span>
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
               </div>
 
               {/* Formato: Hoja para recortar vs Rollo Adhesivo */}
-              <div className="p-3.5 rounded-[var(--lf-card-radius)] bg-[var(--bg-alt)]/70 border border-[var(--border)] space-y-2">
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] block ml-1">
+              <div className="space-y-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] block">
                   2. Destino de Impresión
                 </span>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button
-                    type="button"
-                    variant={modoImpresion === 'cuadricula' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => {
-                      setModoImpresion('cuadricula');
-                      if (cantidadCopias < 12) setCantidadCopias(24);
-                    }}
-                    className="h-11 rounded-xl flex-col py-1"
-                  >
-                    <span className="flex items-center gap-1.5 text-xs font-bold">
-                      <FileText size={13} />
-                      <span>Hoja Carta / A4</span>
-                    </span>
-                    <span className="text-[11px] opacity-75 font-normal">Múltiples para recortar</span>
-                  </Button>
+                <Tabs
+                  value={modoImpresion}
+                  onValueChange={(v) => {
+                    const modo = v as 'cuadricula' | 'adhesivo';
+                    setModoImpresion(modo);
+                    if (modo === 'cuadricula' && cantidadCopias < 12) setCantidadCopias(24);
+                    if (modo === 'adhesivo' && cantidadCopias > 12) setCantidadCopias(1);
+                  }}
+                  className="gap-0"
+                >
+                  <TabsList className="w-full h-auto gap-1 rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] p-1">
+                    <TabsTrigger
+                      value="cuadricula"
+                      className="h-auto min-h-11 flex-col items-start gap-0.5 rounded-[var(--lf-input-radius)] px-3 py-2 text-left text-[var(--text-muted)] data-[state=active]:bg-[var(--primario)]/10 data-[state=active]:text-[var(--primario)] data-[state=active]:shadow-none"
+                    >
+                      <span className="flex items-center gap-1.5 text-xs font-bold">
+                        <FileText size={13} />
+                        <span>Hoja Carta / A4</span>
+                      </span>
+                      <span className="text-[11px] font-normal text-[var(--text-muted)]">Múltiples para recortar</span>
+                    </TabsTrigger>
 
-                  <Button
-                    type="button"
-                    variant={modoImpresion === 'adhesivo' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => {
-                      setModoImpresion('adhesivo');
-                      if (cantidadCopias > 12) setCantidadCopias(1);
-                    }}
-                    className="h-11 rounded-xl flex-col py-1"
-                  >
-                    <span className="flex items-center gap-1.5 text-xs font-bold">
-                      <Tag size={13} />
-                      <span>Rollo Adhesivo</span>
-                    </span>
-                    <span className="text-[11px] opacity-75 font-normal">Impresora Térmica</span>
-                  </Button>
-                </div>
+                    <TabsTrigger
+                      value="adhesivo"
+                      className="h-auto min-h-11 flex-col items-start gap-0.5 rounded-[var(--lf-input-radius)] px-3 py-2 text-left text-[var(--text-muted)] data-[state=active]:bg-[var(--primario)]/10 data-[state=active]:text-[var(--primario)] data-[state=active]:shadow-none"
+                    >
+                      <span className="flex items-center gap-1.5 text-xs font-bold">
+                        <Tag size={13} />
+                        <span>Rollo Adhesivo</span>
+                      </span>
+                      <span className="text-[11px] font-normal text-[var(--text-muted)]">Impresora Térmica</span>
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
               </div>
-            </div>
 
             {/* Edición de Valor del Código & Copias */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="border-t border-[var(--border)] pt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="sm:col-span-2">
                 <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5 ml-1">
                   Contenido / SKU del Código
@@ -276,7 +275,7 @@ export function TiendaEtiquetasModal({
                     value={codigoValor}
                     onChange={(e) => setCodigoValor(e.target.value)}
                     placeholder="Ej: 7501055301072"
-                    className="h-11 rounded-[var(--lf-card-radius)] text-xs bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)] font-mono focus:ring-2 focus:ring-primary/20"
+                    className="h-11 rounded-[var(--lf-input-radius)] text-xs bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)] font-mono"
                   />
                   <Button
                     type="button"
@@ -284,7 +283,7 @@ export function TiendaEtiquetasModal({
                     size="sm"
                     onClick={generarNuevoCodigo}
                     title="Generar SKU numérico aleatorio"
-                    className="h-11 rounded-[var(--lf-card-radius)] px-4 text-xs font-bold gap-1.5 shrink-0 border-[var(--border)]"
+                    className="h-11 rounded-full px-4 text-xs font-bold gap-1.5 shrink-0 border-[var(--border)]"
                   >
                     <RotateCcw size={14} />
                     <span className="hidden sm:inline">Generar</span>
@@ -304,7 +303,7 @@ export function TiendaEtiquetasModal({
                     value={Number.isFinite(cantidadCopias) ? cantidadCopias : ''}
                     onChange={(e) => setCantidadCopias(e.target.value === '' ? NaN : Math.max(1, Number(e.target.value) || 1))}
                     onBlur={() => { if (!Number.isFinite(cantidadCopias)) setCantidadCopias(1); }}
-                    className="h-11 rounded-[var(--lf-card-radius)] text-xs bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)] font-mono text-center focus:ring-2 focus:ring-primary/20"
+                    className="h-11 rounded-[var(--lf-input-radius)] text-xs bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)] font-mono text-center"
                   />
                   <div className="flex gap-1 shrink-0">
                     {[6, 24, 48].map((num) => (
@@ -314,7 +313,7 @@ export function TiendaEtiquetasModal({
                         variant="secondary"
                         size="sm"
                         onClick={() => setCantidadCopias(num)}
-                        className="px-2.5 h-11 rounded-[var(--lf-card-radius)] text-[11px] font-bold"
+                        className="px-2.5 h-11 rounded-full text-xs font-bold font-mono"
                       >
                         {num}
                       </Button>
@@ -325,67 +324,68 @@ export function TiendaEtiquetasModal({
             </div>
 
             {/* Opciones de la Etiqueta (Checkboxes) */}
-            <div className="p-3.5 rounded-[var(--lf-card-radius)] bg-[var(--bg-alt)]/60 border border-[var(--border)]">
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] block mb-2.5 ml-1">
+            <div className="border-t border-[var(--border)] pt-4 space-y-2.5">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] block">
                 Elementos Visibles en Cada Etiqueta
               </span>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                <label className="flex items-center gap-2 cursor-pointer font-medium text-[var(--text)] p-2 rounded-xl hover:bg-[var(--surface)] transition-colors">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-[var(--text)] p-2 rounded-[var(--lf-input-radius)] hover:bg-[var(--surface)] transition-colors">
                   <input
                     type="checkbox"
                     checked={mostrarNombre}
                     onChange={(e) => setMostrarNombre(e.target.checked)}
-                    className="w-4 h-4 rounded text-primary focus:ring-primary"
+                    className="w-4 h-4 rounded accent-[var(--primario)] shrink-0 focus:ring-2 focus:ring-[var(--primario)]"
                   />
                   <span>Nombre</span>
                 </label>
 
-                <label className="flex items-center gap-2 cursor-pointer font-medium text-[var(--text)] p-2 rounded-xl hover:bg-[var(--surface)] transition-colors">
+                <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-[var(--text)] p-2 rounded-[var(--lf-input-radius)] hover:bg-[var(--surface)] transition-colors">
                   <input
                     type="checkbox"
                     checked={mostrarPrecio}
                     onChange={(e) => setMostrarPrecio(e.target.checked)}
-                    className="w-4 h-4 rounded text-primary focus:ring-primary"
+                    className="w-4 h-4 rounded accent-[var(--primario)] shrink-0 focus:ring-2 focus:ring-[var(--primario)]"
                   />
                   <span>Precio (C$)</span>
                 </label>
 
-                <label className="flex items-center gap-2 cursor-pointer font-medium text-[var(--text)] p-2 rounded-xl hover:bg-[var(--surface)] transition-colors">
+                <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-[var(--text)] p-2 rounded-[var(--lf-input-radius)] hover:bg-[var(--surface)] transition-colors">
                   <input
                     type="checkbox"
                     checked={mostrarTienda}
                     onChange={(e) => setMostrarTienda(e.target.checked)}
-                    className="w-4 h-4 rounded text-primary focus:ring-primary"
+                    className="w-4 h-4 rounded accent-[var(--primario)] shrink-0 focus:ring-2 focus:ring-[var(--primario)]"
                   />
                   <span>Comercio</span>
                 </label>
 
-                <label className="flex items-center gap-2 cursor-pointer font-medium text-[var(--text)] p-2 rounded-xl hover:bg-[var(--surface)] transition-colors">
+                <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-[var(--text)] p-2 rounded-[var(--lf-input-radius)] hover:bg-[var(--surface)] transition-colors">
                   <input
                     type="checkbox"
                     checked={mostrarTextoCodigo}
                     onChange={(e) => setMostrarTextoCodigo(e.target.checked)}
-                    className="w-4 h-4 rounded text-primary focus:ring-primary"
+                    className="w-4 h-4 rounded accent-[var(--primario)] shrink-0 focus:ring-2 focus:ring-[var(--primario)]"
                   />
                   <span>SKU Numérico</span>
                 </label>
               </div>
             </div>
+            </div>
 
             {/* ─── VISTA PREVIA INDIVIDUAL DE ETIQUETA ─── */}
             <div className="space-y-2">
-              <span className="text-xs font-extrabold text-[var(--text-muted)] uppercase tracking-wider block ml-1">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] block">
                 Vista Previa de Etiqueta (Tamaño Real de Muestra)
               </span>
-              <div className="flex justify-center p-4 rounded-[var(--lf-card-radius)] bg-[var(--bg-alt)] border border-[var(--border)]">
-                <div className="w-56 p-3 bg-[var(--surface)] text-black rounded-xl border-2 border-dashed border-[var(--border)] shadow-[var(--lf-shadow-card)] flex flex-col items-center text-center font-sans">
+              <div className="flex justify-center p-5 rounded-[var(--lf-card-radius)] bg-[var(--bg-alt)] border border-[var(--border)]">
+                <div className="w-56 p-3 bg-[var(--surface)] text-[var(--text)] rounded-[var(--lf-input-radius)] border-2 border-dashed border-[var(--border)] shadow-[var(--lf-shadow-card)] flex flex-col items-center text-center font-sans">
                   {mostrarTienda && (
-                    <span className="text-[11px] font-extrabold uppercase tracking-widest text-[var(--text-muted)] truncate max-w-full">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] truncate max-w-full">
                       {nombreTienda}
                     </span>
                   )}
                   {mostrarNombre && (
-                    <h4 className="text-xs font-extrabold line-clamp-1 leading-tight mt-0.5 text-black">
+                    <h4 className="text-xs font-bold line-clamp-1 leading-tight mt-0.5 text-[var(--text)]">
                       {producto.nombre}
                     </h4>
                   )}
@@ -400,15 +400,15 @@ export function TiendaEtiquetasModal({
                   </div>
 
                   {mostrarTextoCodigo && (
-                    <span className="text-[11px] font-mono tracking-widest font-bold text-black">
+                    <span className="text-[11px] font-mono tracking-widest font-bold text-[var(--text)]">
                       {codigoValor}
                     </span>
                   )}
 
                   {mostrarPrecio && (
-                    <span className="text-xs font-black text-black mt-1 font-mono">
+                    <Badge className="mt-1 rounded-full px-2 py-0.5 text-xs font-bold font-mono tracking-tight">
                       C$ {producto.precio.toFixed(2)}
-                    </span>
+                    </Badge>
                   )}
                 </div>
               </div>
@@ -429,9 +429,9 @@ export function TiendaEtiquetasModal({
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="ghost"
                   onClick={handleCerrar}
-                  className="flex-1 sm:flex-initial h-11 rounded-full px-5 text-xs font-bold border-[var(--border)]"
+                  className="flex-1 sm:flex-initial h-11 rounded-full px-5 text-xs font-bold text-[var(--text-muted)] hover:text-[var(--text)]"
                 >
                   Cerrar
                 </Button>
@@ -439,7 +439,7 @@ export function TiendaEtiquetasModal({
                 <Button
                   type="button"
                   onClick={ejecutarImpresion}
-                  className="flex-[2] sm:flex-initial h-11 rounded-full px-6 text-xs font-bold gap-2 shadow-[var(--lf-shadow-card)] shadow-primary/20"
+                  className="flex-[2] sm:flex-initial h-11 rounded-full px-6 text-xs font-bold gap-2"
                 >
                   <Printer size={16} />
                   <span>Imprimir {cantidadCopias} Etiquetas</span>

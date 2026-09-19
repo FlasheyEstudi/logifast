@@ -266,72 +266,80 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
   });
 
   return (
-    <div className="w-full" style={{ display: 'flex', flexDirection: 'column', gap: 20, width: '100%' }}>
+    <div className="flex w-full flex-col gap-4 sm:gap-5">
       {/* ─── 1. KPI STAT CARDS (ESTILO APPLE / LOGIFAST 2.0) ─── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {/* Total Productos */}
-        <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)] hover:shadow-[var(--lf-shadow-card)]/90 transition-all">
-          <CardContent className="p-4 sm:p-5 flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-[var(--lf-card-radius)] bg-primary/10 text-primary flex items-center justify-center shrink-0">
-              <Package size={22} />
-            </div>
-            <div className="min-w-0">
-              <span className="text-xs font-semibold text-[var(--text-muted)] block">Total Productos</span>
-              <span className="text-2xl font-black font-mono text-[var(--text)] tracking-tight">{stats.total}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Publicados */}
-        <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)] hover:shadow-[var(--lf-shadow-card)]/90 transition-all">
-          <CardContent className="p-4 sm:p-5 flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-[var(--lf-card-radius)] bg-[var(--exito)]/10 text-[var(--exito)] flex items-center justify-center shrink-0">
-              <Eye size={22} />
-            </div>
-            <div className="min-w-0">
-              <span className="text-xs font-semibold text-[var(--text-muted)] block">Publicados</span>
-              <span className="text-2xl font-black font-mono text-[var(--text)] tracking-tight">{stats.publicados}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Alerta Stock */}
-        <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)] hover:shadow-[var(--lf-shadow-card)]/90 transition-all">
-          <CardContent className="p-4 sm:p-5 flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-[var(--lf-card-radius)] bg-[var(--warning)]/10 text-[var(--warning)] flex items-center justify-center shrink-0">
-              <AlertTriangle size={22} />
-            </div>
-            <div className="min-w-0">
-              <span className="text-xs font-semibold text-[var(--text-muted)] block">Alerta Stock</span>
-              <span className={`text-2xl font-black font-mono tracking-tight ${stats.bajoStock > 0 ? 'text-[var(--warning)] text-[var(--warning)]' : 'text-[var(--text)]'}`}>
-                {stats.bajoStock}
+        {/* Total Productos — KPI secundario */}
+        <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)] py-0">
+          <CardContent className="p-4 sm:p-5 flex flex-col gap-2.5">
+            <div className="flex items-start justify-between gap-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                Total Productos
+              </span>
+              <span className="w-8 h-8 rounded-[var(--lf-input-radius)] bg-[var(--primario)]/10 text-[var(--primario)] flex items-center justify-center shrink-0">
+                <Package size={16} />
               </span>
             </div>
+            <span className="text-lg font-bold font-mono text-[var(--text)] tracking-tight">{stats.total}</span>
           </CardContent>
         </Card>
 
-        {/* Valor Inventario */}
-        <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)] hover:shadow-[var(--lf-shadow-card)]/90 transition-all">
-          <CardContent className="p-4 sm:p-5 flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-[var(--lf-card-radius)] bg-[var(--md-tertiary)]/10 text-[var(--md-tertiary)] flex items-center justify-center shrink-0">
-              <TrendingUp size={22} />
-            </div>
-            <div className="min-w-0">
-              <span className="text-xs font-semibold text-[var(--text-muted)] block">Valor Inventario</span>
-              <span className="text-xl font-black font-mono text-[var(--text)] tracking-tight">
-                C$ {stats.valorInventario.toLocaleString('es-NI', { maximumFractionDigits: 0 })}
+        {/* Publicados — KPI secundario */}
+        <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)] py-0">
+          <CardContent className="p-4 sm:p-5 flex flex-col gap-2.5">
+            <div className="flex items-start justify-between gap-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                Publicados
+              </span>
+              <span className="w-8 h-8 rounded-[var(--lf-input-radius)] bg-[var(--exito)]/10 text-[var(--exito)] flex items-center justify-center shrink-0">
+                <Eye size={16} />
               </span>
             </div>
+            <span className="text-lg font-bold font-mono text-[var(--text)] tracking-tight">{stats.publicados}</span>
+          </CardContent>
+        </Card>
+
+        {/* Alerta Stock — cifra protagonista */}
+        <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)] py-0">
+          <CardContent className="p-4 sm:p-5 flex flex-col gap-2.5">
+            <div className="flex items-start justify-between gap-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                Alerta Stock
+              </span>
+              <span className="w-8 h-8 rounded-[var(--lf-input-radius)] bg-[var(--warning)]/10 text-[var(--warning)] flex items-center justify-center shrink-0">
+                <AlertTriangle size={16} />
+              </span>
+            </div>
+            <span className={`text-xl sm:text-2xl font-black font-mono tracking-tight ${stats.bajoStock > 0 ? 'text-[var(--warning)]' : 'text-[var(--text)]'}`}>
+              {stats.bajoStock}
+            </span>
+          </CardContent>
+        </Card>
+
+        {/* Valor Inventario — cifra protagonista */}
+        <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)] py-0">
+          <CardContent className="p-4 sm:p-5 flex flex-col gap-2.5">
+            <div className="flex items-start justify-between gap-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                Valor Inventario
+              </span>
+              <span className="w-8 h-8 rounded-[var(--lf-input-radius)] bg-[var(--md-tertiary)]/10 text-[var(--md-tertiary)] flex items-center justify-center shrink-0">
+                <TrendingUp size={16} />
+              </span>
+            </div>
+            <span className="text-xl sm:text-2xl font-black font-mono text-[var(--text)] tracking-tight">
+              C$ {stats.valorInventario.toLocaleString('es-NI', { maximumFractionDigits: 0 })}
+            </span>
           </CardContent>
         </Card>
       </div>
 
       {/* ─── 2. TOOLBAR & CONTROLES DE INVENTARIO ─── */}
       <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)]">
-        <CardContent className="p-5 sm:p-6 space-y-4">
-          <div className="flex justify-between items-center flex-wrap gap-3.5">
-            <div>
-              <h2 className="text-lg sm:text-xl font-extrabold font-syne text-[var(--text)] tracking-tight">
+        <CardContent className="p-4 sm:p-5 space-y-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <h2 className="text-base font-semibold font-syne text-[var(--text)]">
                 Gestión de Inventario & Catálogo
               </h2>
               <p className="text-xs text-[var(--text-muted)] mt-1">
@@ -339,28 +347,28 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
               </p>
             </div>
 
-            <Button onClick={abrirModalCrear} className="h-11 px-5 rounded-full text-xs font-bold gap-2 shadow-[var(--lf-shadow-card)]">
+            <Button onClick={abrirModalCrear} className="h-11 w-full sm:w-auto shrink-0 px-5 rounded-full text-xs font-bold gap-2 shadow-[var(--lf-shadow-card)]">
               <Plus size={16} />
               <span>Nuevo Producto</span>
             </Button>
           </div>
 
           {/* Barra de Búsqueda Cápsula & Filtros de Estado */}
-          <div className="flex gap-2.5 flex-wrap items-center pt-3.5 border-t border-[var(--border)]">
+          <div className="flex flex-col gap-2.5 pt-3 border-t border-[var(--border)] sm:flex-row sm:items-center">
             {/* Input Buscador Cápsula */}
-            <div className="relative flex-1 min-w-[240px] flex items-center">
+            <div className="relative flex w-full min-w-0 flex-1 items-center">
               <Search size={18} className="absolute left-4 text-[var(--text-muted)] pointer-events-none" />
               <Input
                 type="text"
                 placeholder="Buscar producto por nombre o SKU..."
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
-                className="h-11 pl-11 pr-10 rounded-full bg-[var(--bg-alt)] border-[var(--border)] text-xs sm:text-sm font-medium text-[var(--text)] shadow-[var(--lf-shadow-card)]"
+                className="h-11 pl-11 pr-10 rounded-full bg-[var(--bg-alt)] border-[var(--border)] text-xs sm:text-sm font-medium text-[var(--text)] shadow-none"
               />
               {busqueda && (
                 <button
                   onClick={() => setBusqueda('')}
-                  className="absolute right-3.5 w-6 h-6 rounded-full hover:bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--text-muted)]/90 flex items-center justify-center transition-colors"
+                  className="absolute right-3.5 w-6 h-6 rounded-full hover:bg-[var(--surface-elevated)] text-[var(--text-muted)] hover:text-[var(--text)] flex items-center justify-center transition-colors"
                 >
                   <X size={14} />
                 </button>
@@ -368,7 +376,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
             </div>
 
             {/* Chips de Estado Rápido Cápsula */}
-            <div className="flex items-center gap-1.5 overflow-x-auto">
+            <div className="no-scrollbar -mx-1 flex items-center gap-1.5 overflow-x-auto px-1 sm:mx-0 sm:px-0">
               {(
                 [
                   { id: 'todos', label: 'Todos' },
@@ -381,10 +389,12 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                 return (
                   <Button
                     key={opt.id}
-                    variant={active ? 'default' : 'secondary'}
+                    variant={active ? 'secondary' : 'ghost'}
                     size="sm"
                     onClick={() => setFiltroEstado(opt.id)}
-                    className="h-9 rounded-full text-xs font-bold px-3.5 shadow-[var(--lf-shadow-card)]"
+                    className={`h-11 sm:h-10 shrink-0 rounded-full px-3.5 text-xs font-bold shadow-none ${
+                      active ? '' : 'text-[var(--text-muted)] hover:text-[var(--text)]'
+                    }`}
                   >
                     {opt.label}
                   </Button>
@@ -395,17 +405,17 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
 
           {/* Slider horizontal de categorías en cápsulas */}
           {categorias.length > 2 && (
-            <div className="flex items-center gap-2 overflow-x-auto pt-1 no-scrollbar">
+            <div className="no-scrollbar -mx-1 flex items-center gap-1.5 overflow-x-auto px-1 pt-0.5 sm:mx-0 sm:px-0">
               {categorias.map((cat) => {
                 const active = categoriaSeleccionada.toLowerCase() === cat.toLowerCase();
                 return (
                   <Button
                     key={cat}
-                    variant={active ? 'default' : 'outline'}
+                    variant={active ? 'secondary' : 'ghost'}
                     size="sm"
                     onClick={() => setCategoriaSeleccionada(cat)}
-                    className={`h-8 rounded-full text-xs font-bold px-3.5 shrink-0 ${
-                      active ? 'shadow-[var(--lf-shadow-card)]' : 'border-[var(--border)] border-[var(--border)] text-[var(--text-muted)]'
+                    className={`h-8 shrink-0 rounded-full px-3.5 text-xs font-bold shadow-none ${
+                      active ? '' : 'text-[var(--text-muted)] hover:text-[var(--text)]'
                     }`}
                   >
                     {cat === 'todos' ? 'Todas las Categorías' : cat}
@@ -421,15 +431,17 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
       {loading ? (
         <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)] h-[260px] flex items-center justify-center">
           <CardContent className="flex flex-col items-center gap-2.5 text-[var(--text-muted)] p-6">
-            <div className="w-8 h-8 border-3 border-primary/20 border-t-primary rounded-full animate-spin" />
+            <div className="h-8 w-8 animate-spin rounded-full border-3 border-[var(--primario)]/20 border-t-[var(--primario)]" />
             <span className="text-xs font-semibold">Cargando catálogo de productos...</span>
           </CardContent>
         </Card>
       ) : filtrados.length === 0 ? (
         <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)] p-12 text-center">
           <CardContent className="flex flex-col items-center gap-2.5">
-            <Package size={44} className="text-[var(--text-muted)] opacity-40" />
-            <h3 className="text-base font-bold font-syne text-[var(--text)]">
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--bg-alt)] text-[var(--text-muted)]">
+              <Package size={26} />
+            </span>
+            <h3 className="text-base font-semibold font-syne text-[var(--text)]">
               No se encontraron productos
             </h3>
             <p className="text-xs text-[var(--text-muted)] max-w-sm">
@@ -445,13 +457,14 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
           <div className="block md:hidden space-y-3.5">
             {filtrados.map((p) => {
               const bajoStock = p.stock !== null && p.stock !== undefined && p.stock <= (p.stockMinimo ?? 5);
+              const agotado = (p.stock ?? 0) <= 0;
 
               return (
-                <Card key={p.id} className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)] hover:shadow-[var(--lf-shadow-card)]/90 transition-all overflow-hidden">
+                <Card key={p.id} className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)] overflow-hidden">
                   <CardContent className="p-4 space-y-3.5">
                     <div className="flex gap-3.5 items-start">
                       {/* Thumbnail redondeado moderno */}
-                      <div className="w-20 h-20 rounded-[var(--lf-card-radius)] bg-[var(--bg-alt)] border border-[var(--border)] overflow-hidden shrink-0 flex items-center justify-center shadow-[var(--lf-shadow-card)]">
+                      <div className="w-20 h-20 rounded-[var(--lf-card-radius)] bg-[var(--bg-alt)] border border-[var(--border)] overflow-hidden shrink-0 flex items-center justify-center">
                         {p.portadaUrl || p.imagenUrl ? (
                           <img
                             src={p.portadaUrl || p.imagenUrl || ''}
@@ -466,27 +479,31 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                       {/* Metadata */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-[11px] font-extrabold uppercase tracking-wider text-primary">
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--primario)]">
                             {p.categoriaNombre || 'General'}
                           </span>
                           <Badge
-                            variant="secondary"
-                            className={`text-[11px] py-0.5 px-2.5 rounded-full font-bold ${
+                            variant="outline"
+                            className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
                               p.disponible
-                                ? 'bg-[var(--exito)]/10 text-[var(--exito)] border border-[var(--exito)]'
-                                : 'bg-[var(--bg-alt)] text-[var(--text-muted)] border border-[var(--border)]'
+                                ? 'border-[var(--exito)]/30 bg-[var(--exito)]/10 text-[var(--exito)]'
+                                : 'border-[var(--border)] bg-[var(--bg-alt)] text-[var(--text-muted)]'
                             }`}
                           >
                             {p.disponible ? 'Publicado' : 'Archivado'}
                           </Badge>
-                          {bajoStock && (
-                            <Badge
-                              variant="destructive"
-                              className="text-[11px] py-0.5 px-2.5 rounded-full font-bold bg-[var(--peligro)]/10 text-[var(--peligro)] border border-[var(--peligro)]"
-                            >
-                              <AlertTriangle size={10} className="mr-1" /> Bajo Stock
-                            </Badge>
-                          )}
+                          <Badge
+                            variant="outline"
+                            className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
+                              agotado
+                                ? 'border-[var(--peligro)]/30 bg-[var(--peligro)]/10 text-[var(--peligro)]'
+                                : bajoStock
+                                ? 'border-[var(--warning)]/30 bg-[var(--warning)]/10 text-[var(--warning)]'
+                                : 'border-[var(--exito)]/30 bg-[var(--exito)]/10 text-[var(--exito)]'
+                            }`}
+                          >
+                            {agotado ? 'Agotado' : bajoStock ? 'Bajo stock' : 'En stock'}
+                          </Badge>
                         </div>
 
                         <h3 className="text-sm sm:text-base font-bold text-[var(--text)] mt-1 mb-0.5 line-clamp-1 leading-snug">
@@ -504,14 +521,14 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                     {/* Precios & Stock Destacados en Cápsula de Información */}
                     <div className="grid grid-cols-2 gap-2 p-3 rounded-[var(--lf-card-radius)] bg-[var(--bg-alt)]/70 border border-[var(--border)]">
                       <div>
-                        <span className="text-[11px] text-[var(--text-muted)] block font-semibold">Precio Venta</span>
-                        <span className="text-base font-black text-primary font-mono">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] block">Precio Venta</span>
+                        <span className="text-base font-black text-[var(--primario)] font-mono">
                           C$ {p.precio.toFixed(2)}
                         </span>
                       </div>
                       <div>
-                        <span className="text-[11px] text-[var(--text-muted)] block font-semibold">Stock Disponible</span>
-                        <span className={`text-base font-black font-mono ${bajoStock ? 'text-[var(--peligro)]' : 'text-[var(--text)]'}`}>
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] block">Stock Disponible</span>
+                        <span className="text-base font-black font-mono text-[var(--text)]">
                           {p.stock ?? 0} {p.unidadMedida || 'und'}
                         </span>
                       </div>
@@ -519,7 +536,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
 
                     {/* Confirmación antes de archivar */}
                     {archivarConfirmId === p.id && (
-                      <div className="p-3 rounded-xl bg-[var(--peligro)]/10 border border-[var(--peligro)] space-y-2">
+                      <div className="space-y-2 rounded-[var(--lf-card-radius)] border border-[var(--peligro)]/30 bg-[var(--peligro)]/10 p-3">
                         <span className="text-xs font-semibold text-[var(--text)] block">
                           ¿Archivar "{p.nombre}"? Dejará de mostrarse a los clientes.
                         </span>
@@ -528,7 +545,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                             variant="destructive"
                             size="sm"
                             onClick={() => toggleDisponible(p)}
-                            className="flex-1 h-8 text-xs font-semibold"
+                            className="flex-1 h-11 rounded-full text-xs font-semibold"
                           >
                             Sí, archivar
                           </Button>
@@ -536,7 +553,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                             variant="outline"
                             size="sm"
                             onClick={() => setArchivarConfirmId(null)}
-                            className="flex-1 h-8 text-xs font-semibold"
+                            className="flex-1 h-11 rounded-full text-xs font-semibold shadow-none"
                           >
                             Cancelar
                           </Button>
@@ -550,9 +567,9 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                         variant="outline"
                         size="sm"
                         onClick={() => (p.disponible ? setArchivarConfirmId(p.id) : toggleDisponible(p))}
-                        className="flex-1 h-9 rounded-full text-xs font-semibold"
+                        className="flex-1 h-11 rounded-full text-xs font-semibold shadow-none"
                       >
-                        {p.disponible ? <EyeOff size={13} className="mr-1" /> : <Eye size={13} className="mr-1" />}
+                        {p.disponible ? <EyeOff size={13} /> : <Eye size={13} />}
                         <span>{p.disponible ? 'Archivar' : 'Publicar'}</span>
                       </Button>
 
@@ -560,19 +577,19 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                         variant="outline"
                         size="sm"
                         onClick={() => abrirGeneradorEtiquetas(p)}
-                        className="flex-1 h-9 rounded-full text-xs font-semibold"
+                        className="flex-1 h-11 rounded-full text-xs font-semibold shadow-none"
                       >
-                        <Printer size={13} className="mr-1" />
+                        <Printer size={13} />
                         <span>Etiquetas</span>
                       </Button>
 
                       <Button
-                        variant="default"
+                        variant="secondary"
                         size="sm"
                         onClick={() => abrirModalEditar(p)}
-                        className="flex-1 h-9 rounded-full text-xs font-semibold"
+                        className="flex-1 h-11 rounded-full text-xs font-semibold shadow-none"
                       >
-                        <Edit2 size={13} className="mr-1" />
+                        <Edit2 size={13} />
                         <span>Editar</span>
                       </Button>
                     </div>
@@ -588,7 +605,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
           <Card className="hidden md:block rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)] overflow-hidden">
             <Table>
               <TableHeader>
-                <TableRow className="bg-[var(--bg-alt)] hover:bg-[var(--bg-alt)]/90">
+                <TableRow className="border-[var(--border)] bg-[var(--bg-alt)] hover:bg-[var(--bg-alt)]">
                   <TableHead className="w-[60px] text-center text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Foto</TableHead>
                   <TableHead className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Producto & SKU</TableHead>
                   <TableHead className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Categoría</TableHead>
@@ -602,12 +619,13 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
               <TableBody>
                 {filtrados.map((p) => {
                   const bajoStock = p.stock !== null && p.stock !== undefined && p.stock <= (p.stockMinimo ?? 5);
+                  const agotado = (p.stock ?? 0) <= 0;
 
                   return (
-                    <TableRow key={p.id}>
+                    <TableRow key={p.id} className="border-b border-[var(--border)] hover:bg-[var(--bg-alt)]">
                       {/* Foto */}
                       <TableCell className="text-center">
-                        <div className="w-10 h-10 rounded-lg bg-[var(--bg-alt)] border border-[var(--border)] overflow-hidden mx-auto flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-[var(--lf-input-radius)] bg-[var(--bg-alt)] border border-[var(--border)] overflow-hidden mx-auto flex items-center justify-center">
                           {p.portadaUrl || p.imagenUrl ? (
                             <img
                               src={p.portadaUrl || p.imagenUrl || ''}
@@ -647,19 +665,33 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
 
                       {/* Stock */}
                       <TableCell className="text-center">
-                        <span className={`font-mono font-bold ${bajoStock ? 'text-[var(--peligro)]' : 'text-[var(--text)]'}`}>
-                          {p.stock ?? 0} {p.unidadMedida || 'und'}
-                        </span>
+                        <div className="inline-flex items-center gap-2">
+                          <span className="font-mono font-bold text-[var(--text)]">
+                            {p.stock ?? 0} {p.unidadMedida || 'und'}
+                          </span>
+                          <Badge
+                            variant="outline"
+                            className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
+                              agotado
+                                ? 'border-[var(--peligro)]/30 bg-[var(--peligro)]/10 text-[var(--peligro)]'
+                                : bajoStock
+                                ? 'border-[var(--warning)]/30 bg-[var(--warning)]/10 text-[var(--warning)]'
+                                : 'border-[var(--exito)]/30 bg-[var(--exito)]/10 text-[var(--exito)]'
+                            }`}
+                          >
+                            {agotado ? 'Agotado' : bajoStock ? 'Bajo stock' : 'En stock'}
+                          </Badge>
+                        </div>
                       </TableCell>
 
                       {/* Estado */}
                       <TableCell className="text-center">
                         <Badge
-                          variant={p.disponible ? 'secondary' : 'outline'}
-                          className={`text-[11px] font-bold px-2.5 py-0.5 ${
+                          variant="outline"
+                          className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
                             p.disponible
-                              ? 'bg-[var(--exito)]/10 text-[var(--exito)] border-[var(--exito)]'
-                              : 'text-[var(--text-muted)]'
+                              ? 'border-[var(--exito)]/30 bg-[var(--exito)]/10 text-[var(--exito)]'
+                              : 'border-[var(--border)] bg-[var(--bg-alt)] text-[var(--text-muted)]'
                           }`}
                         >
                           {p.disponible ? 'Publicado' : 'Archivado'}
@@ -668,11 +700,11 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
 
                       {/* Acciones */}
                       <TableCell className="text-right">
-                        <div className="inline-flex items-center gap-1.5">
+                        <div className="inline-flex items-center justify-end gap-1.5">
                           <Button
                             variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
+                            size="sm"
+                            className="h-8 w-8 px-0 shadow-none"
                             onClick={() => abrirGeneradorEtiquetas(p)}
                             title="Imprimir Etiquetas / Código"
                           >
@@ -680,17 +712,17 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                           </Button>
                           <Button
                             variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
+                            size="sm"
+                            className="h-8 w-8 px-0 shadow-none"
                             onClick={() => toggleDisponible(p)}
                             title={p.disponible ? 'Archivar' : 'Publicar'}
                           >
                             {p.disponible ? <EyeOff size={13} /> : <Eye size={13} />}
                           </Button>
                           <Button
-                            variant="default"
+                            variant="secondary"
                             size="sm"
-                            className="h-8 gap-1.5 text-xs font-semibold"
+                            className="h-8 gap-1.5 text-xs font-semibold shadow-none"
                             onClick={() => abrirModalEditar(p)}
                             title="Editar"
                           >
@@ -716,7 +748,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
         >
           <Card
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-[580px] max-h-[90vh] overflow-y-auto bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-float)] rounded-[var(--lf-card-radius)]"
+            className="w-full max-w-[580px] max-h-[90vh] overflow-y-auto bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-sheet)] rounded-[var(--lf-sheet-radius)]"
           >
             <CardContent className="p-6">
               <div className="flex justify-between items-center pb-4 border-b border-[var(--border)] mb-5">
@@ -775,7 +807,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                       <button
                         type="button"
                         onClick={generarCodigoSku}
-                        className="text-[11px] text-primary font-bold bg-transparent border-none cursor-pointer hover:underline"
+                        className="text-[11px] text-[var(--primario)] font-bold bg-transparent border-none cursor-pointer hover:underline"
                       >
                         + Generar SKU
                       </button>
@@ -877,7 +909,7 @@ export function TiendaInventario({ isDark, categoriaTienda = 'tienda' }: { isDar
                   <Button
                     type="submit"
                     disabled={submitting}
-                    className="flex-[2] h-11 rounded-full font-semibold shadow-[var(--lf-shadow-card)] shadow-primary/20"
+                    className="flex-[2] h-11 rounded-full font-semibold shadow-[var(--lf-shadow-card)]"
                   >
                     {submitting ? 'Guardando...' : (editingProd ? 'Guardar Cambios' : 'Crear Producto')}
                   </Button>

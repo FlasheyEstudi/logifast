@@ -133,17 +133,17 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-lg bg-[var(--surface)] rounded-[var(--lf-card-radius)] border border-[var(--border)] shadow-[var(--lf-shadow-float)] max-h-[90vh] overflow-y-auto"
       >
-        <CardContent className="p-5 sm:p-6 space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-[var(--lf-card-radius)] bg-[var(--warning)]/10 text-[var(--warning)] flex items-center justify-center shrink-0">
+        <CardContent className="p-4 sm:p-5 space-y-4">
+          <div className="flex items-start justify-between gap-3 border-b border-[var(--border)] pb-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--lf-card-radius)] bg-[var(--warning)]/10 text-[var(--warning)]">
                 <RotateCcw size={20} />
               </div>
-              <div>
-                <h3 className="text-base sm:text-lg font-black tracking-tight text-[var(--text)] m-0">
+              <div className="min-w-0">
+                <h3 className="m-0 font-syne text-base font-semibold tracking-tight text-[var(--text)]">
                   Devolución de Mercadería
                 </h3>
-                <p className="text-xs text-[var(--text-muted)] mt-0.5 mb-0">
+                <p className="mb-0 mt-0.5 text-xs text-[var(--text-muted)]">
                   Reingreso de unidades al inventario y registro en Kardex
                 </p>
               </div>
@@ -151,7 +151,7 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
 
             <button
               onClick={onCerrar}
-              className="w-9 h-9 rounded-full hover:bg-[var(--bg-alt)] text-[var(--text-muted)] hover:text-[var(--text)] flex items-center justify-center transition-colors"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-alt)] hover:text-[var(--text)]"
               aria-label="Cerrar modal"
             >
               <X size={18} />
@@ -166,30 +166,32 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
               </div>
 
               <div className="space-y-2">
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--text-muted)] block ml-1">
+                <span className="block text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
                   Artículos Reingresados al Kardex
                 </span>
                 {resultado.items.map((it) => (
                   <div
                     key={it.nombreProducto}
-                    className="p-3.5 rounded-[var(--lf-card-radius)] bg-[var(--bg-alt)]/70 border border-[var(--border)] flex items-center justify-between text-xs"
+                    className="flex items-center justify-between gap-3 rounded-[var(--lf-card-radius)] border border-[var(--border)] bg-[var(--bg-alt)] p-3.5"
                   >
-                    <span className="font-bold text-[var(--text)] flex-1 truncate pr-2">
-                      {it.nombreProducto}
-                    </span>
-                    <span className="text-[var(--exito)] font-bold font-mono mr-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="break-words text-sm font-semibold text-[var(--text)]">
+                        {it.nombreProducto}
+                      </p>
+                      <p className="font-mono text-xs text-[var(--text-muted)]">
+                        {it.stockAnterior} → <b className="font-bold text-[var(--text)]">{it.stockNuevo}</b>
+                      </p>
+                    </div>
+                    <Badge className="shrink-0 rounded-full border-[var(--exito)] bg-[var(--exito)]/15 px-2.5 py-1 font-mono text-xs font-bold text-[var(--exito)]">
                       +{it.cantidad}
-                    </span>
-                    <span className="font-mono text-[var(--text-muted)]">
-                      {it.stockAnterior} → <b className="text-primary">{it.stockNuevo}</b>
-                    </span>
+                    </Badge>
                   </div>
                 ))}
               </div>
 
-              <div className="p-4 rounded-[var(--lf-card-radius)] bg-[var(--bg-alt)]/80 flex justify-between items-center text-sm font-bold border border-[var(--border)]">
-                <span>Total Reembolsado:</span>
-                <span className="font-mono text-base font-black text-primary">C$ {resultado.totalDevuelto.toFixed(2)}</span>
+              <div className="flex items-baseline justify-between gap-3 rounded-[var(--lf-card-radius)] border border-[var(--border)] bg-[var(--bg-alt)] px-4 py-3.5">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Total Reembolsado:</span>
+                <span className="shrink-0 font-mono text-xl font-black text-[var(--text)]">C$ {resultado.totalDevuelto.toFixed(2)}</span>
               </div>
 
               {resultado.alertasStockBajo.length > 0 && (
@@ -206,7 +208,7 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
 
               <Button
                 onClick={onCerrar}
-                className="w-full h-11 rounded-full text-xs font-bold shadow-[var(--lf-shadow-card)] shadow-primary/20"
+                className="w-full h-11 rounded-full text-sm font-bold shadow-[var(--lf-shadow-card)]"
               >
                 Cerrar y Volver a Caja POS
               </Button>
@@ -215,108 +217,125 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
             <div className="space-y-4">
               {/* Buscador de productos cápsula */}
               <div className="relative flex items-center">
-                <Search size={16} className="absolute left-3.5 text-[var(--text-muted)] pointer-events-none" />
+                <Search size={16} className="pointer-events-none absolute left-3.5 text-[var(--text-muted)]" />
                 <Input
                   value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
                   placeholder="Buscar producto por nombre o SKU a devolver…"
-                  className="pl-10 pr-10 h-11 rounded-full text-xs bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)] focus:ring-2 focus:ring-primary/20 shadow-[var(--lf-shadow-card)]"
+                  className="h-11 rounded-full border-[var(--border)] bg-[var(--bg-alt)] pl-10 pr-14 text-xs text-[var(--text)] shadow-[var(--lf-shadow-card)] focus-visible:ring-2 focus-visible:ring-[var(--primario)]"
                 />
                 {busqueda && (
                   <button
                     onClick={() => setBusqueda('')}
-                    className="absolute right-3 w-6 h-6 rounded-full hover:bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--text-muted)]/90 flex items-center justify-center"
+                    className="absolute right-2 flex h-11 w-11 items-center justify-center rounded-full text-[var(--text-muted)] hover:bg-[var(--surface)] hover:text-[var(--text)]"
+                    aria-label="Limpiar búsqueda"
                   >
-                    <X size={13} />
+                    <X size={16} />
                   </button>
                 )}
               </div>
 
               {/* Resultados de búsqueda */}
               {busqueda.trim() !== '' && (
-                <div className="p-1.5 rounded-[var(--lf-card-radius)] bg-[var(--bg-alt)] border border-[var(--border)] max-h-48 overflow-y-auto space-y-1">
+                <div className="max-h-60 space-y-1 overflow-y-auto rounded-[var(--lf-card-radius)] border border-[var(--border)] bg-[var(--bg-alt)] p-1.5">
                   {candidatos.length === 0 ? (
-                    <p className="text-xs text-[var(--text-muted)] text-center py-3">
+                    <p className="py-3 text-center text-xs text-[var(--text-muted)]">
                       Sin resultados con stock gestionado
                     </p>
                   ) : (
-                    candidatos.map((p) => (
-                      <button
-                        key={p.id}
-                        onClick={() => agregar(p)}
-                        className="w-full p-2.5 rounded-xl hover:bg-[var(--surface)] text-left flex items-center justify-between text-xs transition-colors cursor-pointer"
-                      >
-                        <span className="font-bold text-[var(--text)] truncate pr-2">
-                          {p.nombre}
-                        </span>
-                        <div className="flex items-center gap-3 shrink-0">
-                          <span className="text-[var(--text-muted)] font-mono">Stock: {p.stock}</span>
-                          <span className="font-mono font-bold text-primary">C$ {p.precio.toFixed(2)}</span>
-                          <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold">
-                            <Plus size={14} />
+                    candidatos.map((p) => {
+                      const stockBajo = p.stock !== null && p.stock !== undefined && p.stock <= (p.stockMinimo ?? 5);
+                      return (
+                        <button
+                          key={p.id}
+                          onClick={() => agregar(p)}
+                          className="flex w-full cursor-pointer items-center gap-2.5 rounded-[var(--lf-input-radius)] p-2.5 text-left transition-colors hover:bg-[var(--surface)]"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <p className="break-words text-xs font-bold text-[var(--text)]">{p.nombre}</p>
+                            <Badge
+                              className={`mt-1 rounded-full px-2 py-0.5 font-mono text-[11px] font-bold ${
+                                stockBajo
+                                  ? 'border-[var(--warning)] bg-[var(--warning)]/15 text-[var(--warning)]'
+                                  : 'border-[var(--border)] bg-[var(--bg-alt)] text-[var(--text-muted)]'
+                              }`}
+                            >
+                              Stock: {p.stock}
+                            </Badge>
                           </div>
-                        </div>
-                      </button>
-                    ))
+                          <span className="shrink-0 font-mono text-xs font-bold text-[var(--primario)]">
+                            C$ {p.precio.toFixed(2)}
+                          </span>
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)] text-[var(--primario)]">
+                            <Plus size={15} />
+                          </span>
+                        </button>
+                      );
+                    })
                   )}
                 </div>
               )}
 
               {/* Lista de productos seleccionados para devolución */}
-              <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
+              <div className="max-h-72 space-y-2.5 overflow-y-auto pr-1">
                 {lineas.length === 0 ? (
-                  <div className="py-8 text-center text-xs text-[var(--text-muted)] border border-dashed border-[var(--border)] rounded-[var(--lf-card-radius)]">
+                  <div className="rounded-[var(--lf-card-radius)] border border-dashed border-[var(--border)] px-4 py-8 text-center text-xs text-[var(--text-muted)]">
                     Usa el buscador para añadir los productos que el cliente devuelve
                   </div>
                 ) : (
                   lineas.map((l) => (
                     <div
                       key={l.producto.id}
-                      className="p-3.5 rounded-[var(--lf-card-radius)] bg-[var(--bg-alt)]/70 border border-[var(--border)] space-y-2.5"
+                      className="space-y-3 rounded-[var(--lf-card-radius)] border border-[var(--border)] bg-[var(--bg-alt)] p-3.5"
                     >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="text-xs sm:text-sm font-bold text-[var(--text)] truncate">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="break-words text-sm font-semibold text-[var(--text)]">
                             {l.producto.nombre}
                           </p>
-                          <p className="text-[11px] text-[var(--text-muted)] font-mono">
+                          <p className="font-mono text-xs text-[var(--text-muted)]">
                             C$ {l.producto.precio.toFixed(2)} c/u
                           </p>
                         </div>
+                        <span className="shrink-0 font-mono text-sm font-bold text-[var(--text)]">
+                          C$ {(l.producto.precio * l.cantidad).toFixed(2)}
+                        </span>
+                      </div>
 
-                        {/* Quantity Controls */}
-                        <div className="flex items-center gap-1.5 shrink-0">
+                      {/* Quantity Controls */}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5">
                           <Button
                             variant="outline"
                             size="icon"
                             onClick={() => cambiarCantidad(l.producto.id, -1)}
-                            className="w-8 h-8 rounded-full border-[var(--border)]"
+                            className="h-11 w-11 rounded-full border-[var(--border)] bg-[var(--surface)] text-[var(--text)] shadow-none"
                             aria-label="Disminuir"
                           >
-                            <Minus size={13} />
+                            <Minus size={16} />
                           </Button>
-                          <span className="w-8 text-center font-bold text-sm font-mono">
+                          <span className="w-10 text-center font-mono text-sm font-bold text-[var(--text)]">
                             {l.cantidad}
                           </span>
                           <Button
                             variant="outline"
                             size="icon"
                             onClick={() => cambiarCantidad(l.producto.id, 1)}
-                            className="w-8 h-8 rounded-full border-[var(--border)]"
+                            className="h-11 w-11 rounded-full border-[var(--border)] bg-[var(--surface)] text-[var(--text)] shadow-none"
                             aria-label="Aumentar"
                           >
-                            <Plus size={13} />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => quitar(l.producto.id)}
-                            className="w-8 h-8 ml-0.5 rounded-full text-[var(--peligro)] hover:bg-[var(--peligro)]/10 hover:text-[var(--peligro)]/90"
-                            aria-label="Eliminar"
-                          >
-                            <Trash2 size={15} />
+                            <Plus size={16} />
                           </Button>
                         </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => quitar(l.producto.id)}
+                          className="h-11 w-11 rounded-full text-[var(--peligro)] hover:bg-[var(--peligro)]/10 hover:text-[var(--peligro)]"
+                          aria-label="Eliminar"
+                        >
+                          <Trash2 size={16} />
+                        </Button>
                       </div>
 
                       <Input
@@ -327,7 +346,7 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
                           )
                         }
                         placeholder="Motivo (opcional): dañado, vencido, talla equivocada…"
-                        className="h-10 rounded-xl text-xs bg-[var(--surface)] border-[var(--border)] text-[var(--text)] focus:ring-2 focus:ring-primary/20"
+                        className="h-11 rounded-[var(--lf-input-radius)] border-[var(--border)] bg-[var(--surface)] text-xs text-[var(--text)] focus-visible:ring-2 focus-visible:ring-[var(--primario)]"
                       />
                     </div>
                   ))
@@ -335,35 +354,35 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
               </div>
 
               {/* Referencia y Cliente */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                 <Input
                   value={referencia}
                   onChange={(e) => setReferencia(e.target.value)}
                   placeholder="N.º Ticket o Referencia (opcional)"
-                  className="h-11 rounded-[var(--lf-card-radius)] text-xs bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)] focus:ring-2 focus:ring-primary/20"
+                  className="h-11 rounded-[var(--lf-input-radius)] border-[var(--border)] bg-[var(--bg-alt)] text-xs text-[var(--text)] focus-visible:ring-2 focus-visible:ring-[var(--primario)]"
                 />
                 <Input
                   value={clienteNombre}
                   onChange={(e) => setClienteNombre(e.target.value)}
                   placeholder="Nombre del Cliente (opcional)"
-                  className="h-11 rounded-[var(--lf-card-radius)] text-xs bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)] focus:ring-2 focus:ring-primary/20"
+                  className="h-11 rounded-[var(--lf-input-radius)] border-[var(--border)] bg-[var(--bg-alt)] text-xs text-[var(--text)] focus-visible:ring-2 focus-visible:ring-[var(--primario)]"
                 />
               </div>
 
               {/* Total Reembolso */}
-              <div className="p-4 rounded-[var(--lf-card-radius)] bg-[var(--bg-alt)]/80 border border-[var(--border)] flex justify-between items-center text-sm font-bold">
-                <span className="text-[var(--text-muted)]">Total a Reembolsar:</span>
-                <span className="font-mono text-lg font-black text-primary">
+              <div className="flex items-baseline justify-between gap-3 rounded-[var(--lf-card-radius)] border border-[var(--border)] bg-[var(--bg-alt)] px-4 py-3.5">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Total a Reembolsar:</span>
+                <span className="shrink-0 font-mono text-xl font-black text-[var(--text)]">
                   C$ {total.toFixed(2)}
                 </span>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-2.5 pt-2">
+              <div className="flex gap-2.5 pt-1">
                 <Button
                   variant="outline"
                   onClick={onCerrar}
-                  className="flex-1 h-11 rounded-full text-xs font-bold border-[var(--border)]"
+                  className="h-11 flex-1 rounded-full border-[var(--border)] text-xs font-bold text-[var(--text-muted)] shadow-none"
                 >
                   Cancelar
                 </Button>
@@ -371,11 +390,11 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
                 <Button
                   onClick={enviar}
                   disabled={enviando || lineas.length === 0}
-                  className="flex-[2] h-11 rounded-full text-xs font-bold gap-1.5 bg-[var(--exito)] hover:bg-[var(--exito)]/90 text-white shadow-[var(--lf-shadow-card)] shadow-[var(--exito)]/20"
+                  className="h-11 flex-[2] rounded-full text-xs font-bold gap-1.5 shadow-[var(--lf-shadow-card)]"
                 >
                   {enviando ? (
                     <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <RotateCcw size={16} className="animate-spin" />
                       <span>Registrando...</span>
                     </>
                   ) : (

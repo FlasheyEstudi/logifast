@@ -8,6 +8,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 
 export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
   const [ruc, setRuc] = useState('');
@@ -80,11 +82,11 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
       <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)]">
         <CardContent className="p-5 sm:p-6 space-y-6">
           <div className="flex items-start gap-3.5">
-            <div className="w-12 h-12 rounded-[var(--lf-card-radius)] bg-primary/10 text-primary flex items-center justify-center shrink-0 shadow-[var(--lf-shadow-card)]">
+            <div className="w-12 h-12 rounded-[var(--lf-card-radius)] bg-[var(--primario)]/10 text-[var(--primario)] flex items-center justify-center shrink-0">
               <FileText size={22} />
             </div>
             <div>
-              <div className="text-xs font-bold uppercase tracking-wider text-primary">Cumplimiento Tributario</div>
+              <div className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Cumplimiento Tributario</div>
               <h2 className="text-lg sm:text-xl font-bold text-[var(--text)] font-syne mt-0.5">
                 Configuración de Facturación & DGI
               </h2>
@@ -98,7 +100,7 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
             {/* RUC & Razón Social */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-bold text-[var(--text)] block mb-1.5">
+                <label className="text-xs font-semibold text-[var(--text-secondary)] block mb-1.5">
                   Número RUC de la Empresa *
                 </label>
                 <Input
@@ -106,13 +108,13 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
                   value={ruc}
                   onChange={(e) => setRuc(e.target.value)}
                   placeholder="Ej: J0310000000000"
-                  className="h-11 rounded-[var(--lf-card-radius)]"
+                  className="h-11 rounded-[var(--lf-input-radius)]"
                   required
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-[var(--text)] block mb-1.5">
+                <label className="text-xs font-semibold text-[var(--text-secondary)] block mb-1.5">
                   Razón Social Legal *
                 </label>
                 <Input
@@ -120,7 +122,7 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
                   value={razonSocial}
                   onChange={(e) => setRazonSocial(e.target.value)}
                   placeholder="Ej: Comercial Distribuidora S.A."
-                  className="h-11 rounded-[var(--lf-card-radius)]"
+                  className="h-11 rounded-[var(--lf-input-radius)]"
                   required
                 />
               </div>
@@ -129,13 +131,13 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
             {/* Régimen & Serie */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-bold text-[var(--text)] block mb-1.5">
+                <label className="text-xs font-semibold text-[var(--text-secondary)] block mb-1.5">
                   Régimen Fiscal DGI
                 </label>
                 <select
                   value={regimenDgi}
                   onChange={(e) => setRegimenDgi(e.target.value)}
-                  className="w-full h-11 rounded-[var(--lf-card-radius)] border border-[var(--border)] bg-[var(--bg-alt)] px-3.5 py-1 text-sm shadow-[var(--lf-shadow-card)] transition-all outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer text-[var(--text)] font-medium"
+                  className="w-full h-11 rounded-[var(--lf-input-radius)] border border-[var(--border)] bg-[var(--bg-alt)] px-3.5 py-1 text-sm transition-colors outline-none focus:ring-2 focus:ring-[var(--primario)]/25 cursor-pointer text-[var(--text)] font-medium"
                 >
                   <option value="Cuota Fija" className="bg-[var(--surface)] text-[var(--text)]">Cuota Fija (Pequeño Contribuyente)</option>
                   <option value="Régimen General" className="bg-[var(--surface)] text-[var(--text)]">Régimen General (IVA 15%)</option>
@@ -144,7 +146,7 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-[var(--text)] block mb-1.5">
+                <label className="text-xs font-semibold text-[var(--text-secondary)] block mb-1.5">
                   Serie de Comprobante / Serie Factura
                 </label>
                 <Input
@@ -152,14 +154,14 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
                   value={serieFactura}
                   onChange={(e) => setSerieFactura(e.target.value)}
                   placeholder="F001"
-                  className="h-11 rounded-[var(--lf-card-radius)] font-mono"
+                  className="h-11 rounded-[var(--lf-input-radius)] font-mono"
                 />
               </div>
             </div>
 
             {/* Saludo */}
             <div>
-              <label className="text-xs font-bold text-[var(--text)] block mb-1.5">
+              <label className="text-xs font-semibold text-[var(--text-secondary)] block mb-1.5">
                 Mensaje de Saludo o Agradecimiento en la Factura
               </label>
               <Input
@@ -167,13 +169,13 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
                 value={saludoFactura}
                 onChange={(e) => setSaludoFactura(e.target.value)}
                 placeholder="Ej: ¡Gracias por preferir nuestros productos!"
-                className="h-11 rounded-[var(--lf-card-radius)]"
+                className="h-11 rounded-[var(--lf-input-radius)]"
               />
             </div>
 
             {/* Pie de Página */}
             <div>
-              <label className="text-xs font-bold text-[var(--text)] block mb-1.5">
+              <label className="text-xs font-semibold text-[var(--text-secondary)] block mb-1.5">
                 Políticas de Cambio / Pie de Comprobante
               </label>
               <Textarea
@@ -181,18 +183,18 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
                 onChange={(e) => setPiePaginaFactura(e.target.value)}
                 placeholder="Ej: Conservar este comprobante para cualquier garantía dentro de 15 días."
                 rows={3}
-                className="resize-none rounded-[var(--lf-card-radius)]"
+                className="resize-none rounded-[var(--lf-input-radius)]"
               />
             </div>
 
             {/* Pie de Marca Institucional LogiFast */}
-            <div className="p-4 rounded-[var(--lf-card-radius)] bg-primary/10 border border-primary/20 flex items-start gap-3 shadow-[var(--lf-shadow-card)]">
-              <Shield size={20} className="text-primary shrink-0 mt-0.5" />
+            <div className="p-4 rounded-[var(--lf-card-radius)] bg-[var(--info)]/10 border border-[var(--border)] flex items-start gap-3">
+              <Shield size={20} className="text-[var(--info)] shrink-0 mt-0.5" />
               <div>
-                <p className="text-xs font-bold text-primary">
+                <p className="text-xs font-bold text-[var(--text)]">
                   Pie de Marca Institucional Permanente
                 </p>
-                <p className="text-[11px] text-[var(--text-muted)] mt-0.5 leading-relaxed font-medium">
+                <p className="text-[11px] text-[var(--text-muted)] mt-0.5 leading-relaxed">
                   Todas las facturas y comprobantes térmicos emitidos incluirán la certificación "Generado por LogiFast PWA - Sistema POS & E-Commerce".
                 </p>
               </div>
@@ -202,11 +204,11 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
             <Button
               type="submit"
               disabled={guardando}
-              className="w-full h-12 rounded-full text-sm font-bold shadow-[var(--lf-shadow-card)] shadow-primary/20 active:scale-[0.99] transition-transform"
+              className="w-full h-12 rounded-full text-sm font-bold active:scale-[0.99] transition-transform"
             >
               {guardando ? (
                 <>
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                  <div className="w-5 h-5 border-2 border-[var(--primary-foreground)]/30 border-t-[var(--primary-foreground)] rounded-full animate-spin mr-2" />
                   <span>Guardando Ajustes...</span>
                 </>
               ) : (
@@ -224,20 +226,25 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
       <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)] lg:sticky lg:top-20">
         <CardContent className="p-5 sm:p-6 space-y-4">
           <div>
-            <h3 className="text-sm font-bold text-[var(--text)] font-syne">
+            <h3 className="text-base font-semibold text-[var(--text)] font-syne">
               Vista Previa de Comprobante
             </h3>
-            <p className="text-xs text-[var(--text-muted)] font-medium">
+            <p className="text-xs text-[var(--text-muted)] mt-0.5">
               Así se imprimirá el ticket en la impresora térmica de 58mm / 80mm
             </p>
           </div>
 
-          <div className="bg-[var(--surface)] text-black rounded-[var(--lf-card-radius)] p-6 shadow-[var(--lf-shadow-float)] border border-[var(--border)] font-mono text-xs printable-ticket space-y-3">
-            <div className="text-center pb-2 border-b border-dashed border-black/40 space-y-0.5">
+          <div className="bg-[var(--surface)] text-[var(--text)] rounded-[var(--lf-card-radius)] p-5 border border-[var(--border)] shadow-[var(--lf-shadow-card)] font-mono text-xs printable-ticket space-y-3">
+            <div className="text-center pb-3 border-b border-dashed border-[var(--border)] space-y-1">
               <div className="text-sm font-black tracking-tight uppercase">{razonSocial || 'MI TIENDA S.A.'}</div>
               <div className="text-[11px] text-[var(--text-muted)]">{ruc || 'J0310000000000'}</div>
-              <div className="text-[11px] text-[var(--text-muted)]">DGI: {regimenDgi}</div>
-              <div className="pt-1.5 text-[11px] font-bold">
+              <Badge
+                variant="outline"
+                className="rounded-full border-[var(--border)] bg-[var(--bg-alt)] px-2.5 py-0.5 text-[11px] font-bold text-[var(--text-secondary)]"
+              >
+                {`DGI: ${regimenDgi}`}
+              </Badge>
+              <div className="pt-1 text-[11px] font-bold">
                 FACTURA POS #{serieFactura}-000104
               </div>
               <div suppressHydrationWarning className="text-[11px] text-[var(--text-muted)]">
@@ -245,26 +252,28 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
               </div>
             </div>
 
-            <div className="py-2 border-b border-dashed border-black/40 space-y-1 text-xs">
-              <div className="flex justify-between">
-                <span>2x Producto Muestra A</span>
-                <span className="font-bold">C$ 240.00</span>
-              </div>
-              <div className="flex justify-between">
-                <span>1x Producto Muestra B</span>
-                <span className="font-bold">C$ 110.00</span>
-              </div>
-            </div>
+            <Table className="text-xs">
+              <TableBody>
+                <TableRow className="border-b border-dashed border-[var(--border)]">
+                  <TableCell className="px-0 py-1.5 text-xs">2x Producto Muestra A</TableCell>
+                  <TableCell className="px-0 py-1.5 text-right text-xs font-bold font-mono">C$ 240.00</TableCell>
+                </TableRow>
+                <TableRow className="border-b border-dashed border-[var(--border)]">
+                  <TableCell className="px-0 py-1.5 text-xs">1x Producto Muestra B</TableCell>
+                  <TableCell className="px-0 py-1.5 text-right text-xs font-bold font-mono">C$ 110.00</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
 
-            <div className="py-2 border-b border-dashed border-black/40 flex justify-between font-black text-sm">
-              <span>TOTAL:</span>
-              <span>C$ 350.00</span>
+            <div className="pt-2 pb-3 border-b border-dashed border-[var(--border)] flex items-end justify-between gap-3">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">TOTAL:</span>
+              <span className="text-2xl font-black font-mono tracking-tight text-[var(--text)]">C$ 350.00</span>
             </div>
 
             <div className="text-center pt-2 space-y-1 text-[11px] text-[var(--text-muted)]">
               <div>{saludoFactura || '¡Gracias por su compra!'}</div>
               <div>{piePaginaFactura || 'Conservar este comprobante.'}</div>
-              <div className="font-bold text-black pt-1">
+              <div className="font-bold text-[var(--text)] pt-1">
                 *** Generado por LogiFast PWA ***
               </div>
             </div>

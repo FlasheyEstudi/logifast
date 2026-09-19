@@ -154,13 +154,13 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
     try {
       const diffMs = ahora - new Date(createdAt).getTime();
       const mins = Math.max(0, Math.floor(diffMs / 60000));
-      if (mins < 15) {
-        return { mins, label: `${mins}m`, color: 'bg-[var(--exito)]/15 text-[var(--exito)]' };
+      if (mins < 10) {
+        return { mins, label: `${mins}m`, color: 'border-[var(--exito)]/40 bg-[var(--exito)]/15 text-[var(--exito)]' };
       }
-      if (mins < 30) {
-        return { mins, label: `${mins}m`, color: 'bg-[var(--warning)]/15 text-[var(--warning)]' };
+      if (mins < 20) {
+        return { mins, label: `${mins}m`, color: 'border-[var(--warning)]/40 bg-[var(--warning)]/15 text-[var(--warning)]' };
       }
-      return { mins, label: `${mins}m`, color: 'bg-[var(--peligro)]/15 text-[var(--peligro)] font-extrabold' };
+      return { mins, label: `${mins}m`, color: 'border-[var(--peligro)]/40 bg-[var(--peligro)]/15 text-[var(--peligro)] font-extrabold' };
     } catch {
       return { mins: 0, label: '0m', color: 'bg-[var(--bg-alt)] text-[var(--text-muted)]' };
     }
@@ -170,20 +170,20 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
     <div className="w-full space-y-4 sm:space-y-5">
       {/* ─── Header & KDS Navigation Tabs ─── */}
       <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)]">
-        <CardContent className="p-5 sm:p-6 space-y-4">
+        <CardContent className="p-4 sm:p-5 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-2.5">
-                <h2 className="text-base sm:text-lg font-bold text-[var(--text)] font-syne">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <h2 className="text-base font-semibold text-[var(--text)] font-syne">
                   {isComida ? 'Monitor KDS de Cocina' : 'Monitor de Comandas & Despacho'}
                 </h2>
                 {conteo.recibidos > 0 && (
-                  <Badge className="animate-pulse px-3 py-0.5 rounded-full bg-[var(--warning)] hover:bg-[var(--warning)]/90 text-white text-xs font-extrabold font-mono shadow-[var(--lf-shadow-card)]">
+                  <Badge className="animate-pulse rounded-full border-[var(--warning)] bg-[var(--warning)]/15 px-2.5 py-1 font-mono text-xs font-bold text-[var(--warning)]">
                     {conteo.recibidos} NUEVOS
                   </Badge>
                 )}
               </div>
-              <p className="text-xs text-[var(--text-muted)] mt-0.5 font-medium">
+              <p className="text-xs text-[var(--text-muted)] mt-1">
                 Control en tiempo real de órdenes online y Marketplace para cocina o empaque
               </p>
             </div>
@@ -194,10 +194,10 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
                 variant="outline"
                 size="sm"
                 onClick={() => setSoundEnabled(!soundEnabled)}
-                className={`h-10 rounded-full px-4 text-xs font-bold gap-2 shadow-[var(--lf-shadow-card)] ${
+                className={`h-11 rounded-full px-4 text-xs font-bold gap-2 shadow-[var(--lf-shadow-card)] ${
                   soundEnabled
-                    ? 'border-[var(--exito)] bg-[var(--exito)]/10 text-[var(--exito)] hover:bg-[var(--exito)]/20'
-                    : ''
+                    ? 'border-[var(--exito)] text-[var(--exito)] hover:bg-[var(--exito)]/10 hover:text-[var(--exito)]'
+                    : 'border-[var(--border)] text-[var(--text-muted)]'
                 }`}
               >
                 <Bell size={15} />
@@ -208,9 +208,9 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
                 variant="outline"
                 size="sm"
                 onClick={cargarOrdenes}
-                className="h-10 rounded-full px-4 text-xs font-bold gap-1.5 shadow-[var(--lf-shadow-card)]"
+                className="h-11 rounded-full border-[var(--border)] px-4 text-xs font-bold gap-1.5 text-[var(--text)] shadow-[var(--lf-shadow-card)]"
               >
-                <RefreshCw size={14} className={loading ? 'animate-spin text-primary' : ''} />
+                <RefreshCw size={14} className={loading ? 'animate-spin text-[var(--primario)]' : 'text-[var(--text-muted)]'} />
                 <span className="hidden sm:inline">Actualizar</span>
               </Button>
             </div>
@@ -229,23 +229,23 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
               return (
                 <Button
                   key={tab.id}
-                  variant={active ? 'default' : 'secondary'}
+                  variant={active ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setFiltroEstado(tab.id)}
-                  className={`h-9 rounded-full text-xs font-bold px-4 gap-2 shrink-0 transition-all ${
+                  className={`h-11 rounded-full px-4 text-xs font-bold gap-2 shrink-0 ${
                     active
-                      ? 'shadow-[var(--lf-shadow-card)] shadow-primary/25'
-                      : 'bg-[var(--surface)] border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)]'
+                      ? 'shadow-[var(--lf-shadow-card)]'
+                      : 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] shadow-none hover:bg-[var(--bg-alt)] hover:text-[var(--text)]'
                   }`}
                 >
                   <span>{tab.label}</span>
                   <span
-                    className={`text-[11px] font-extrabold px-2 py-0.5 rounded-full font-mono ${
+                    className={`font-mono text-[11px] font-bold tabular-nums ${
                       active
-                        ? 'bg-white/25 text-white'
+                        ? ''
                         : tab.highlight
-                        ? 'bg-[var(--warning)] text-white animate-pulse'
-                        : 'bg-[var(--bg-alt)] text-[var(--text)]'
+                        ? 'animate-pulse text-[var(--warning)]'
+                        : 'text-[var(--text-muted)]'
                     }`}
                   >
                     {tab.count}
@@ -259,17 +259,17 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
 
       {/* ─── Orders Grid ─── */}
       {ordenesFiltradas.length === 0 ? (
-        <div className="py-20 px-6 text-center bg-[var(--surface)] border border-dashed border-[var(--border)] rounded-[var(--lf-card-radius)]">
-          <Clock size={44} className="mx-auto mb-3 opacity-30 text-[var(--text-muted)]" />
-          <h3 className="text-base font-bold text-[var(--text)] font-syne">
+        <div className="flex flex-col items-center rounded-[var(--lf-card-radius)] border border-dashed border-[var(--border)] bg-[var(--surface)] px-6 py-16 text-center">
+          <Clock size={40} className="mb-3 text-[var(--text-muted)]" />
+          <h3 className="text-base font-semibold text-[var(--text)] font-syne">
             No hay pedidos en esta sección
           </h3>
-          <p className="text-xs text-[var(--text-muted)] mt-1 max-w-sm mx-auto">
+          <p className="mx-auto mt-1 max-w-sm text-xs text-[var(--text-muted)]">
             Cuando un cliente realice un pedido desde la app móvil o el Marketplace, aparecerá aquí al instante.
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5 md:gap-4">
           {ordenesFiltradas.map((ord) => {
             const elapsed = getElapsedInfo(ord.createdAt);
             const isRecibido = ord.estado === 'recibido';
@@ -279,11 +279,11 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
             return (
               <div
                 key={ord.id}
-                className="w-full max-w-[360px] mx-auto rounded-[var(--lf-card-radius)] overflow-hidden bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)] hover:shadow-[var(--lf-shadow-card)]/90 transition-all flex flex-col"
+                className="w-full flex flex-col overflow-hidden rounded-[var(--lf-card-radius)] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--lf-shadow-card)] hover:shadow-[var(--lf-shadow-float)] transition-shadow"
               >
                 {/* Status Color Banner */}
                 <div
-                  className={`h-2 w-full ${
+                  className={`h-1.5 w-full ${
                     isRecibido
                       ? 'bg-[var(--peligro)]'
                       : isPreparando
@@ -294,107 +294,123 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
                   }`}
                 />
 
-                <div className="p-5 font-mono text-xs flex flex-col gap-3.5 flex-1 justify-between">
-                  {/* Cabecera comanda */}
-                  <div className="pb-3 border-b border-dashed border-[var(--border)] space-y-1">
-                    <div className="flex justify-between items-center">
-                      <span className="text-[11px] uppercase font-bold tracking-widest text-[var(--text-muted)] font-sans">
-                        LOGIFAST KDS
-                      </span>
-                      <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider ${elapsed.color} font-sans`}>
-                        {elapsed.label}
-                      </span>
-                    </div>
-
-                    <div className="text-lg font-black tracking-tight text-[var(--text)]">
-                      PEDIDO #{ord.id.slice(-5).toUpperCase()}
-                    </div>
-
-                    <div className="flex justify-between items-center text-[11px] text-[var(--text-muted)]">
-                      <span>{ord.createdAt}</span>
-                      <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-[var(--bg-alt)] text-[var(--text)]">
-                        {ord.estado}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Cliente y Entrega */}
-                  <div className="space-y-1.5 pb-3 border-b border-dashed border-[var(--border)]">
-                    <div className="flex justify-between items-start gap-2">
-                      <span className="text-[11px] uppercase font-bold text-[var(--text-muted)]">CLIENTE:</span>
-                      <span className="font-bold text-[var(--text)] text-right truncate">{ord.clienteNombre}</span>
-                    </div>
-                    {ord.clienteTelefono && (
-                      <div className="flex justify-between items-center text-[11px]">
-                        <span className="text-[11px] uppercase font-bold text-[var(--text-muted)]">TEL:</span>
-                        <span className="text-[var(--text)]">{ord.clienteTelefono}</span>
+                <div className="flex flex-1 flex-col">
+                  <div className="flex flex-1 flex-col gap-3.5 p-4 sm:p-5">
+                    {/* Cabecera comanda: número, hora y tiempo */}
+                    <div className="space-y-2 border-b border-[var(--border)] pb-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <span className="block text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                            LOGIFAST KDS
+                          </span>
+                          <span className="block break-words font-mono text-lg font-bold tracking-tight text-[var(--text)]">
+                            PEDIDO #{ord.id.slice(-5).toUpperCase()}
+                          </span>
+                        </div>
+                        <Badge className={`shrink-0 rounded-full px-2.5 py-1 font-mono text-xs font-bold ${elapsed.color}`}>
+                          {elapsed.label}
+                        </Badge>
                       </div>
-                    )}
-                    <div className="flex justify-between items-start gap-2 text-[11px]">
-                      <span className="text-[11px] uppercase font-bold text-[var(--text-muted)]">ENTREGA:</span>
-                      <span className="text-[var(--text-muted)] text-right truncate">{ord.direccionEntrega}</span>
-                    </div>
-                  </div>
 
-                  {/* Productos */}
-                  <div className="space-y-1.5 pb-3 border-b border-dashed border-[var(--border)] flex-1">
-                    <div className="flex justify-between text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
-                      <span>CANT / ARTÍCULO</span>
-                      <span>PRECIO</span>
-                    </div>
-                    {ord.items.map((it, idx) => (
-                      <div key={idx} className="flex justify-between items-start gap-2">
-                        <span className="font-bold text-[var(--text)] flex-1">
-                          <span className="font-black text-primary mr-1.5">{it.cantidad}x</span>
-                          {it.nombreProducto}
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="min-w-0 break-words font-mono text-[11px] text-[var(--text-muted)]">
+                          {ord.createdAt}
                         </span>
-                        <span className="text-[var(--text-muted)] shrink-0 font-medium">
-                          C$ {(it.cantidad * it.precioUnitario).toFixed(2)}
-                        </span>
+                        <Badge
+                          className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider ${
+                            isRecibido
+                              ? 'border-[var(--peligro)] bg-[var(--peligro)]/15 text-[var(--peligro)]'
+                              : isPreparando
+                              ? 'border-[var(--warning)] bg-[var(--warning)]/15 text-[var(--warning)]'
+                              : isListo
+                              ? 'border-[var(--exito)] bg-[var(--exito)]/15 text-[var(--exito)]'
+                              : 'border-[var(--border)] bg-[var(--bg-alt)] text-[var(--text-muted)]'
+                          }`}
+                        >
+                          {ord.estado}
+                        </Badge>
                       </div>
-                    ))}
+                    </div>
+
+                    {/* Cliente y Entrega */}
+                    <div className="space-y-2 border-b border-[var(--border)] pb-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="shrink-0 text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">CLIENTE:</span>
+                        <span className="min-w-0 break-words text-right text-sm font-semibold text-[var(--text)]">{ord.clienteNombre}</span>
+                      </div>
+                      {ord.clienteTelefono && (
+                        <div className="flex items-start justify-between gap-3">
+                          <span className="shrink-0 text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">TEL:</span>
+                          <span className="min-w-0 break-words text-right font-mono text-xs text-[var(--text)]">{ord.clienteTelefono}</span>
+                        </div>
+                      )}
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="shrink-0 text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">ENTREGA:</span>
+                        <span className="min-w-0 break-words text-right text-xs text-[var(--text-secondary)]">{ord.direccionEntrega}</span>
+                      </div>
+                    </div>
+
+                    {/* Productos */}
+                    <div className="flex-1 space-y-1.5">
+                      <div className="flex items-baseline justify-between gap-2 text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                        <span>CANT / ARTÍCULO</span>
+                        <span>PRECIO</span>
+                      </div>
+                      {ord.items.map((it, idx) => (
+                        <div key={idx} className="flex items-start justify-between gap-3">
+                          <span className="min-w-0 flex-1 break-words text-xs text-[var(--text)]">
+                            <span className="mr-1.5 font-mono font-bold text-[var(--primario)]">{it.cantidad}x</span>
+                            {it.nombreProducto}
+                          </span>
+                          <span className="shrink-0 font-mono text-xs text-[var(--text-secondary)]">
+                            C$ {(it.cantidad * it.precioUnitario).toFixed(2)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
                   {/* Total */}
-                  <div className="flex justify-between items-baseline pt-1">
-                    <span className="text-[11px] font-bold uppercase text-[var(--text-muted)]">
+                  <div className="flex items-baseline justify-between gap-3 border-y border-[var(--border)] bg-[var(--bg-alt)] px-4 py-3 sm:px-5">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
                       TOTAL ({ord.metodoPago}):
                     </span>
-                    <span className="text-base font-black text-[var(--text)] font-mono">
+                    <span className="shrink-0 font-mono text-lg font-bold text-[var(--text)]">
                       C$ {ord.total.toFixed(2)}
                     </span>
                   </div>
 
                   {/* Acciones */}
-                  <div className="pt-2 font-sans space-y-2">
-                    {isRecibido && (
-                      <Button
-                        onClick={() => cambiarEstado(ord.id, 'preparando')}
-                        className="w-full h-11 rounded-full text-xs font-bold shadow-[var(--lf-shadow-card)] shadow-primary/20"
-                      >
-                        Aceptar y Preparar
-                      </Button>
-                    )}
+                  {(isRecibido || isPreparando || isListo) && (
+                    <div className="space-y-2 p-4 sm:p-5">
+                      {isRecibido && (
+                        <Button
+                          onClick={() => cambiarEstado(ord.id, 'preparando')}
+                          className="w-full h-11 rounded-full text-sm font-bold shadow-[var(--lf-shadow-card)]"
+                        >
+                          Aceptar y Preparar
+                        </Button>
+                      )}
 
-                    {isPreparando && (
-                      <Button
-                        onClick={() => cambiarEstado(ord.id, 'listo')}
-                        className="w-full h-11 rounded-full text-xs font-bold bg-[var(--exito)] hover:bg-[var(--exito)]/90 text-white shadow-[var(--lf-shadow-card)] shadow-[var(--exito)]/20"
-                      >
-                        Marcar Listo
-                      </Button>
-                    )}
+                      {isPreparando && (
+                        <Button
+                          onClick={() => cambiarEstado(ord.id, 'listo')}
+                          className="w-full h-11 rounded-full text-sm font-bold shadow-[var(--lf-shadow-card)]"
+                        >
+                          Marcar Listo
+                        </Button>
+                      )}
 
-                    {isListo && (
-                      <Button
-                        variant="secondary"
-                        onClick={() => cambiarEstado(ord.id, 'en_camino')}
-                        className="w-full h-11 rounded-full text-xs font-bold shadow-[var(--lf-shadow-card)]"
-                      >
-                        Entregar a Repartidor
-                      </Button>
-                    )}
-                  </div>
+                      {isListo && (
+                        <Button
+                          onClick={() => cambiarEstado(ord.id, 'en_camino')}
+                          className="w-full h-11 rounded-full text-sm font-bold shadow-[var(--lf-shadow-card)]"
+                        >
+                          Entregar a Repartidor
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             );

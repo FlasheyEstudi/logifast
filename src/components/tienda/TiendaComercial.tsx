@@ -33,10 +33,14 @@ export function TiendaComercial() {
           <Button
             key={t.id}
             type="button"
-            variant={abierta === t.id ? 'default' : 'secondary'}
+            variant={abierta === t.id ? 'outline' : 'ghost'}
             size="sm"
             onClick={() => setAbierta(abierta === t.id ? null : t.id)}
-            className="h-9 rounded-full text-xs font-semibold px-4 gap-1.5"
+            className={`h-11 sm:h-10 rounded-full text-sm font-semibold px-4 gap-1.5 ${
+              abierta === t.id
+                ? 'bg-[var(--primario)]/10 text-[var(--primario)] border border-[var(--primario)]'
+                : 'border border-transparent text-[var(--text-secondary)]'
+            }`}
           >
             {t.icon} {t.label}
           </Button>
@@ -123,13 +127,13 @@ function SeccionEquipo() {
 
   return (
     <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)]">
-      <CardContent className="p-5 sm:p-6 space-y-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-[var(--lf-card-radius)] bg-primary/10 text-primary flex items-center justify-center shrink-0 shadow-[var(--lf-shadow-card)]">
+      <CardContent className="p-4 sm:p-5 space-y-4">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-[var(--lf-card-radius)] bg-[var(--primario)]/10 text-[var(--primario)] flex items-center justify-center shrink-0">
             <Users size={18} />
           </div>
           <div>
-            <h3 className="text-base font-bold font-syne text-[var(--text)] m-0">
+            <h3 className="text-base font-semibold font-syne text-[var(--text)] m-0">
               Equipo de la tienda
             </h3>
             <p className="text-xs text-[var(--text-muted)] mt-0.5 m-0 font-medium">
@@ -139,9 +143,12 @@ function SeccionEquipo() {
         </div>
 
         {esPropietario && (
-          <form onSubmit={invitar} className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_auto] gap-3 pt-3 border-t border-[var(--border)]">
+          <form
+            onSubmit={invitar}
+            className="rounded-[var(--lf-card-radius)] border border-[var(--border)] bg-[var(--bg-alt)] p-4 grid grid-cols-1 sm:grid-cols-[2fr_1fr_auto] gap-3"
+          >
             <div>
-              <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5">
+              <label className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] block mb-1.5">
                 Correo del usuario registrado
               </label>
               <Input
@@ -149,18 +156,18 @@ function SeccionEquipo() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="cajero@correo.com"
-                className="h-11 rounded-[var(--lf-card-radius)] text-xs bg-[var(--bg-alt)] border-[var(--border)]"
+                className="h-11 rounded-[var(--lf-input-radius)] text-sm bg-[var(--surface)] border-[var(--border)]"
                 required
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5">
+              <label className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] block mb-1.5">
                 Rol
               </label>
               <select
                 value={rol}
                 onChange={(e) => setRol(e.target.value)}
-                className="w-full h-11 px-3.5 rounded-[var(--lf-card-radius)] border border-[var(--border)] bg-[var(--bg-alt)] text-[var(--text)] text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 font-medium"
+                className="w-full h-11 px-3 rounded-[var(--lf-input-radius)] border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primario)] font-medium"
               >
                 {roles.filter((r) => r !== 'dueno').map((r) => (
                   <option key={r} value={r}>
@@ -169,11 +176,11 @@ function SeccionEquipo() {
                 ))}
               </select>
             </div>
-            <div className="flex items-end">
+            <div className="flex items-end justify-end">
               <Button
                 type="submit"
                 disabled={enviando}
-                className="h-11 rounded-full px-5 text-xs font-bold gap-1.5 shadow-[var(--lf-shadow-card)] shadow-primary/20"
+                className="w-full sm:w-auto h-11 rounded-full px-5 text-sm font-bold gap-1.5"
               >
                 <Plus size={15} /> {enviando ? 'Invitando…' : 'Invitar'}
               </Button>
@@ -181,40 +188,50 @@ function SeccionEquipo() {
           </form>
         )}
 
-        <div className="space-y-2.5 pt-2">
-          {cargando ? (
-            <div className="text-xs text-[var(--text-muted)] py-4 text-center">Cargando equipo…</div>
-          ) : equipo.length === 0 ? (
-            <div className="text-xs text-[var(--text-muted)] py-4 text-center">Todavía no has invitado a nadie.</div>
-          ) : (
-            equipo.map((m) => (
+        {cargando ? (
+          <div className="text-xs text-[var(--text-muted)] py-6 text-center">Cargando equipo…</div>
+        ) : equipo.length === 0 ? (
+          <div className="py-8 px-4 text-center rounded-[var(--lf-card-radius)] border border-[var(--border)] bg-[var(--bg-alt)]/60">
+            <Users size={28} className="mx-auto mb-2 text-[var(--text-muted)]" />
+            <p className="text-xs text-[var(--text-muted)] m-0 font-medium">Todavía no has invitado a nadie.</p>
+          </div>
+        ) : (
+          <div className="rounded-[var(--lf-card-radius)] border border-[var(--border)] overflow-hidden">
+            {equipo.map((m) => (
               <div
                 key={m.id}
-                className="flex flex-wrap items-center gap-3 p-3.5 rounded-[var(--lf-card-radius)] bg-[var(--bg-alt)]/60 border border-[var(--border)] shadow-[var(--lf-shadow-card)]"
+                className="flex flex-wrap items-center gap-x-3 gap-y-2 p-3.5 border-b border-[var(--border)] last:border-b-0 transition-colors hover:bg-[var(--bg-alt)]"
               >
-                <span className="font-bold text-sm text-[var(--text)]">{m.nombre}</span>
-                <span className="text-xs text-[var(--text-muted)]">{m.email}</span>
-                <Badge variant="secondary" className="text-[11px] font-bold uppercase rounded-full px-2.5 py-0.5">
-                  {m.rol}
-                </Badge>
-                <span className="text-[11px] text-[var(--text-muted)] font-medium">
-                  {m.permisosEfectivos.join(', ') || 'sin permisos'}
-                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-semibold text-sm text-[var(--text)]">{m.nombre}</span>
+                    <Badge
+                      variant="outline"
+                      className="text-[11px] font-bold uppercase tracking-wider rounded-full px-2.5 py-0.5 bg-[var(--bg-alt)] text-[var(--text-muted)] border border-[var(--border)]"
+                    >
+                      {m.rol}
+                    </Badge>
+                  </div>
+                  <div className="text-xs text-[var(--text-muted)] mt-0.5 truncate">{m.email}</div>
+                  <div className="text-[11px] font-medium text-[var(--text-muted)] mt-0.5">
+                    {m.permisosEfectivos.join(', ') || 'sin permisos'}
+                  </div>
+                </div>
                 {esPropietario && (
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={() => quitar(m.id)}
-                    className="ml-auto h-8 rounded-full px-3 text-xs font-semibold text-[var(--peligro)] hover:text-[var(--peligro)]/90 hover:bg-[var(--peligro)]/10 shadow-[var(--lf-shadow-card)]"
+                    className="h-9 rounded-full px-3 text-xs font-semibold text-[var(--peligro)] border-[var(--border)] hover:bg-[var(--peligro)]/10 hover:text-[var(--peligro)]"
                   >
                     Quitar
                   </Button>
                 )}
               </div>
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -279,13 +296,13 @@ function SeccionAlianzas() {
 
   return (
     <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)]">
-      <CardContent className="p-5 sm:p-6 space-y-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-[var(--lf-card-radius)] bg-primary/10 text-primary flex items-center justify-center shrink-0 shadow-[var(--lf-shadow-card)]">
+      <CardContent className="p-4 sm:p-5 space-y-4">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-[var(--lf-card-radius)] bg-[var(--primario)]/10 text-[var(--primario)] flex items-center justify-center shrink-0">
             <Star size={18} />
           </div>
           <div>
-            <h3 className="text-base font-bold font-syne text-[var(--text)] m-0">
+            <h3 className="text-base font-semibold font-syne text-[var(--text)] m-0">
               Alianzas con repartidores
             </h3>
             <p className="text-xs text-[var(--text-muted)] mt-0.5 m-0 font-medium">
@@ -294,70 +311,89 @@ function SeccionAlianzas() {
           </div>
         </div>
 
-        <form onSubmit={crear} className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_1fr_auto] gap-3 pt-3 border-t border-[var(--border)]">
+        <form
+          onSubmit={crear}
+          className="rounded-[var(--lf-card-radius)] border border-[var(--border)] bg-[var(--bg-alt)] p-4 grid grid-cols-1 sm:grid-cols-[2fr_1fr_1fr_auto] gap-3"
+        >
           <div>
-            <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5">Beneficio</label>
+            <label className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] block mb-1.5">Beneficio</label>
             <Input
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
               placeholder="Café gratis al entregar"
-              className="h-11 rounded-[var(--lf-card-radius)] text-xs bg-[var(--bg-alt)] border-[var(--border)]"
+              className="h-11 rounded-[var(--lf-input-radius)] text-sm bg-[var(--surface)] border-[var(--border)]"
               required
             />
           </div>
           <div>
-            <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5">Valor</label>
+            <label className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] block mb-1.5">Valor</label>
             <Input
               value={valor}
               onChange={(e) => setValor(e.target.value)}
               placeholder="10% / C$50"
-              className="h-11 rounded-[var(--lf-card-radius)] text-xs bg-[var(--bg-alt)] border-[var(--border)]"
+              className="h-11 rounded-[var(--lf-input-radius)] text-sm bg-[var(--surface)] border-[var(--border)] font-mono"
             />
           </div>
           <div>
-            <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5">Vigencia (días)</label>
+            <label className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] block mb-1.5">Vigencia (días)</label>
             <Input
               type="number"
               min="0"
               value={vigenciaDias}
               onChange={(e) => setVigenciaDias(e.target.value)}
-              className="h-11 rounded-[var(--lf-card-radius)] text-xs bg-[var(--bg-alt)] border-[var(--border)]"
+              className="h-11 rounded-[var(--lf-input-radius)] text-sm bg-[var(--surface)] border-[var(--border)] font-mono"
             />
           </div>
-          <div className="flex items-end">
+          <div className="flex items-end justify-end">
             <Button
               type="submit"
               disabled={enviando}
-              className="h-11 rounded-full px-5 text-xs font-bold gap-1.5 shadow-[var(--lf-shadow-card)] shadow-primary/20"
+              className="w-full sm:w-auto h-11 rounded-full px-5 text-sm font-bold gap-1.5"
             >
               <Plus size={15} /> Publicar
             </Button>
           </div>
         </form>
 
-        <div className="space-y-2.5 pt-2">
-          {cargando ? (
-            <div className="text-xs text-[var(--text-muted)] py-4 text-center">Cargando alianzas…</div>
-          ) : alianzas.length === 0 ? (
-            <div className="text-xs text-[var(--text-muted)] py-4 text-center">Sin alianzas publicadas.</div>
-          ) : (
-            alianzas.map((a) => (
+        {cargando ? (
+          <div className="text-xs text-[var(--text-muted)] py-6 text-center">Cargando alianzas…</div>
+        ) : alianzas.length === 0 ? (
+          <div className="py-8 px-4 text-center rounded-[var(--lf-card-radius)] border border-[var(--border)] bg-[var(--bg-alt)]/60">
+            <Star size={28} className="mx-auto mb-2 text-[var(--text-muted)]" />
+            <p className="text-xs text-[var(--text-muted)] m-0 font-medium">Sin alianzas publicadas.</p>
+          </div>
+        ) : (
+          <div className="rounded-[var(--lf-card-radius)] border border-[var(--border)] overflow-hidden">
+            {alianzas.map((a) => (
               <div
                 key={a.id}
-                className="flex flex-wrap items-center gap-3 p-3.5 rounded-[var(--lf-card-radius)] bg-[var(--bg-alt)]/60 border border-[var(--border)] shadow-[var(--lf-shadow-card)]"
+                className="flex flex-wrap items-center gap-x-3 gap-y-2 p-3.5 border-b border-[var(--border)] last:border-b-0 transition-colors hover:bg-[var(--bg-alt)]"
               >
-                <span className="font-bold text-sm text-[var(--text)]">{a.titulo}</span>
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold text-sm text-[var(--text)]">{a.titulo}</div>
+                  <div className="text-[11px] font-medium text-[var(--text-muted)] mt-0.5">vence {fecha(a.vigenciaFin)}</div>
+                </div>
                 {a.valor && (
-                  <span className="text-xs font-bold text-[var(--exito)]">{a.valor}</span>
+                  <span className="font-mono text-lg font-bold text-[var(--text)]">{a.valor}</span>
                 )}
-                <span className="text-[11px] text-[var(--text-muted)] font-medium">vence {fecha(a.vigenciaFin)}</span>
-                <Badge variant="outline" className="ml-auto text-[11px] font-bold rounded-full px-3 py-0.5">
-                  {a.canjes} canje(s)
+                <div>
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">canje(s)</div>
+                  <div className="font-mono text-base font-bold text-[var(--text)] leading-tight">{a.canjes}</div>
+                </div>
+                <Badge
+                  variant="outline"
+                  className={`text-[11px] font-bold uppercase tracking-wider rounded-full px-2.5 py-0.5 ${
+                    a.activo
+                      ? 'bg-[var(--exito)]/10 text-[var(--exito)] border border-[var(--exito)]'
+                      : 'bg-[var(--bg-alt)] text-[var(--text-muted)] border border-[var(--border)]'
+                  }`}
+                >
+                  {a.activo ? 'activo' : 'inactivo'}
                 </Badge>
               </div>
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -434,14 +470,14 @@ function SeccionPauta() {
   };
 
   return (
-    <Card className="rounded-[var(--lf-card-radius)] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--lf-shadow-card)] overflow-hidden">
-      <CardContent className="p-5 sm:p-6 space-y-5">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-[var(--lf-card-radius)] bg-primary/10 text-primary flex items-center justify-center shrink-0">
+    <Card className="rounded-[var(--lf-card-radius)] border border-[var(--border)] bg-[var(--surface)] shadow-[var(--lf-shadow-card)]">
+      <CardContent className="p-4 sm:p-5 space-y-5">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-[var(--lf-card-radius)] bg-[var(--primario)]/10 text-[var(--primario)] flex items-center justify-center shrink-0">
             <Megaphone size={19} />
           </div>
           <div>
-            <h3 className="text-sm sm:text-base font-black tracking-tight text-[var(--text)] m-0">
+            <h3 className="text-base font-semibold font-syne text-[var(--text)] m-0">
               Publicidad en el inicio
             </h3>
             <p className="text-xs text-[var(--text-muted)] m-0 mt-0.5">
@@ -450,116 +486,134 @@ function SeccionPauta() {
           </div>
         </div>
 
-        <form onSubmit={contratar} className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
-          <div>
-            <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5 ml-1">Título</label>
-            <Input
-              value={titulo}
-              onChange={(e) => setTitulo(e.target.value)}
-              placeholder="2x1 en Fresco hoy"
-              className="h-11 rounded-[var(--lf-card-radius)] text-xs bg-[var(--bg-alt)] border-[var(--border)] focus:ring-2 focus:ring-primary/20"
-              required
-            />
+        <form
+          onSubmit={contratar}
+          className="rounded-[var(--lf-card-radius)] border border-[var(--border)] bg-[var(--bg-alt)] p-4 space-y-3.5"
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] block mb-1.5">Título</label>
+              <Input
+                value={titulo}
+                onChange={(e) => setTitulo(e.target.value)}
+                placeholder="2x1 en Fresco hoy"
+                className="h-11 rounded-[var(--lf-input-radius)] text-sm bg-[var(--surface)] border-[var(--border)]"
+                required
+              />
+            </div>
+            <div>
+              <label className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] block mb-1.5">Subtítulo</label>
+              <Input
+                value={subtitulo}
+                onChange={(e) => setSubtitulo(e.target.value)}
+                placeholder="Solo por hoy en tu tienda"
+                className="h-11 rounded-[var(--lf-input-radius)] text-sm bg-[var(--surface)] border-[var(--border)]"
+              />
+            </div>
+            <div>
+              <label className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] block mb-1.5">Texto del botón</label>
+              <Input
+                value={botonTexto}
+                onChange={(e) => setBotonTexto(e.target.value)}
+                className="h-11 rounded-[var(--lf-input-radius)] text-sm bg-[var(--surface)] border-[var(--border)]"
+              />
+            </div>
+            <div>
+              <label className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] block mb-1.5">Enlace del botón</label>
+              <Input
+                value={botonLink}
+                onChange={(e) => setBotonLink(e.target.value)}
+                placeholder="/cliente/explorar"
+                className="h-11 rounded-[var(--lf-input-radius)] text-sm bg-[var(--surface)] border-[var(--border)]"
+              />
+            </div>
+            <div>
+              <label className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] block mb-1.5">Color</label>
+              <input
+                type="color"
+                value={colorFondo}
+                onChange={(e) => setColorFondo(e.target.value)}
+                className="w-full h-11 p-1 rounded-[var(--lf-input-radius)] border border-[var(--border)] bg-[var(--surface)] cursor-pointer"
+              />
+            </div>
+            <div>
+              <label className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] block mb-1.5">Días de vigencia</label>
+              <Input
+                type="number"
+                min="1"
+                value={dias}
+                onChange={(e) => setDias(e.target.value)}
+                className="h-11 rounded-[var(--lf-input-radius)] text-sm bg-[var(--surface)] border-[var(--border)] font-mono"
+              />
+            </div>
+            <div>
+              <label className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] block mb-1.5">Tarifa acordada (C$)</label>
+              <Input
+                type="number"
+                min="0"
+                value={precioMensual}
+                onChange={(e) => setPrecioMensual(e.target.value)}
+                className="h-11 rounded-[var(--lf-input-radius)] text-sm bg-[var(--surface)] border-[var(--border)] font-mono"
+              />
+            </div>
           </div>
-          <div>
-            <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5 ml-1">Subtítulo</label>
-            <Input
-              value={subtitulo}
-              onChange={(e) => setSubtitulo(e.target.value)}
-              placeholder="Solo por hoy en tu tienda"
-              className="h-11 rounded-[var(--lf-card-radius)] text-xs bg-[var(--bg-alt)] border-[var(--border)] focus:ring-2 focus:ring-primary/20"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5 ml-1">Texto del botón</label>
-            <Input
-              value={botonTexto}
-              onChange={(e) => setBotonTexto(e.target.value)}
-              className="h-11 rounded-[var(--lf-card-radius)] text-xs bg-[var(--bg-alt)] border-[var(--border)] focus:ring-2 focus:ring-primary/20"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5 ml-1">Enlace del botón</label>
-            <Input
-              value={botonLink}
-              onChange={(e) => setBotonLink(e.target.value)}
-              placeholder="/cliente/explorar"
-              className="h-11 rounded-[var(--lf-card-radius)] text-xs bg-[var(--bg-alt)] border-[var(--border)] focus:ring-2 focus:ring-primary/20"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5 ml-1">Color</label>
-            <input
-              type="color"
-              value={colorFondo}
-              onChange={(e) => setColorFondo(e.target.value)}
-              className="w-full h-11 p-1 rounded-[var(--lf-card-radius)] border border-[var(--border)] bg-[var(--bg-alt)] cursor-pointer"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5 ml-1">Días de vigencia</label>
-            <Input
-              type="number"
-              min="1"
-              value={dias}
-              onChange={(e) => setDias(e.target.value)}
-              className="h-11 rounded-[var(--lf-card-radius)] text-xs bg-[var(--bg-alt)] border-[var(--border)] focus:ring-2 focus:ring-primary/20"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5 ml-1">Tarifa acordada (C$)</label>
-            <Input
-              type="number"
-              min="0"
-              value={precioMensual}
-              onChange={(e) => setPrecioMensual(e.target.value)}
-              className="h-11 rounded-[var(--lf-card-radius)] text-xs bg-[var(--bg-alt)] border-[var(--border)] focus:ring-2 focus:ring-primary/20"
-            />
-          </div>
-          <div className="flex items-end">
+          <div className="flex justify-end border-t border-[var(--border)] pt-3.5">
             <Button
               type="submit"
               disabled={enviando}
-              className="w-full h-11 rounded-full text-xs font-bold gap-1.5 shadow-[var(--lf-shadow-card)] shadow-primary/20"
+              className="w-full sm:w-auto h-11 rounded-full px-5 text-sm font-bold gap-1.5"
             >
               <Plus size={15} /> {enviando ? 'Contratando…' : 'Contratar anuncio'}
             </Button>
           </div>
         </form>
 
-        <div className="space-y-2.5 pt-2">
-          {cargando ? (
-            <div className="text-xs text-[var(--text-muted)] py-6 text-center">Cargando anuncios…</div>
-          ) : banners.length === 0 ? (
-            <div className="text-xs text-[var(--text-muted)] py-6 text-center">Sin anuncios contratados.</div>
-          ) : (
-            banners.map((b) => (
+        {cargando ? (
+          <div className="text-xs text-[var(--text-muted)] py-6 text-center">Cargando anuncios…</div>
+        ) : banners.length === 0 ? (
+          <div className="py-8 px-4 text-center rounded-[var(--lf-card-radius)] border border-[var(--border)] bg-[var(--bg-alt)]/60">
+            <Megaphone size={28} className="mx-auto mb-2 text-[var(--text-muted)]" />
+            <p className="text-xs text-[var(--text-muted)] m-0 font-medium">Sin anuncios contratados.</p>
+          </div>
+        ) : (
+          <div className="space-y-2.5">
+            {banners.map((b) => (
               <div
                 key={b.id}
-                className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-[var(--lf-card-radius)] bg-[var(--bg-alt)]/60 border border-[var(--border)] transition-all hover:bg-[var(--bg-alt)]/90"
+                className="p-3.5 rounded-[var(--lf-card-radius)] border border-[var(--border)] bg-[var(--surface)] transition-colors hover:bg-[var(--bg-alt)] space-y-3"
               >
-                <div className="space-y-1">
-                  <div className="font-bold text-sm text-[var(--text)]">{b.titulo}</div>
-                  <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
-                    <span>Hasta {fecha(b.programadoHasta)}</span>
-                    <span>•</span>
-                    <span>{b.impresiones} vistas · {b.clicks} clics</span>
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="font-semibold text-sm text-[var(--text)]">{b.titulo}</div>
+                    <div className="text-[11px] font-medium text-[var(--text-muted)] mt-0.5">Hasta {fecha(b.programadoHasta)}</div>
+                  </div>
+                  <Badge
+                    variant={b.pagado ? 'secondary' : 'outline'}
+                    className={`text-[11px] font-bold uppercase tracking-wider rounded-full px-2.5 py-0.5 ${
+                      b.pagado
+                        ? 'bg-[var(--exito)]/10 text-[var(--exito)] border border-[var(--exito)]'
+                        : b.precioMensual
+                        ? 'bg-[var(--warning)]/10 text-[var(--warning)] border border-[var(--warning)]'
+                        : 'bg-[var(--bg-alt)] text-[var(--text-muted)] border border-[var(--border)]'
+                    }`}
+                  >
+                    {b.pagado ? 'PAGADO' : b.precioMensual ? `PENDIENTE ${money(b.precioMensual)}` : 'SIN TARIFA'}
+                  </Badge>
+                </div>
+                <div className="flex items-end gap-5 border-t border-[var(--border)] pt-3">
+                  <div>
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">vistas</div>
+                    <div className="font-mono text-lg font-bold text-[var(--text)] leading-tight">{b.impresiones}</div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">clics</div>
+                    <div className="font-mono text-lg font-bold text-[var(--text)] leading-tight">{b.clicks}</div>
                   </div>
                 </div>
-                <Badge
-                  variant={b.pagado ? 'secondary' : 'outline'}
-                  className={`rounded-full px-3 py-1 text-xs font-bold ${
-                    b.pagado
-                      ? 'bg-[var(--exito)]/10 text-[var(--exito)] border-0'
-                      : 'text-[var(--warning)] text-[var(--warning)] border-[var(--warning)]'
-                  }`}
-                >
-                  {b.pagado ? 'PAGADO' : b.precioMensual ? `PENDIENTE ${money(b.precioMensual)}` : 'SIN TARIFA'}
-                </Badge>
               </div>
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

@@ -95,14 +95,14 @@ export function TiendaCupones() {
 
   return (
     <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)]">
-      <CardContent className="p-5 sm:p-6 space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-[var(--lf-card-radius)] bg-primary/10 text-primary flex items-center justify-center shrink-0 shadow-[var(--lf-shadow-card)]">
+      <CardContent className="p-4 sm:p-5 space-y-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex items-start gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-[var(--lf-card-radius)] bg-[var(--primario)]/10 text-[var(--primario)] flex items-center justify-center shrink-0">
               <Tag size={18} />
             </div>
-            <div>
-              <h3 className="text-base font-bold font-syne text-[var(--text)] m-0">
+            <div className="min-w-0">
+              <h3 className="text-base font-semibold font-syne text-[var(--text)] m-0">
                 Cupones de mi tienda
               </h3>
               <p className="text-xs text-[var(--text-muted)] mt-0.5 m-0 font-medium">
@@ -115,101 +115,110 @@ export function TiendaCupones() {
             onClick={() => setCreando((v) => !v)}
             variant={creando ? 'outline' : 'default'}
             size="sm"
-            className="h-10 rounded-full px-4 text-xs font-bold gap-1.5 shadow-[var(--lf-shadow-card)]"
+            className="h-11 sm:h-10 rounded-full px-4 text-sm font-bold gap-1.5"
           >
             <Plus size={15} /> {creando ? 'Cancelar' : 'Nuevo cupón'}
           </Button>
         </div>
 
         {creando && (
-          <form onSubmit={crear} className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-[var(--border)]">
-            <div>
-              <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5">Código</label>
-              <Input
-                value={codigo}
-                onChange={(e) => setCodigo(e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, ''))}
-                placeholder="EJ. VERANO20"
-                className="h-11 rounded-[var(--lf-card-radius)] text-xs bg-[var(--bg-alt)] border-[var(--border)] font-mono uppercase"
-                required
-              />
+          <form
+            onSubmit={crear}
+            className="rounded-[var(--lf-card-radius)] border border-[var(--border)] bg-[var(--bg-alt)] p-4 space-y-3.5"
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] block mb-1.5">
+                  Código
+                </label>
+                <Input
+                  value={codigo}
+                  onChange={(e) => setCodigo(e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, ''))}
+                  placeholder="EJ. VERANO20"
+                  className="h-11 rounded-[var(--lf-input-radius)] text-sm bg-[var(--surface)] border-[var(--border)] font-mono uppercase"
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] block mb-1.5">
+                  Tipo
+                </label>
+                <select
+                  value={tipoDescuento}
+                  onChange={(e) => setTipoDescuento(e.target.value as 'porcentaje' | 'fijo')}
+                  className="w-full h-11 px-3 rounded-[var(--lf-input-radius)] border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primario)] font-medium"
+                >
+                  <option value="porcentaje">Porcentaje (%)</option>
+                  <option value="fijo">Monto fijo (C$)</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] block mb-1.5">
+                  {tipoDescuento === 'porcentaje' ? 'Descuento (%)' : 'Descuento (C$)'}
+                </label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={valor}
+                  onChange={(e) => setValor(e.target.value)}
+                  className="h-11 rounded-[var(--lf-input-radius)] text-sm bg-[var(--surface)] border-[var(--border)] font-mono"
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] block mb-1.5">
+                  Compra mínima (C$, 0 = sin mínimo)
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={montoMinimo}
+                  onChange={(e) => setMontoMinimo(e.target.value)}
+                  className="h-11 rounded-[var(--lf-input-radius)] text-sm bg-[var(--surface)] border-[var(--border)] font-mono"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] block mb-1.5">
+                  Tope de descuento (C$, 0 = sin tope)
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={descuentoMaximo}
+                  onChange={(e) => setDescuentoMaximo(e.target.value)}
+                  className="h-11 rounded-[var(--lf-input-radius)] text-sm bg-[var(--surface)] border-[var(--border)] font-mono"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] block mb-1.5">
+                  Vigencia (días)
+                </label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={vigenciaDias}
+                  onChange={(e) => setVigenciaDias(e.target.value)}
+                  className="h-11 rounded-[var(--lf-input-radius)] text-sm bg-[var(--surface)] border-[var(--border)] font-mono"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] block mb-1.5">
+                  Usos máximos (0 = ilimitado)
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={maxUsos}
+                  onChange={(e) => setMaxUsos(e.target.value)}
+                  className="h-11 rounded-[var(--lf-input-radius)] text-sm bg-[var(--surface)] border-[var(--border)] font-mono"
+                />
+              </div>
             </div>
-            <div>
-              <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5">Tipo</label>
-              <select
-                value={tipoDescuento}
-                onChange={(e) => setTipoDescuento(e.target.value as 'porcentaje' | 'fijo')}
-                className="w-full h-11 px-3.5 rounded-[var(--lf-card-radius)] border border-[var(--border)] bg-[var(--bg-alt)] text-[var(--text)] text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 font-medium"
-              >
-                <option value="porcentaje">Porcentaje (%)</option>
-                <option value="fijo">Monto fijo (C$)</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5">
-                {tipoDescuento === 'porcentaje' ? 'Descuento (%)' : 'Descuento (C$)'}
-              </label>
-              <Input
-                type="number"
-                min="1"
-                value={valor}
-                onChange={(e) => setValor(e.target.value)}
-                className="h-11 rounded-[var(--lf-card-radius)] text-xs bg-[var(--bg-alt)] border-[var(--border)] font-mono"
-                required
-              />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5">
-                Compra mínima (C$, 0 = sin mínimo)
-              </label>
-              <Input
-                type="number"
-                min="0"
-                value={montoMinimo}
-                onChange={(e) => setMontoMinimo(e.target.value)}
-                className="h-11 rounded-[var(--lf-card-radius)] text-xs bg-[var(--bg-alt)] border-[var(--border)] font-mono"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5">
-                Tope de descuento (C$, 0 = sin tope)
-              </label>
-              <Input
-                type="number"
-                min="0"
-                value={descuentoMaximo}
-                onChange={(e) => setDescuentoMaximo(e.target.value)}
-                className="h-11 rounded-[var(--lf-card-radius)] text-xs bg-[var(--bg-alt)] border-[var(--border)] font-mono"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5">
-                Vigencia (días)
-              </label>
-              <Input
-                type="number"
-                min="1"
-                value={vigenciaDias}
-                onChange={(e) => setVigenciaDias(e.target.value)}
-                className="h-11 rounded-[var(--lf-card-radius)] text-xs bg-[var(--bg-alt)] border-[var(--border)] font-mono"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-[var(--text-muted)] block mb-1.5">
-                Usos máximos (0 = ilimitado)
-              </label>
-              <Input
-                type="number"
-                min="0"
-                value={maxUsos}
-                onChange={(e) => setMaxUsos(e.target.value)}
-                className="h-11 rounded-[var(--lf-card-radius)] text-xs bg-[var(--bg-alt)] border-[var(--border)] font-mono"
-              />
-            </div>
-            <div className="flex items-end">
+            <div className="flex justify-end border-t border-[var(--border)] pt-3.5">
               <Button
                 type="submit"
                 disabled={guardando}
-                className="w-full h-11 rounded-full text-xs font-bold shadow-[var(--lf-shadow-card)] shadow-primary/20"
+                className="w-full sm:w-auto h-11 rounded-full px-5 text-sm font-bold"
               >
                 {guardando ? 'Creando…' : 'Crear cupón'}
               </Button>
@@ -217,37 +226,52 @@ export function TiendaCupones() {
           </form>
         )}
 
-        <div className="space-y-2.5 pt-2">
+        <div className="space-y-2.5 pt-1">
           {loading ? (
-            <div className="text-xs text-[var(--text-muted)] py-4 text-center">Cargando cupones…</div>
+            <div className="text-xs text-[var(--text-muted)] py-6 text-center">Cargando cupones…</div>
           ) : cupones.length === 0 ? (
-            <div className="text-xs text-[var(--text-muted)] py-4 text-center">
-              Todavía no tienes cupones propios. Crea uno para atraer clientes con un descuento que solo aplica en tu tienda.
+            <div className="py-8 px-4 text-center rounded-[var(--lf-card-radius)] border border-[var(--border)] bg-[var(--bg-alt)]/60">
+              <Tag size={28} className="mx-auto mb-2 text-[var(--text-muted)]" />
+              <p className="text-xs text-[var(--text-muted)] m-0 font-medium">
+                Todavía no tienes cupones propios. Crea uno para atraer clientes con un descuento que solo aplica en tu tienda.
+              </p>
             </div>
           ) : (
             cupones.map((c) => (
               <div
                 key={c.id}
-                className="flex flex-wrap items-center gap-3 p-3.5 rounded-[var(--lf-card-radius)] bg-[var(--bg-alt)]/60 border border-[var(--border)] shadow-[var(--lf-shadow-card)]"
+                className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center gap-3 p-3.5 rounded-[var(--lf-card-radius)] border border-[var(--border)] bg-[var(--surface)] transition-colors hover:bg-[var(--bg-alt)]"
               >
-                <span className="font-mono font-bold text-sm text-[var(--text)]">{c.codigo}</span>
-                <span className="text-xs font-bold text-[var(--exito)]">
-                  {c.tipoDescuento === 'porcentaje' ? `${c.valor}%` : money(c.valor)}
-                </span>
-                <span className="text-[11px] text-[var(--text-muted)] font-medium">
-                  {c.montoMinimo ? `mínimo ${money(c.montoMinimo)}` : 'sin mínimo'} · usos {c.usosActuales}
-                  {c.maxUsos > 0 ? `/${c.maxUsos}` : ''} · vence {new Date(c.vigenciaFin).toLocaleDateString('es-NI')}
-                </span>
-                <Badge
-                  variant={c.estado === 'activo' ? 'secondary' : 'outline'}
-                  className={`ml-auto text-[11px] font-bold uppercase rounded-full px-3 py-0.5 ${
-                    c.estado === 'activo'
-                      ? 'bg-[var(--exito)]/10 text-[var(--exito)] border border-[var(--exito)]'
-                      : 'text-[var(--text-muted)]'
-                  }`}
-                >
-                  {c.estado}
-                </Badge>
+                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 min-w-0">
+                  <span className="font-mono font-bold text-sm text-[var(--text)]">{c.codigo}</span>
+                  <span className="font-mono text-lg font-bold text-[var(--text)]">
+                    {c.tipoDescuento === 'porcentaje' ? `${c.valor}%` : money(c.valor)}
+                  </span>
+                  <span className="text-[11px] font-medium text-[var(--text-muted)]">
+                    {c.montoMinimo ? `mínimo ${money(c.montoMinimo)}` : 'sin mínimo'} · usos {c.usosActuales}
+                    {c.maxUsos > 0 ? `/${c.maxUsos}` : ''}
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                  <Badge
+                    variant="outline"
+                    className="text-[11px] font-bold uppercase tracking-wider rounded-full px-2.5 py-0.5 bg-[var(--bg-alt)] text-[var(--text-muted)] border border-[var(--border)]"
+                  >
+                    vence {new Date(c.vigenciaFin).toLocaleDateString('es-NI')}
+                  </Badge>
+                  <Badge
+                    variant="outline"
+                    className={`text-[11px] font-bold uppercase tracking-wider rounded-full px-2.5 py-0.5 ${
+                      c.estado === 'activo'
+                        ? 'bg-[var(--exito)]/10 text-[var(--exito)] border border-[var(--exito)]'
+                        : c.estado === 'agotado'
+                        ? 'bg-[var(--warning)]/10 text-[var(--warning)] border border-[var(--warning)]'
+                        : 'bg-[var(--bg-alt)] text-[var(--text-muted)] border border-[var(--border)]'
+                    }`}
+                  >
+                    {c.estado}
+                  </Badge>
+                </div>
               </div>
             ))
           )}

@@ -199,116 +199,124 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
     <div className="w-full space-y-4 sm:space-y-5">
       {/* ─── 1. KPI STAT CARDS ─── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {/* Total Movimientos */}
-        <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)] hover:shadow-[var(--lf-shadow-card)]/90 transition-all">
-          <CardContent className="p-4 sm:p-5 flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-[var(--lf-card-radius)] bg-primary/10 text-primary flex items-center justify-center shrink-0 shadow-[var(--lf-shadow-card)]">
-              <SlidersHorizontal size={22} />
+        {/* Total Movimientos — KPI secundario */}
+        <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)] py-0">
+          <CardContent className="p-4 sm:p-5 flex flex-col gap-2.5">
+            <div className="flex items-start justify-between gap-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                Total Movimientos
+              </span>
+              <span className="w-8 h-8 rounded-[var(--lf-input-radius)] bg-[var(--primario)]/10 text-[var(--primario)] flex items-center justify-center shrink-0">
+                <SlidersHorizontal size={16} />
+              </span>
             </div>
-            <div className="min-w-0">
-              <span className="text-xs font-semibold text-[var(--text-muted)] block">Total Movimientos</span>
-              <span className="text-2xl font-black font-mono tracking-tight text-[var(--text)]">{stats.total}</span>
-            </div>
+            <span className="text-lg font-bold font-mono tracking-tight text-[var(--text)]">{stats.total}</span>
           </CardContent>
         </Card>
 
-        {/* Entradas */}
-        <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)] hover:shadow-[var(--lf-shadow-card)]/90 transition-all">
-          <CardContent className="p-4 sm:p-5 flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-[var(--lf-card-radius)] bg-[var(--exito)]/10 text-[var(--exito)] flex items-center justify-center shrink-0 shadow-[var(--lf-shadow-card)]">
-              <ArrowDownLeft size={22} />
+        {/* Entradas — flujo principal */}
+        <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)] py-0">
+          <CardContent className="p-4 sm:p-5 flex flex-col gap-2.5">
+            <div className="flex items-start justify-between gap-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                Entradas (Stock)
+              </span>
+              <span className="w-8 h-8 rounded-[var(--lf-input-radius)] bg-[var(--exito)]/10 text-[var(--exito)] flex items-center justify-center shrink-0">
+                <ArrowDownLeft size={16} />
+              </span>
             </div>
-            <div className="min-w-0">
-              <span className="text-xs font-semibold text-[var(--text-muted)] block">Entradas (Stock)</span>
-              <span className="text-2xl font-black font-mono tracking-tight text-[var(--exito)]">+{stats.cantEntradas}</span>
-            </div>
+            <span className="text-xl sm:text-2xl font-black font-mono tracking-tight text-[var(--exito)]">+{stats.cantEntradas}</span>
           </CardContent>
         </Card>
 
-        {/* Salidas */}
-        <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)] hover:shadow-[var(--lf-shadow-card)]/90 transition-all">
-          <CardContent className="p-4 sm:p-5 flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-[var(--lf-card-radius)] bg-[var(--peligro)]/10 text-[var(--peligro)] flex items-center justify-center shrink-0 shadow-[var(--lf-shadow-card)]">
-              <ArrowUpRight size={22} />
+        {/* Salidas — flujo principal */}
+        <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)] py-0">
+          <CardContent className="p-4 sm:p-5 flex flex-col gap-2.5">
+            <div className="flex items-start justify-between gap-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                Salidas / Ventas
+              </span>
+              <span className="w-8 h-8 rounded-[var(--lf-input-radius)] bg-[var(--peligro)]/10 text-[var(--peligro)] flex items-center justify-center shrink-0">
+                <ArrowUpRight size={16} />
+              </span>
             </div>
-            <div className="min-w-0">
-              <span className="text-xs font-semibold text-[var(--text-muted)] block">Salidas / Ventas</span>
-              <span className="text-2xl font-black font-mono tracking-tight text-[var(--peligro)]">-{stats.cantSalidas}</span>
-            </div>
+            <span className="text-xl sm:text-2xl font-black font-mono tracking-tight text-[var(--peligro)]">-{stats.cantSalidas}</span>
           </CardContent>
         </Card>
 
-        {/* Ajustes */}
-        <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)] hover:shadow-[var(--lf-shadow-card)]/90 transition-all">
-          <CardContent className="p-4 sm:p-5 flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-[var(--lf-card-radius)] bg-[var(--warning)]/10 text-[var(--warning)] flex items-center justify-center shrink-0 shadow-[var(--lf-shadow-card)]">
-              <RotateCcw size={22} />
+        {/* Ajustes — KPI secundario */}
+        <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)] py-0">
+          <CardContent className="p-4 sm:p-5 flex flex-col gap-2.5">
+            <div className="flex items-start justify-between gap-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                Ajustes Físicos
+              </span>
+              <span className="w-8 h-8 rounded-[var(--lf-input-radius)] bg-[var(--warning)]/10 text-[var(--warning)] flex items-center justify-center shrink-0">
+                <RotateCcw size={16} />
+              </span>
             </div>
-            <div className="min-w-0">
-              <span className="text-xs font-semibold text-[var(--text-muted)] block">Ajustes Físicos</span>
-              <span className="text-2xl font-black font-mono tracking-tight text-[var(--warning)]">{stats.cantAjustes}</span>
-            </div>
+            <span className="text-lg font-bold font-mono tracking-tight text-[var(--text)]">{stats.cantAjustes}</span>
           </CardContent>
         </Card>
       </div>
 
       {/* ─── 2. HEADER & TOOLBAR DE AUDITORÍA ─── */}
       <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)]">
-        <CardContent className="p-5 sm:p-6 space-y-4">
-          <div className="flex justify-between items-center flex-wrap gap-3.5">
-            <div>
-              <h2 className="text-lg font-bold font-syne text-[var(--text)]">
+        <CardContent className="p-4 sm:p-5 space-y-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <h2 className="text-base font-semibold font-syne text-[var(--text)]">
                 Kardex de Inventario & Auditoría
               </h2>
-              <p className="text-xs text-[var(--text-muted)] mt-0.5 font-medium">
+              <p className="text-xs text-[var(--text-muted)] mt-1">
                 Trazabilidad inmutable de entradas, salidas por ventas POS y ajustes de stock
               </p>
             </div>
 
-            <div className="flex gap-2 items-center">
+            <div className="flex gap-2 items-center shrink-0">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={cargarDatos}
                 title="Recargar movimientos"
-                className="h-11 rounded-full px-4 text-xs font-bold shadow-[var(--lf-shadow-card)]"
+                className="h-11 rounded-full px-4 text-xs font-bold shadow-none"
               >
-                <RefreshCw size={14} className={`mr-1.5 ${loading ? 'animate-spin text-primary' : ''}`} />
+                <RefreshCw size={14} className={loading ? 'animate-spin text-[var(--primario)]' : ''} />
                 <span className="hidden sm:inline">Actualizar</span>
               </Button>
 
               <Button
                 onClick={() => setModalOpen(true)}
-                className="h-11 rounded-full px-5 text-xs font-bold shadow-[var(--lf-shadow-card)] shadow-primary/20"
+                className="h-11 rounded-full px-5 text-xs font-bold shadow-[var(--lf-shadow-card)]"
               >
-                <Plus size={16} className="mr-1.5" />
+                <Plus size={16} />
                 <span>Registrar Movimiento</span>
               </Button>
             </div>
           </div>
 
           {/* Buscador & Filtros */}
-          <div className="flex gap-2.5 flex-wrap items-center pt-3.5 border-t border-[var(--border)]">
-            <div className="relative flex-1 min-w-[240px] flex items-center">
+          <div className="flex flex-col gap-2.5 pt-3 border-t border-[var(--border)] sm:flex-row sm:items-center">
+            <div className="relative flex w-full min-w-0 flex-1 items-center">
               <Search size={18} className="absolute left-4 text-[var(--text-muted)] pointer-events-none" />
               <Input
                 type="text"
                 placeholder="Buscar por producto, SKU o motivo..."
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
-                className="pl-11 pr-10 h-11 sm:h-12 rounded-full text-xs sm:text-sm bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)] focus:ring-2 focus:ring-primary/20 shadow-[var(--lf-shadow-card)]"
+                className="pl-11 pr-10 h-11 rounded-full text-xs sm:text-sm bg-[var(--bg-alt)] border-[var(--border)] text-[var(--text)] shadow-none"
               />
               {busqueda && (
                 <button
                   onClick={() => setBusqueda('')}
-                  className="absolute right-3.5 w-6 h-6 rounded-full hover:bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--text-muted)]/90 flex items-center justify-center transition-colors"
+                  className="absolute right-3.5 w-6 h-6 rounded-full hover:bg-[var(--surface-elevated)] text-[var(--text-muted)] hover:text-[var(--text)] flex items-center justify-center transition-colors"
                 >
                   <X size={14} />
                 </button>
               )}
             </div>
 
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+            <div className="no-scrollbar -mx-1 flex items-center gap-1.5 overflow-x-auto px-1 sm:mx-0 sm:px-0">
               {(
                 [
                   { id: 'todos', label: 'Todos' },
@@ -321,13 +329,11 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
                 return (
                   <Button
                     key={f.id}
-                    variant={active ? 'default' : 'secondary'}
+                    variant={active ? 'secondary' : 'ghost'}
                     size="sm"
                     onClick={() => setFiltroTipo(f.id)}
-                    className={`h-9 rounded-full text-xs font-bold px-4 shrink-0 transition-all ${
-                      active
-                        ? 'shadow-[var(--lf-shadow-card)] shadow-primary/25'
-                        : 'bg-[var(--surface)] border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)]'
+                    className={`h-11 sm:h-10 shrink-0 rounded-full px-4 text-xs font-bold shadow-none ${
+                      active ? '' : 'text-[var(--text-muted)] hover:text-[var(--text)]'
                     }`}
                   >
                     {f.label}
@@ -343,15 +349,17 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
       {loading ? (
         <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)] h-[260px] flex items-center justify-center">
           <CardContent className="flex flex-col items-center gap-2.5 text-[var(--text-muted)] p-6">
-            <div className="w-8 h-8 border-3 border-primary/20 border-t-primary rounded-full animate-spin" />
+            <div className="h-8 w-8 animate-spin rounded-full border-3 border-[var(--primario)]/20 border-t-[var(--primario)]" />
             <span className="text-xs font-semibold">Cargando movimientos Kardex...</span>
           </CardContent>
         </Card>
       ) : movimientosFiltrados.length === 0 ? (
         <Card className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)] p-12 text-center">
           <CardContent className="flex flex-col items-center gap-2.5">
-            <SlidersHorizontal size={44} className="text-[var(--text-muted)] opacity-30 mx-auto" />
-            <h3 className="text-base font-bold font-syne text-[var(--text)]">
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--bg-alt)] text-[var(--text-muted)] mx-auto">
+              <SlidersHorizontal size={26} />
+            </span>
+            <h3 className="text-base font-semibold font-syne text-[var(--text)]">
               No se encontraron movimientos
             </h3>
             <p className="text-xs text-[var(--text-muted)] max-w-sm mx-auto">
@@ -374,7 +382,7 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
                 m.tipo === 'MERMA';
 
               return (
-                <Card key={m.id} className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)] hover:shadow-[var(--lf-shadow-card)]/90 transition-all">
+                <Card key={m.id} className="rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)]">
                   <CardContent className="p-4 space-y-3">
                     <div className="flex justify-between items-start gap-2.5">
                       <div className="flex-1 min-w-0">
@@ -390,13 +398,13 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
 
                       {/* Badge Píldora */}
                       <Badge
-                        variant="secondary"
-                        className={`text-[11px] font-bold px-3 py-0.5 rounded-full flex items-center gap-1 shrink-0 ${
+                        variant="outline"
+                        className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border flex items-center gap-1 shrink-0 ${
                           esEntrada
-                            ? 'bg-[var(--exito)]/10 text-[var(--exito)] border border-[var(--exito)]'
+                            ? 'border-[var(--exito)]/30 bg-[var(--exito)]/10 text-[var(--exito)]'
                             : esSalida
-                            ? 'bg-[var(--peligro)]/10 text-[var(--peligro)] border border-[var(--peligro)]'
-                            : 'bg-[var(--warning)]/10 text-[var(--warning)] border border-[var(--warning)]'
+                            ? 'border-[var(--peligro)]/30 bg-[var(--peligro)]/10 text-[var(--peligro)]'
+                            : 'border-[var(--warning)]/30 bg-[var(--warning)]/10 text-[var(--warning)]'
                         }`}
                       >
                         {esEntrada ? <ArrowDownLeft size={12} /> : <ArrowUpRight size={12} />}
@@ -407,30 +415,30 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
                     {/* Resumen Numérico en Cápsula */}
                     <div className="grid grid-cols-3 gap-2 p-2.5 rounded-[var(--lf-card-radius)] bg-[var(--bg-alt)]/60 border border-[var(--border)] text-center">
                       <div>
-                        <span className="text-[11px] font-bold text-[var(--text-muted)] block uppercase">Anterior</span>
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] block">Anterior</span>
                         <span className="text-xs font-bold font-mono text-[var(--text-muted)]">
                           {m.stockAnterior}
                         </span>
                       </div>
                       <div>
-                        <span className="text-[11px] font-bold text-[var(--text-muted)] block uppercase">Cambio</span>
-                        <span className={`text-xs font-black font-mono ${
-                          esEntrada ? 'text-[var(--exito)] text-[var(--exito)]' : esSalida ? 'text-[var(--peligro)] text-[var(--peligro)]' : 'text-[var(--warning)] text-[var(--warning)]'
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] block">Cambio</span>
+                        <span className={`text-sm font-black font-mono ${
+                          esEntrada ? 'text-[var(--exito)]' : esSalida ? 'text-[var(--peligro)]' : 'text-[var(--warning)]'
                         }`}>
                           {esEntrada ? `+${m.cantidad}` : `-${m.cantidad}`}
                         </span>
                       </div>
                       <div>
-                        <span className="text-[11px] font-bold text-[var(--text-muted)] block uppercase">Nuevo</span>
-                        <span className="text-xs font-black font-mono text-primary">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] block">Nuevo</span>
+                        <span className="text-sm font-black font-mono text-[var(--primario)]">
                           {m.stockNuevo}
                         </span>
                       </div>
                     </div>
 
                     {/* Detalle y Fecha */}
-                    <div className="flex justify-between items-center text-[11px] text-[var(--text-muted)] pt-1 border-t border-[var(--border)]">
-                      <span className="font-mono">
+                    <div className="flex justify-between items-center gap-2 pt-2 border-t border-[var(--border)] text-[11px] text-[var(--text-muted)]">
+                      <span className="font-mono font-bold text-[var(--text)]">
                         {new Date(m.createdAt).toLocaleDateString('es-NI')} {new Date(m.createdAt).toLocaleTimeString('es-NI', { timeStyle: 'short' })}
                       </span>
                       <span className="max-w-[180px] truncate text-right font-medium">
@@ -449,7 +457,7 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
           <Card className="hidden md:block rounded-[var(--lf-card-radius)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-card)] overflow-hidden">
             <Table>
               <TableHeader>
-                <TableRow className="bg-[var(--bg-alt)] hover:bg-[var(--bg-alt)]/90">
+                <TableRow className="border-[var(--border)] bg-[var(--bg-alt)] hover:bg-[var(--bg-alt)]">
                   <TableHead className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Fecha & Hora</TableHead>
                   <TableHead className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Producto / SKU</TableHead>
                   <TableHead className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Tipo Movimiento</TableHead>
@@ -460,65 +468,86 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {movimientosFiltrados.map((m) => {
+                {movimientosFiltrados.map((m, idx) => {
                   const esEntrada = m.tipo === 'ENTRADA' || m.tipo === 'DEVOLUCION_CLIENTE';
                   const esSalida =
                     m.tipo === 'SALIDA' ||
                     m.tipo === 'VENTA_POS' ||
                     m.tipo === 'VENTA_DELIVERY' ||
                     m.tipo === 'MERMA';
+                  const fechaDia = new Date(m.createdAt).toLocaleDateString('es-NI');
+                  const nuevoDia =
+                    idx === 0 ||
+                    fechaDia !== new Date(movimientosFiltrados[idx - 1].createdAt).toLocaleDateString('es-NI');
 
                   return (
-                    <TableRow key={m.id}>
-                      <TableCell className="whitespace-nowrap font-mono text-xs text-[var(--text-muted)]">
-                        {new Date(m.createdAt).toLocaleDateString('es-NI')} {new Date(m.createdAt).toLocaleTimeString('es-NI', { timeStyle: 'short' })}
-                      </TableCell>
+                    <React.Fragment key={m.id}>
+                      {nuevoDia && (
+                        <TableRow className="border-b border-[var(--border)] bg-[var(--bg-alt)] hover:bg-[var(--bg-alt)]">
+                          <TableCell colSpan={7} className="py-1.5">
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                              {fechaDia}
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                      )}
 
-                      <TableCell>
-                        <span className="font-bold text-[var(--text)] block">
-                          {m.producto?.nombre || 'Producto'}
-                        </span>
-                        {m.producto?.codigoBarras && (
-                          <span className="text-[11px] font-mono text-[var(--text-muted)]">
-                            SKU: {m.producto.codigoBarras}
+                      <TableRow className="border-b border-[var(--border)] hover:bg-[var(--bg-alt)]">
+                        <TableCell className="whitespace-nowrap font-mono text-xs">
+                          <span className="font-bold text-[var(--text)]">
+                            {new Date(m.createdAt).toLocaleDateString('es-NI')}
+                          </span>{' '}
+                          <span className="text-[var(--text-muted)]">
+                            {new Date(m.createdAt).toLocaleTimeString('es-NI', { timeStyle: 'short' })}
                           </span>
-                        )}
-                      </TableCell>
+                        </TableCell>
 
-                      <TableCell>
-                        <Badge
-                          variant={esEntrada ? 'secondary' : esSalida ? 'destructive' : 'outline'}
-                          className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 ${
-                            esEntrada
-                              ? 'bg-[var(--exito)]/10 text-[var(--exito)] border-0'
-                              : esSalida
-                              ? 'bg-[var(--peligro)]/10 text-[var(--peligro)] border-0'
-                              : 'bg-[var(--warning)]/10 text-[var(--warning)] border-0'
-                          }`}
-                        >
-                          {esEntrada ? <ArrowDownLeft size={12} /> : <ArrowUpRight size={12} />}
-                          {m.tipo}
-                        </Badge>
-                      </TableCell>
+                        <TableCell>
+                          <span className="font-bold text-[var(--text)] block">
+                            {m.producto?.nombre || 'Producto'}
+                          </span>
+                          {m.producto?.codigoBarras && (
+                            <span className="text-[11px] font-mono text-[var(--text-muted)]">
+                              SKU: {m.producto.codigoBarras}
+                            </span>
+                          )}
+                        </TableCell>
 
-                      <TableCell className="text-right font-mono font-extrabold">
-                        <span className={esEntrada ? 'text-[var(--exito)]' : esSalida ? 'text-[var(--peligro)]' : 'text-[var(--warning)]'}>
-                          {esEntrada ? `+${m.cantidad}` : `-${m.cantidad}`}
-                        </span>
-                      </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border inline-flex items-center gap-1 ${
+                              esEntrada
+                                ? 'border-[var(--exito)]/30 bg-[var(--exito)]/10 text-[var(--exito)]'
+                                : esSalida
+                                ? 'border-[var(--peligro)]/30 bg-[var(--peligro)]/10 text-[var(--peligro)]'
+                                : 'border-[var(--warning)]/30 bg-[var(--warning)]/10 text-[var(--warning)]'
+                            }`}
+                          >
+                            {esEntrada ? <ArrowDownLeft size={12} /> : <ArrowUpRight size={12} />}
+                            {m.tipo}
+                          </Badge>
+                        </TableCell>
 
-                      <TableCell className="text-center font-mono text-[var(--text-muted)]">
-                        {m.stockAnterior}
-                      </TableCell>
+                        <TableCell className="text-right font-mono font-extrabold">
+                          <span className={esEntrada ? 'text-[var(--exito)]' : esSalida ? 'text-[var(--peligro)]' : 'text-[var(--warning)]'}>
+                            {esEntrada ? `+${m.cantidad}` : `-${m.cantidad}`}
+                          </span>
+                        </TableCell>
 
-                      <TableCell className="text-center font-mono font-extrabold text-[var(--primario)]">
-                        {m.stockNuevo}
-                      </TableCell>
+                        <TableCell className="text-center font-mono text-[var(--text-muted)]">
+                          {m.stockAnterior}
+                        </TableCell>
 
-                      <TableCell className="text-[var(--text-muted)] text-xs">
-                        {m.motivo || 'Operación comercial estándar'}
-                      </TableCell>
-                    </TableRow>
+                        <TableCell className="text-center font-mono font-extrabold text-[var(--primario)]">
+                          {m.stockNuevo}
+                        </TableCell>
+
+                        <TableCell className="text-[var(--text-muted)] text-xs">
+                          {m.motivo || 'Operación comercial estándar'}
+                        </TableCell>
+                      </TableRow>
+                    </React.Fragment>
                   );
                 })}
               </TableBody>
@@ -535,7 +564,7 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
         >
           <Card
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-[500px] max-h-[90vh] overflow-y-auto bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-float)] rounded-[var(--lf-card-radius)]"
+            className="w-full max-w-[500px] max-h-[90vh] overflow-y-auto bg-[var(--surface)] border border-[var(--border)] shadow-[var(--lf-shadow-sheet)] rounded-[var(--lf-sheet-radius)]"
           >
             <CardContent className="p-6">
               <div className="flex justify-between items-center pb-4 border-b border-[var(--border)] mb-5">
@@ -564,7 +593,7 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
                   <select
                     value={productoId}
                     onChange={(e) => setProductoId(e.target.value)}
-                    className="w-full h-11 px-3.5 rounded-[var(--lf-card-radius)] border border-[var(--border)] bg-[var(--bg-alt)] text-[var(--text)] text-xs focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    className="w-full h-11 px-3.5 rounded-[var(--lf-card-radius)] border border-[var(--border)] bg-[var(--bg-alt)] text-[var(--text)] text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primario)]"
                     required
                   >
                     {productos.map((p) => (
@@ -599,14 +628,14 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
                           onClick={() => setTipo(t.id as any)}
                           className={`p-3 rounded-[var(--lf-card-radius)] border flex flex-col items-center gap-1 transition-all cursor-pointer ${
                             isSelected
-                              ? `${t.color} border-2 bg-[var(--surface)] font-bold shadow-xs`
-                              : 'border-[var(--border)] border-[var(--border)] bg-[var(--bg-alt)] text-[var(--text-muted)]'
+                              ? `${t.color} border-2 bg-[var(--surface)] font-bold`
+                              : 'border-[var(--border)] bg-[var(--bg-alt)] text-[var(--text-muted)]'
                           }`}
                         >
                           <span className="flex items-center gap-1 text-xs">
                             {t.icon} {t.label}
                           </span>
-                          <span className="text-[11px] opacity-80">{t.desc}</span>
+                          <span className="text-[11px] text-[var(--text-muted)]">{t.desc}</span>
                         </button>
                       );
                     })}
@@ -672,7 +701,7 @@ export function TiendaKardex({ isDark }: { isDark: boolean }) {
                   <Button
                     type="submit"
                     disabled={submitting}
-                    className="flex-1 h-11 rounded-full text-xs font-semibold shadow-[var(--lf-shadow-card)] shadow-primary/20"
+                    className="flex-1 h-11 rounded-full text-xs font-semibold shadow-[var(--lf-shadow-card)]"
                   >
                     {submitting ? 'Registrando...' : 'Registrar en Kardex'}
                   </Button>
