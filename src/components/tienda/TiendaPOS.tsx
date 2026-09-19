@@ -227,6 +227,11 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
         import('@capacitor/core'),
       ]);
       if (Capacitor.isNativePlatform?.()) {
+        const perm = await BarcodeScanner.checkPermission({ force: true }).catch(() => null);
+        if (perm && !(perm as any).granted) {
+          notify.error('Permiso de cámara denegado. Actívalo en los ajustes de la app.');
+          return;
+        }
         try { await BarcodeScanner.prepare?.(); } catch { /* seguir */ }
       }
       const resultado: any = await BarcodeScanner.startScan();

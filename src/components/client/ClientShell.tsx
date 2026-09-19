@@ -699,6 +699,11 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName, i
 
   /* ─── SPLASH STATE (solo una vez por sesión para fluidez total) ─── */
   const [showSplash, setShowSplash] = useState(false);
+
+  /* ─── Permiso de notificaciones al arrancar (antes solo se pedía ubicación) ─── */
+  useEffect(() => {
+    solicitarPermisoNotificacionesManual().catch(() => null);
+  }, []);
   const [splashFading, setSplashFading] = useState(false);
 
   useEffect(() => {

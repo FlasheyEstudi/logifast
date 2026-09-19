@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useState } from 'react';
-import { ChevronLeft, ChevronRight, Trash2, LogOut, FileText } from '@/components/icons';
+import { ChevronLeft, ChevronRight, Trash2, LogOut, FileText, Camera } from '@/components/icons';
 import { TemaToggle } from '@/components/ui/TemaToggle';
 import { SonidoToggle } from '@/components/ui/SonidoToggle';
 import PerfilSeguridad from '@/components/seguridad/PerfilSeguridad';
@@ -94,7 +94,7 @@ export default function ConfiguracionView({ onClose, onLogout, onVerFactura }: C
         {fila('Lector de barras (POS)', () => {
           const esApp = !!(window as any).Capacitor?.isNativePlatform?.();
           window.location.href = esApp ? '/escaner.html' : '/escaner';
-        }, <span style={{ fontSize: 15 }}>📷</span>)}
+        }, <Camera size={15} style={{ color: 'var(--primario)' }} />)}
         {fila('Eliminar cuenta', () => { setEliminarAbierto(true); setError(null); }, <Trash2 size={15} style={{ color: 'var(--peligro)' }} />, true)}
         {fila('Cerrar sesión', onLogout, <LogOut size={15} style={{ color: 'var(--peligro)' }} />, true)}
       </div>

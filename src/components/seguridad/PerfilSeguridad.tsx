@@ -106,8 +106,7 @@ export default function PerfilSeguridad({ onLogout }: PerfilSeguridadProps) {
         Seguridad
       </div>
 
-      {/* Huella / Face ID (solo si el dispositivo lo soporta) */}
-      {bioDisp && (
+      {/* Huella / Face ID */}
       <div
         style={{
           display: 'flex',
@@ -147,16 +146,14 @@ export default function PerfilSeguridad({ onLogout }: PerfilSeguridadProps) {
           role="switch"
           aria-checked={bioOn}
           aria-label="Activar Huella / Face ID"
-          disabled={!bioDisp}
           onClick={() => toggleBio(!bioOn)}
           style={{
             width: 48,
             height: 28,
             borderRadius: 99,
             border: 'none',
-            cursor: bioDisp ? 'pointer' : 'not-allowed',
+            cursor: 'pointer',
             background: bioOn ? 'var(--primario)' : 'var(--text-muted)',
-            opacity: bioDisp ? 1 : 0.4,
             position: 'relative',
             transition: 'background 0.2s',
             flexShrink: 0,
@@ -176,7 +173,6 @@ export default function PerfilSeguridad({ onLogout }: PerfilSeguridadProps) {
           />
         </button>
       </div>
-      )}
 
       {/* Cambiar contraseña */}
       <button

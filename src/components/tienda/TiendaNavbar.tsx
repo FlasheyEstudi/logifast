@@ -180,7 +180,14 @@ export function TiendaNavbar({
     }
     try {
       const { BarcodeScanner } = await import('@capacitor-community/barcode-scanner');
-      if (esApp) { try { await BarcodeScanner.prepare?.(); } catch { /* seguir */ } }
+      if (esApp) {
+        const perm = await BarcodeScanner.checkPermission({ force: true }).catch(() => null);
+        if (perm && !(perm as any).granted) {
+          notify.error('Permiso de cámara denegado. Actívalo en los ajustes de la app.');
+          return;
+        }
+        try { await BarcodeScanner.prepare?.(); } catch { /* seguir */ }
+      }
       const resultado: any = await BarcodeScanner.startScan();
       if (resultado?.hasContent && resultado.content) {
         const m = String(resultado.content).match(/(?:escaner\?pin=|pin[=:])(\d{6})/i);
