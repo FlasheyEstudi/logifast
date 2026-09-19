@@ -63,7 +63,7 @@ export function TiendaEtiquetasModal({
   // Inicializar valor de código cuando cambia el producto
   useEffect(() => {
     if (!producto) return;
-    const valorInicial = producto.codigoBarras?.trim() || `SKU${Date.now().toString().slice(-8)}`;
+    const valorInicial = producto.codigoBarras?.trim() || `ID${producto.id}`;
     setCodigoValor(valorInicial);
   }, [producto]);
 

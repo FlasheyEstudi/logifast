@@ -24,6 +24,7 @@ import {
 } from '@/components/icons';
 import { notify } from '@/lib/notify';
 import { onRealtimeEvent, realtime } from '@/services/realtime';
+import { iniciarPosScanner, onEstadoPos, onCodigoPos, responderCodigo, abrirSesionPos } from '@/services/pos-scanner';
 import type { Producto } from './TiendaInventario';
 import { TiendaDevolucion } from './TiendaDevolucion';
 
@@ -60,7 +61,6 @@ interface FacturaDatos {
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import QRCode from 'qrcode';
 import CamaraEscaneo from './CamaraEscaneo';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -87,21 +87,14 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
   // Modal Factura / Imprimir
   const [facturaEmitida, setFacturaEmitida] = useState<FacturaDatos | null>(null);
 
-  // Escáner inalámbrico
-  const [escanerAbierto, setEscanerAbierto] = useState(false);
-  const [escanerPin, setEscanerPin] = useState('');
-  const [escanerQr, setEscanerQr] = useState<string | null>(null);
+  // Escáner inalámbrico (la sala vive en el servicio singleton pos-scanner)
   const [camaraAbierta, setCamaraAbierta] = useState(false);
   const [lectorConectado, setLectorConectado] = useState(false);
-  const [ultimosEscaneos, setUltimosEscaneos] = useState<
-    { codigo: string; estado: 'ok' | 'sin-producto' | 'ambiguo'; detalle: string; hora: string }[]
-  >([]);
   const [origenWeb, setOrigenWeb] = useState('');
 
   // Devolución de mercadería (reingreso de stock + Kardex)
   const [devolucionAbierta, setDevolucionAbierta] = useState(false);
-  const escanerPinRef = useRef('');
-  const manejarCodigoRef = useRef<(codigo: string, origen: 'inalambrico' | 'pistola') => void>(() => {});
+    const manejarCodigoRef = useRef<(codigo: string, origen: 'inalambrico' | 'pistola') => void>(() => {});
 
   useEffect(() => {
     setOrigenWeb(window.location.origin);
@@ -154,41 +147,26 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
   };
 
   // ─── Escáner: resolver un código contra el catálogo y agregarlo a la venta ───
-  const generarPinEscaner = () => {
-    try {
-      const buf = new Uint32Array(1);
-      crypto.getRandomValues(buf);
-      return String(100000 + (buf[0] % 900000));
-    } catch {
-      return String(Math.floor(100000 + Math.random() * 900000));
-    }
-  };
-
   const manejarCodigo = useCallback(
     (codigoCrudo: string, origen: 'inalambrico' | 'pistola') => {
       const codigo = String(codigoCrudo ?? '').trim();
       if (!codigo) return;
-      const encontrados = productos.filter((p) => p.codigoBarras && p.codigoBarras.trim() === codigo);
-      const hora = new Date().toLocaleTimeString('es-NI', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      const registrar = (estado: 'ok' | 'sin-producto' | 'ambiguo', detalle: string) =>
-        setUltimosEscaneos((prev) => [{ codigo, estado, detalle, hora }, ...prev].slice(0, 5));
-
+      const encontrados = productos.filter(
+        (p) => (p.codigoBarras && p.codigoBarras.trim() === codigo) || p.id === codigo || `ID${p.id}` === codigo
+      );
       if (encontrados.length === 1) {
         agregarAlCarrito(encontrados[0]);
-        registrar('ok', `+1 ${encontrados[0].nombre}`);
         if (origen === 'pistola') notify.success(`${encontrados[0].nombre} agregado`);
-        if (escanerPinRef.current) realtime.escanerResultado(escanerPinRef.current, codigo, true, encontrados[0].nombre);
+        responderCodigo(codigo, true, encontrados[0].nombre);
         return;
       }
 
       setBusqueda(codigo);
       if (encontrados.length === 0) {
-        registrar('sin-producto', 'Sin producto con ese código');
         notify.warning(`Código ${codigo}: sin producto registrado`);
-        if (escanerPinRef.current) realtime.escanerResultado(escanerPinRef.current, codigo, false, null);
+        responderCodigo(codigo, false, null);
       } else {
-        registrar('ambiguo', `${encontrados.length} productos comparten el código`);
-        if (escanerPinRef.current) realtime.escanerResultado(escanerPinRef.current, codigo, true, null);
+        responderCodigo(codigo, true, null);
       }
     },
     [productos, carrito]
@@ -206,14 +184,8 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
       // Flujo 1: QR de sesión del POS (…/escaner?pin=XXXXXX) → conecta este dispositivo como lector extensión
       const m = codigo.match(/(?:escaner\?pin=|pin[=:])(\d{6})/i);
       if (m && m[1]) {
-        const pin = m[1];
-        escanerPinRef.current = pin;
-        setEscanerPin(pin);
-        setLectorConectado(false);
-        setUltimosEscaneos([]);
-        setEscanerAbierto(true);
-        realtime.escanerUnir(pin);
-        notify.success('Celular conectado como lector del POS');
+        abrirSesionPos(m[1]);
+        notify.success('Sala del escáner abierta');
         return;
       }
       // Flujo 2: código de barras / QR de producto → agregar directo al carrito
@@ -259,86 +231,19 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
     return () => window.removeEventListener('keydown', alTeclear, true);
   }, []);
 
-  // Eventos del escáner inalámbrico
+  // Escáner inalámbrico: la sala vive en el servicio singleton y SOBREVIVE al cambio
+  // de módulo y al desmontar este componente (no se cierra nunca aquí).
   useEffect(() => {
-    const offs = [
-      onRealtimeEvent('escaner:presencia', (d: { lectorConectado?: boolean }) => {
-        if (!escanerPinRef.current) return;
-        setLectorConectado(!!d?.lectorConectado);
-      }),
-      onRealtimeEvent('escaner:codigo:recibido', (d: { codigo?: string }) => {
-        if (d?.codigo) manejarCodigoRef.current(d.codigo, 'inalambrico');
-      }),
-      onRealtimeEvent('escaner:cerrada', (d: { motivo?: string }) => {
-        if (!escanerPinRef.current) return;
-        escanerPinRef.current = '';
-        setEscanerPin('');
-        setLectorConectado(false);
-        notify.warning(
-          d?.motivo === 'expirada' ? 'La sesión del escáner expiró por inactividad' : 'La sesión del escáner se cerró'
-        );
-      }),
-      onRealtimeEvent('escaner:error', (d: { mensaje?: string }) => {
-        if (d?.mensaje) notify.error(d.mensaje);
-      }),
-    ];
+    iniciarPosScanner();
+    const offEstado = onEstadoPos(setLectorConectado);
+    const offCodigo = onCodigoPos((codigo) => manejarCodigoRef.current(codigo, 'inalambrico'));
     return () => {
-      offs.forEach((off) => off());
-      if (escanerPinRef.current) realtime.escanerCerrar(escanerPinRef.current);
+      offEstado();
+      offCodigo();
     };
   }, []);
 
-  const abrirEscaner = () => {
-    const pin = generarPinEscaner();
-    escanerPinRef.current = pin;
-    setEscanerPin(pin);
-    setLectorConectado(false);
-    setUltimosEscaneos([]);
-    setEscanerAbierto(true);
-    setEscanerQr(null);
-    realtime.escanerAbrir(pin);
-    // Vinculación persistente (estilo WhatsApp Web):
-    // 1) la caja registra su PIN para que el celular ya vinculado se una solo, sin volver a escanear.
-    fetch('/api/qr-sync', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pin }),
-    }).catch(() => null);
-    // 2) el QR lleva el TOKEN de vinculación (se escanea UNA sola vez); el PIN queda de respaldo manual.
-    fetch('/api/qr-sync?action=token')
-      .then((r) => r.json())
-      .then((d) => {
-        if (d?.token) {
-          QRCode.toDataURL(d.token, { width: 360, margin: 1 })
-            .then(setEscanerQr)
-            .catch(() => setEscanerQr(null));
-        }
-      })
-      .catch(() => setEscanerQr(null));
-  };
-
-  // ─── Apertura del escáner pedida desde el navbar (bandera + evento) ───
-  useEffect(() => {
-    const abrir = () => abrirEscaner();
-    window.addEventListener('pos:abrir-escaner', abrir);
-    if (typeof window !== 'undefined' && sessionStorage.getItem('pos_pending_escaner') === '1') {
-      sessionStorage.removeItem('pos_pending_escaner');
-      abrirEscaner();
-    }
-    return () => window.removeEventListener('pos:abrir-escaner', abrir);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const cerrarEscaner = () => {
-    if (escanerPinRef.current) realtime.escanerCerrar(escanerPinRef.current);
-    escanerPinRef.current = '';
-    setEscanerPin('');
-    setLectorConectado(false);
-    setEscanerAbierto(false);
-    setEscanerQr(null);
-  };
-
-  const modificarCantidad = (prodId: string, delta: number) => {
+    const modificarCantidad = (prodId: string, delta: number) => {
     const item = carrito.find((it) => it.producto.id === prodId);
     const stockDisponible = item?.producto.stock ?? null;
 
@@ -975,124 +880,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
         />
       )}
 
-      {escanerAbierto && (
-        <div
-          onClick={cerrarEscaner}
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md bg-[var(--surface)] rounded-[var(--lf-card-radius)] border border-[var(--border)] p-6 shadow-[var(--lf-shadow-float)] max-h-[90vh] overflow-y-auto animate-scale-up"
-          >
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-[var(--lf-card-radius)] bg-primary/10 text-primary flex items-center justify-center shadow-[var(--lf-shadow-card)]">
-                  <Camera size={20} />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-[var(--text)] font-syne">
-                    Escáner Inalámbrico
-                  </h3>
-                  <p className="text-xs text-[var(--text-muted)] font-medium">Usa tu celular como lector de barras</p>
-                </div>
-              </div>
 
-              <Badge
-                variant={lectorConectado ? 'default' : 'secondary'}
-                className={`text-[11px] font-extrabold px-3 py-1 rounded-full ${
-                  lectorConectado
-                    ? 'bg-[var(--exito)]/15 text-[var(--exito)] ring-1 ring-[var(--exito)]/30'
-                    : 'text-[var(--text-muted)]'
-                }`}
-              >
-                {lectorConectado ? 'CONECTADO' : 'ESPERANDO...'}
-              </Badge>
-            </div>
-
-            <p className="text-xs text-[var(--text-muted)] mt-4 leading-relaxed">
-              En tu celular abre la URL <b>{origenWeb}/escaner</b> e ingresa el siguiente PIN de sesión:
-            </p>
-
-            {/* PIN Display */}
-            <div className="flex items-center gap-3 my-4">
-              <div className="flex-1 text-center text-4xl sm:text-5xl font-extrabold tracking-widest font-mono py-3.5 rounded-[var(--lf-card-radius)] bg-[var(--bg-alt)] border border-[var(--border)] text-[var(--text)] shadow-[var(--lf-shadow-card)]">
-                {escanerPin}
-              </div>
-              <div className="w-12 h-12 rounded-[var(--lf-card-radius)] bg-[var(--bg-alt)] border border-[var(--border)] flex items-center justify-center text-[var(--text-muted)] shadow-[var(--lf-shadow-card)]">
-                <Wifi size={24} className={lectorConectado ? 'text-[var(--exito)] animate-pulse' : ''} />
-              </div>
-            </div>
-
-            {/* QR de emparejamiento: el celular lo escanea y entra directo al lector */}
-            {escanerQr && (
-              <div className="flex flex-col items-center gap-2 mt-2">
-                <img
-                  src={escanerQr}
-                  alt="QR para conectar el celular como lector"
-                  className="w-44 h-44 rounded-xl border border-[var(--border)] bg-white"
-                />
-                <p className="text-xs text-[var(--text-muted)] text-center leading-snug">
-                  Escanea este QR <b>una sola vez</b> para vincular tu celular. Después se conectará solo. PIN de respaldo: {escanerPin}
-                </p>
-              </div>
-            )}
-
-            {origenWeb.includes('localhost') || origenWeb.includes('127.0.0.1') ? (
-              <div className="p-3 rounded-[var(--lf-card-radius)] bg-[var(--warning)]/10 border border-[var(--warning)] text-[var(--warning)] text-xs flex items-start gap-2.5">
-                <AlertTriangle size={16} className="shrink-0 mt-0.5" />
-                <p className="leading-snug font-medium">
-                  El celular no puede abrir <b>localhost</b>. Accede usando la IP de tu PC en la red WiFi local (ej. http://192.168.1.10:3000/escaner).
-                </p>
-              </div>
-            ) : null}
-
-            {/* Últimos Escaneos */}
-            <div className="mt-5">
-              <div className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">
-                Últimas Lecturas
-              </div>
-              {ultimosEscaneos.length === 0 ? (
-                <div className="text-xs text-[var(--text-muted)] italic py-2">
-                  No hay lecturas registradas en esta sesión.
-                </div>
-              ) : (
-                <div className="space-y-1.5">
-                  {ultimosEscaneos.map((e, i) => (
-                    <div
-                      key={`${e.codigo}-${i}`}
-                      className="flex items-center gap-2.5 p-2.5 rounded-[var(--lf-card-radius)] bg-[var(--bg-alt)] border border-[var(--border)] text-xs"
-                    >
-                      <span className="font-mono font-bold text-[var(--text)]">
-                        {e.codigo}
-                      </span>
-                      <span
-                        className={`flex-1 truncate font-medium ${
-                          e.estado === 'ok'
-                            ? 'text-[var(--exito)]'
-                            : e.estado === 'ambiguo'
-                            ? 'text-[var(--warning)]'
-                            : 'text-[var(--peligro)]'
-                        }`}
-                      >
-                        {e.detalle}
-                      </span>
-                      <span className="text-[11px] text-[var(--text-muted)] font-mono">{e.hora}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <Button
-              variant="outline"
-              onClick={cerrarEscaner}
-              className="w-full mt-5 h-11 rounded-full text-xs font-bold shadow-[var(--lf-shadow-card)]"
-            >
-              Cerrar Sesión de Escaneo
-            </Button>
-          </div>
-        </div>
-      )}
 
       {/* ─── Modal Factura / Comprobante Térmico POS ─── */}
       {facturaEmitida && (

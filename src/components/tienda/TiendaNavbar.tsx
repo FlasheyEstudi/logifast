@@ -25,6 +25,8 @@ import {
 import SlidingPillTabBar, { type SlidingTabItem } from '@/components/ui/SlidingPillTabBar';
 import { realtime } from '@/services/realtime';
 import { notify } from '@/lib/notify';
+import { iniciarPosScanner, reconectarSesionPos, onEstadoPos, getSesionPos, abrirSesionPos, cerrarSesionPos } from '@/services/pos-scanner';
+import QRCode from 'qrcode';
 import CamaraEscaneo from './CamaraEscaneo';
 
 export type TiendaModulo =
@@ -78,6 +80,10 @@ export function TiendaNavbar({
   const [moreDrawerOpen, setMoreDrawerOpen] = useState(false);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const [camaraAbierta, setCamaraAbierta] = useState(false);
+  const [modalSesionAbierta, setModalSesionAbierta] = useState(false);
+  const [sesionPin, setSesionPin] = useState<string | null>(null);
+  const [lectorConectado, setLectorConectado] = useState(false);
+  const [qrTokenImg, setQrTokenImg] = useState<string | null>(null);
   const moreRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -172,15 +178,48 @@ export function TiendaNavbar({
     const esApp = !!(window as any).Capacitor?.isNativePlatform?.();
     const esMovil = esApp || (window.innerWidth <= 768 && (navigator.maxTouchPoints > 0 || 'ontouchstart' in window));
     if (!esMovil) {
-      sessionStorage.setItem('pos_pending_escaner', '1');
-      if (moduloActivo === 'pos') {
-        window.dispatchEvent(new CustomEvent('pos:abrir-escaner'));
-      } else {
-        onSelectModulo('pos');
-      }
+      abrirSesion();
       return;
     }
     setCamaraAbierta(true);
+  };
+
+  /* ─── Sesión persistente del escáner (un solo lugar: el layout) ─── */
+  useEffect(() => {
+    iniciarPosScanner();
+    if (reconectarSesionPos()) {
+      setSesionPin(typeof window !== 'undefined' ? localStorage.getItem('pos_active_session') : null);
+    }
+    const off = onEstadoPos(setLectorConectado);
+    return off;
+  }, []);
+
+  const abrirSesion = () => {
+    let pin = getSesionPos().pin;
+    if (!pin) {
+      pin = String(100000 + Math.floor(Math.random() * 900000));
+      abrirSesionPos(pin);
+    }
+    setSesionPin(pin);
+    setModalSesionAbierta(true);
+    setQrTokenImg(null);
+    fetch('/api/qr-sync?action=token')
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.token) {
+          QRCode.toDataURL(d.token, { width: 360, margin: 1 })
+            .then(setQrTokenImg)
+            .catch(() => setQrTokenImg(null));
+        }
+      })
+      .catch(() => setQrTokenImg(null));
+  };
+
+  const desconectar = () => {
+    cerrarSesionPos();
+    setSesionPin(null);
+    setModalSesionAbierta(false);
+    setQrTokenImg(null);
   };
 
   const procesarQrCelular = async (crudo: string) => {
@@ -391,15 +430,34 @@ export function TiendaNavbar({
 
           {/* Right: Indicador En Vivo + Tema + Salir (Sin bordes en iconos) */}
           <div className="flex items-center gap-2 shrink-0">
-            {/* QR arriba: celular → cámara; PC/tablet → modal con QR grande (sin recargar) */}
-            <button
-              onClick={tocarQr}
-              className="h-11 px-3.5 rounded-full bg-[var(--primario)]/10 hover:bg-[var(--primario)]/20 border border-[var(--primario)]/30 text-[var(--primario)] font-bold text-xs items-center gap-1.5 transition-colors cursor-pointer active:scale-95 shrink-0 flex"
-              title="Conectar el celular como lector del POS"
-            >
-              <QrCode size={14} />
-              <span className="hidden sm:inline">Conectar Celular</span>
-            </button>
+            {/* Conexión del celular: UN solo punto (layout). Conectado = badge verde + X para desconectar. */}
+            {sesionPin ? (
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  onClick={() => setModalSesionAbierta(true)}
+                  className="flex items-center gap-1.5 h-11 px-3.5 rounded-full bg-[var(--exito)]/10 border border-[var(--exito)]/30 text-[var(--exito)] font-bold text-xs cursor-pointer shrink-0"
+                >
+                  <span className="w-2 h-2 rounded-full bg-[var(--exito)] animate-pulse" />
+                  <span>Celular conectado{lectorConectado ? ' · lector activo' : ''}</span>
+                </button>
+                <button
+                  onClick={desconectar}
+                  aria-label="Desconectar celular"
+                  className="w-11 h-11 rounded-full bg-[var(--peligro)]/10 border border-[var(--peligro)]/30 text-[var(--peligro)] flex items-center justify-center cursor-pointer shrink-0"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={tocarQr}
+                className="h-11 px-3.5 rounded-full bg-[var(--primario)]/10 hover:bg-[var(--primario)]/20 border border-[var(--primario)]/30 text-[var(--primario)] font-bold text-xs items-center gap-1.5 transition-colors cursor-pointer active:scale-95 shrink-0 flex"
+                title="Conectar el celular como lector del POS"
+              >
+                <QrCode size={14} />
+                <span className="hidden sm:inline">Conectar Celular</span>
+              </button>
+            )}
 
             {/* Indicador En Vivo */}
             <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--exito)]/10 border border-[var(--exito)]/30 text-[var(--exito)] text-xs font-bold">
@@ -564,6 +622,35 @@ export function TiendaNavbar({
       {/* Cámara de escaneo (QR de vinculación en el celular) */}
       {camaraAbierta && (
         <CamaraEscaneo onCodigo={procesarQrCelular} onCerrar={() => setCamaraAbierta(false)} titulo="Escanear QR de la caja" />
+      )}
+
+      {/* Modal VISUAL de la sesión: cerrarlo NUNCA desconecta el celular */}
+      {modalSesionAbierta && (
+        <div className="fixed inset-0 z-[9997] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setModalSesionAbierta(false)}>
+          <div className="w-full max-w-sm bg-[var(--surface)] rounded-[var(--lf-card-radius)] border border-[var(--border)] p-6 flex flex-col items-center gap-4 shadow-[var(--lf-shadow-float)]" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between w-full">
+              <h3 className="font-syne text-base font-bold text-[var(--text)] m-0">Conectar Celular</h3>
+              <button onClick={() => setModalSesionAbierta(false)} aria-label="Cerrar" className="w-11 h-11 rounded-full bg-[var(--bg-alt)] text-[var(--text-muted)] flex items-center justify-center cursor-pointer shrink-0">
+                <X size={16} />
+              </button>
+            </div>
+            <div className={`text-[11px] font-extrabold px-3 py-1 rounded-full ${lectorConectado ? 'bg-[var(--exito)]/15 text-[var(--exito)] ring-1 ring-[var(--exito)]/30' : 'text-[var(--text-muted)] bg-[var(--bg-alt)]'}`}>
+              {lectorConectado ? 'CELULAR CONECTADO' : 'ESPERANDO CELULAR…'}
+            </div>
+            {qrTokenImg ? (
+              <img src={qrTokenImg} alt="QR de vinculación" className="w-56 h-56 rounded-xl border border-[var(--border)] bg-white" />
+            ) : (
+              <div className="w-56 h-56 rounded-xl bg-[var(--bg-alt)] animate-pulse" />
+            )}
+            <div className="text-center">
+              <div className="text-3xl font-extrabold tracking-widest font-mono text-[var(--text)]">{sesionPin}</div>
+              <p className="text-xs text-[var(--text-muted)] mt-2 leading-snug">
+                Escanea el QR una sola vez; después el celular se conecta solo. Cerrar esta ventana no desconecta.
+              </p>
+            </div>
+            <button onClick={() => setModalSesionAbierta(false)} className="h-11 px-6 rounded-full bg-[var(--primario)] text-white font-bold text-sm cursor-pointer">Listo</button>
+          </div>
+        </div>
       )}
     </div>
   );
