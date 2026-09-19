@@ -12,7 +12,6 @@ import {
   Package,
   Star,
   ChevronRight,
-  Megaphone,
   CheckCircle,
   Clock,
   Gift,
@@ -109,8 +108,6 @@ export default function ClientInicio({
   const { tiendas = [], setExplorarCategoria, setTiendaSeleccionada } = useMarketplaceStore();
 
   const [activeBannerIdx, setActiveBannerIdx] = useState(0);
-  const [adModalOpen, setAdModalOpen] = useState(false);
-  const [adSuccessMsg, setAdSuccessMsg] = useState('');
 
   /* Dynamic Location state from GPS or saved addresses */
   const [ubicacionTexto, setUbicacionTexto] = useState<string>(() => {
@@ -200,15 +197,6 @@ export default function ClientInicio({
   const featuredTiendas = useMemo(() => {
     return (tiendas || []).slice(0, 6);
   }, [tiendas]);
-
-  const handleAdSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setAdSuccessMsg('¡Solicitud enviada! Nuestro equipo comercial te contactará en breve.');
-    setTimeout(() => {
-      setAdSuccessMsg('');
-      setAdModalOpen(false);
-    }, 2500);
-  };
 
   const handleSelectCategoria = (catKey: string) => {
     setExplorarCategoria(catKey as any);
@@ -590,6 +578,7 @@ export default function ClientInicio({
 
         return (
           <div
+            className="lf-inicio-fullbleed"
             style={{
               width: '100%',
               borderRadius: 24,
@@ -1189,7 +1178,7 @@ export default function ClientInicio({
       )}
 
       {/* ── TIENDAS DESTACADAS ── */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div className="lf-inicio-fullbleed" style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingLeft: 16, paddingRight: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h3
             style={{
@@ -1224,7 +1213,7 @@ export default function ClientInicio({
           </button>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(158px, 1fr))', gap: 12 }}>
           {featuredTiendas.map((tienda) => (
             <div
               key={tienda.id}
@@ -1331,195 +1320,6 @@ export default function ClientInicio({
         </div>
       </div>
 
-      {/* ── BANNER PARA NEGOCIOS ── */}
-      <div
-        style={{
-          ...sectionCard,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <span
-            style={{
-              padding: '3px 8px',
-              borderRadius: 6,
-              background: 'var(--primario-soft)',
-              color: 'var(--primario)',
-              fontSize: 10,
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              width: 'fit-content',
-            }}
-          >
-            Para Negocios
-          </span>
-          <h4
-            style={{
-              fontSize: 15,
-              fontWeight: 700,
-              fontFamily: "'Syne', sans-serif",
-              color: 'var(--text)',
-              margin: 0,
-            }}
-          >
-            ¿Tienes una tienda o restaurante?
-          </h4>
-          <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
-            Regístrate en LogiFast y vende a miles de clientes.
-          </p>
-        </div>
-
-        <button
-          onClick={() => setAdModalOpen(true)}
-          style={{
-            ...btnPrimary,
-            minHeight: 44,
-            padding: '10px 16px',
-            fontSize: 13,
-            flexShrink: 0,
-          }}
-        >
-          <Megaphone size={14} /> Anunciarme
-        </button>
-      </div>
-
-      {/* ── MODAL ANUNCIAR NEGOCIO ── */}
-      <AnimatePresence>
-        {adModalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            style={{
-              position: 'fixed',
-              inset: 0,
-              zIndex: 9999,
-              background: 'rgba(0, 0, 0, 0.65)',
-              backdropFilter: 'blur(8px)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: 16,
-            }}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              style={{
-                width: '100%',
-                maxWidth: 400,
-                borderRadius: 'var(--lf-card-radius, 22px)',
-                background: 'var(--surface)',
-                border: '1px solid var(--border)',
-                boxShadow: '0 20px 50px rgba(0,0,0,0.4)',
-                padding: 24,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 16,
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  borderBottom: '1px solid var(--border)',
-                  paddingBottom: 12,
-                }}
-              >
-                <h3
-                  style={{
-                    fontSize: 16,
-                    fontWeight: 700,
-                    fontFamily: "'Syne', sans-serif",
-                    color: 'var(--text)',
-                    margin: 0,
-                  }}
-                >
-                  Anuncia tu Negocio en LogiFast
-                </h3>
-                <button
-                  onClick={() => setAdModalOpen(false)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: 'var(--text-muted)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <X size={20} />
-                </button>
-              </div>
-
-              {adSuccessMsg ? (
-                <div style={{ padding: '24px 0', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <CheckCircle size={40} style={{ color: '#34C759', margin: '0 auto' }} />
-                  <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
-                    {adSuccessMsg}
-                  </p>
-                </div>
-              ) : (
-                <form onSubmit={handleAdSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>
-                      Nombre del Negocio
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Ej: Taquería Los Comadres"
-                      style={inputStyle}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>
-                      Teléfono de Contacto
-                    </label>
-                    <input
-                      type="tel"
-                      required
-                      placeholder="+505 8888-8888"
-                      style={inputStyle}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>
-                      Categoría
-                    </label>
-                    <select style={inputStyle}>
-                      <option value="restaurante">Restaurante / Comida</option>
-                      <option value="supermercado">Mercado / Licorería</option>
-                      <option value="farmacia">Farmacia / Salud</option>
-                      <option value="tienda">Tienda / Comercio</option>
-                    </select>
-                  </div>
-
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, paddingTop: 8 }}>
-                    <button
-                      type="button"
-                      onClick={() => setAdModalOpen(false)}
-                      style={btnGhost}
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      type="submit"
-                      style={btnPrimary}
-                    >
-                      Enviar Solicitud
-                    </button>
-                  </div>
-                </form>
-              )}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
       </div>
     </PullToRefresh>
   );
