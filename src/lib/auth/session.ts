@@ -138,6 +138,11 @@ export function verifyToken(token: string): SessionClaims | null {
   }
 }
 
+/** Firma un token de propósito específico con caducidad corta (p. ej. QR de vinculación del POS). */
+export function signShortToken(payload: object, ttlSeconds: number): string {
+  return jwt.sign(payload, getSecret(), { algorithm: 'HS256', expiresIn: ttlSeconds });
+}
+
 /**
  * Devuelve el usuario de sesión actual verificado contra la base de datos,
  * o null si no hay sesión válida.
