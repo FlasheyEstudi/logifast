@@ -668,7 +668,7 @@ function MapInner({
             onClick={() => setFilterTiendas((p) => !p)}
             style={{
               padding: '4px 10px',
-              minHeight: 40,
+              minHeight: 44,
               borderRadius: 99,
               fontSize: 11,
               fontWeight: 700,
@@ -688,7 +688,7 @@ function MapInner({
             onClick={() => setFilterRepartidores((p) => !p)}
             style={{
               padding: '4px 10px',
-              minHeight: 40,
+              minHeight: 44,
               borderRadius: 99,
               fontSize: 11,
               fontWeight: 700,
@@ -708,7 +708,7 @@ function MapInner({
             onClick={() => setFilterMotos((p) => !p)}
             style={{
               padding: '4px 10px',
-              minHeight: 40,
+              minHeight: 44,
               borderRadius: 99,
               fontSize: 11,
               fontWeight: 700,
@@ -834,7 +834,7 @@ const statusBadge = (status: string) => {
 /* ─── Toggle button style helper ─── */
 const toggleBtnStyle = (active: boolean, isDark: boolean): React.CSSProperties => ({
   display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px',
-  minHeight: 40,
+  minHeight: 44,
   borderRadius: 10,
   background: isDark ? 'rgba(22,27,34,0.9)' : 'rgba(255,255,255,0.9)',
   backdropFilter: 'blur(16px)',
