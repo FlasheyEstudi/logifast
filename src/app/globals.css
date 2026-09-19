@@ -412,10 +412,18 @@ html.dark {
    Base Styles
    ======================================== */
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+/* Reset base. Va DENTRO de @layer base a propósito.
+   Suelto (sin capa) ganaba a TODO lo que está en @layer, incluidas las utilidades
+   de Tailwind (@layer utilities): anulaba cada p-*, px-*, py-*, m-* y mt/mb de
+   la app. Eso es lo que hacía que el portal de tienda se viera apretado: sus
+   tarjetas no tenían padding real. Tailwind ya trae este reset en su preflight;
+   aquí se refuerza, pero en su capa. */
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
 }
 
 html {
