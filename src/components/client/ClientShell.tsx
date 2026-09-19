@@ -77,7 +77,6 @@ import ClientAyuda from './ClientAyuda';
 import ClientPuntos from './ClientPuntos';
 import ClientMiTienda from './ClientMiTienda';
 import ClientTracking from './ClientTracking';
-import LiveTrackingCard from './LiveTrackingCard';
 import ClientChat from './ClientChat';
 import ClientRating from './ClientRating';
 
@@ -482,6 +481,41 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName, i
 
     return null;
   }, [orders, ordenesCompra]);
+
+  /* ─── Notificaciones NATIVAS del sistema por cambios de estado del pedido.
+         Se ven con el celular bloqueado o en la bandeja de notificaciones;
+         no se muestra nada dentro de la app. Sin emojis (texto limpio). ─── */
+  const ultimoEstadoNotifRef = useRef<string>('');
+  useEffect(() => {
+    if (!activeOrder?.id) return;
+    const etiquetas: Record<string, { titulo: string; cuerpo: string }> = {
+      preparando: { titulo: 'Tu pedido está en preparación', cuerpo: 'La tienda ya está preparando tu pedido.' },
+      preparada: { titulo: 'Tu pedido está listo', cuerpo: 'La tienda terminó de preparar tu pedido.' },
+      en_camino: { titulo: 'Tu repartidor va en camino', cuerpo: 'El repartidor va en camino a tu dirección.' },
+      recogido: { titulo: 'Tu pedido fue recogido', cuerpo: 'El repartidor ya recogió tu pedido.' },
+      entregado: { titulo: 'Tu pedido fue entregado', cuerpo: 'Tu pedido fue entregado correctamente.' },
+      cancelado: { titulo: 'Tu pedido fue cancelado', cuerpo: 'Tu pedido fue cancelado.' },
+      incidencia: { titulo: 'Incidencia con tu pedido', cuerpo: 'Se reportó una incidencia con tu pedido.' },
+    };
+    const off = onRealtimeEvent('orden:estado:update', (d: { ordenId?: string; id?: string; estado?: string }) => {
+      const oid = d?.ordenId || d?.id;
+      if (!oid || String(oid) !== String(activeOrder.id) || !d?.estado) return;
+      const estado = String(d.estado).toLowerCase();
+      if (ultimoEstadoNotifRef.current === estado) return;
+      ultimoEstadoNotifRef.current = estado;
+      const et = etiquetas[estado];
+      if (!et) return;
+      dispararNotificacionNativa({
+        titulo: et.titulo,
+        cuerpo: et.cuerpo,
+        canalId: 'logifast_estado',
+        categoriaAcciones: 'ORDEN_ESTADO',
+        tipoAlerta: estado === 'incidencia' || estado === 'cancelado' ? 'alerta' : estado === 'entregado' ? 'exito' : 'orden',
+        mostrarBannerInApp: false,
+      }).catch(() => null);
+    });
+    return off;
+  }, [activeOrder?.id]);
 
   useEffect(() => {
     if (activeOrder?.id) {
@@ -1284,12 +1318,6 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName, i
         </main>
 
         {/* ═══════ NAVBAR FLOTANTE CÁPSULA PREMIUM (CLIENTE) ═══════ */}
-        {/* Tarjeta en vivo del pedido activo (sticky, estilo PedidosYa) */}
-        <LiveTrackingCard
-          order={activeOrder}
-          isDark={isDark}
-          onOpen={() => activeOrder && handleOpenTracking(String(activeOrder.id))}
-        />
         <div
           style={{
             position: 'fixed',

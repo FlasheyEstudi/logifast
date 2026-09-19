@@ -16508,18 +16508,3 @@ body {
   50% { transform: translateY(120px); }
 }
 
-/* Live tracking card del cliente (PedidosYa style) */
-@keyframes lf-slide-up {
-  from { transform: translateY(110%); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-@keyframes lf-slide-right {
-  from { transform: translateX(120%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-}
-@keyframes lf-moto {
-  0%, 100% { transform: translateY(-50%) translateX(-14px); }
-  50% { transform: translateY(-50%) translateX(14px); }
-}
-.lf-live-card { animation: lf-slide-up 0.5s ease-out; }
-.lf-toast { animation: lf-slide-right 0.35s ease-out; }
