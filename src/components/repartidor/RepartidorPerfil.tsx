@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import PerfilSeguridad from '@/components/seguridad/PerfilSeguridad';
 import { notify } from '@/lib/notify';
 import { BarChart, Bar, XAxis, ResponsiveContainer, Cell, Tooltip } from 'recharts';
 import {
@@ -1625,6 +1626,8 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
           label="Centro de ayuda y soporte técnico"
           onClick={() => setShowHelpModal(true)}
         />
+
+        <PerfilSeguridad onLogout={onLogout} />
 
         {/* Cerrar sesión */}
         <button
