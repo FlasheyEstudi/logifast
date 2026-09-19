@@ -77,6 +77,7 @@ import ClientAyuda from './ClientAyuda';
 import ClientPuntos from './ClientPuntos';
 import ClientMiTienda from './ClientMiTienda';
 import ClientTracking from './ClientTracking';
+import LiveTrackingCard from './LiveTrackingCard';
 import ClientChat from './ClientChat';
 import ClientRating from './ClientRating';
 
@@ -1283,6 +1284,12 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName, i
         </main>
 
         {/* ═══════ NAVBAR FLOTANTE CÁPSULA PREMIUM (CLIENTE) ═══════ */}
+        {/* Tarjeta en vivo del pedido activo (sticky, estilo PedidosYa) */}
+        <LiveTrackingCard
+          order={activeOrder}
+          isDark={isDark}
+          onOpen={() => activeOrder && handleOpenTracking(String(activeOrder.id))}
+        />
         <div
           style={{
             position: 'fixed',

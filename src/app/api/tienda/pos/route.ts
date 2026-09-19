@@ -120,12 +120,18 @@ export async function POST(req: NextRequest) {
 
     const comprobanteNum = `POS-${Date.now().toString().slice(-6)}`;
 
+    // PIN único de la factura (4 dígitos): se confirma para autorizar devoluciones.
+    let codigoPin = String(Math.floor(1000 + Math.random() * 9000));
+    const pinDuplicado = await db.ventaPOS.findFirst({ where: { tiendaId: tienda.id, codigoPin } });
+    if (pinDuplicado) codigoPin = String(Math.floor(1000 + Math.random() * 9000));
+
     // 1 y 2. Crear venta y decrementar stock en una transacción atómica (ACID)
     const venta = await db.$transaction(async (tx) => {
       const v = await tx.ventaPOS.create({
         data: {
           tiendaId: tienda.id,
           numeroComprobante: comprobanteNum,
+          codigoPin,
           clienteNombre,
           clienteRuc,
           clienteTelefono,
@@ -217,6 +223,7 @@ export async function POST(req: NextRequest) {
       venta,
       factura: {
         numeroComprobante: comprobanteNum,
+        codigoPin,
         fecha: new Date().toLocaleDateString('es-NI', { dateStyle: 'medium' }),
         hora: new Date().toLocaleTimeString('es-NI', { timeStyle: 'short' }),
         tiendaNombre: tienda.nombre,

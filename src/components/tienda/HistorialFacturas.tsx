@@ -14,6 +14,7 @@ interface ItemFactura {
 interface Factura {
   id: string;
   numeroComprobante: string;
+  codigoPin: string | null;
   createdAt: string;
   total: number;
   subtotal: number;
@@ -202,6 +203,9 @@ export default function HistorialFacturas() {
             </div>
             <div className="border-t border-dashed border-slate-300 my-1" />
             <div className="text-center font-bold">{preview.numeroComprobante}</div>
+            {preview.codigoPin && (
+              <div className="text-center font-bold">PIN: {preview.codigoPin}</div>
+            )}
             <div className="text-center">{new Date(preview.createdAt).toLocaleString('es-NI', { dateStyle: 'medium', timeStyle: 'short' })}</div>
             <div className="text-center">Cliente: {preview.clienteNombre || 'Cliente General'}</div>
             <div className="border-t border-dashed border-slate-300 my-1" />

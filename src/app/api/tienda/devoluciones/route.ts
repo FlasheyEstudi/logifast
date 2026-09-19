@@ -54,12 +54,33 @@ export async function POST(req: NextRequest) {
       referencia = '',
       clienteNombre = 'Cliente General',
       notas = '',
+      pinFactura = '',
     } = body as {
       items?: ItemDevolucionInput[];
       referencia?: string;
       clienteNombre?: string;
       notas?: string;
+      pinFactura?: string;
     };
+
+    // Autorización con el PIN único de la factura original: sin PIN no hay devolución.
+    const pinLimpio = String(pinFactura ?? '').trim();
+    if (!pinLimpio) {
+      return NextResponse.json(
+        { ok: false, error: 'Se requiere el PIN de la factura para autorizar la devolución' },
+        { status: 400 }
+      );
+    }
+    const ventaOrigen = await db.ventaPOS.findFirst({
+      where: { tiendaId: tienda.id, codigoPin: pinLimpio },
+      select: { id: true, numeroComprobante: true },
+    });
+    if (!ventaOrigen) {
+      return NextResponse.json(
+        { ok: false, error: 'PIN de factura inválido: no corresponde a una venta de esta tienda' },
+        { status: 400 }
+      );
+    }
 
     if (!Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ ok: false, error: 'La devolución no contiene productos' }, { status: 400 });

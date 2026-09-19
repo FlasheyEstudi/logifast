@@ -64,6 +64,15 @@ function syncProject(projectName, targetDir, htmlSource) {
   console.log(`  → Instalando index.html nativo desde ${path.basename(htmlSource)}...`);
   fs.copyFileSync(htmlSource, path.join(targetPublic, 'index.html'));
 
+  // 4.4 Escáner del POS como página estática (el celular lo usa dentro de la app)
+  const ESCANER_HTML = path.join(ROOT_DIR, '.next/server/app/escaner.html');
+  if (fs.existsSync(ESCANER_HTML)) {
+    fs.copyFileSync(ESCANER_HTML, path.join(targetPublic, 'escaner.html'));
+    fs.mkdirSync(path.join(targetPublic, 'escaner'), { recursive: true });
+    fs.copyFileSync(ESCANER_HTML, path.join(targetPublic, 'escaner', 'index.html'));
+    console.log('  → Lector del POS instalado (escaner.html)');
+  }
+
   // 4.5 Asegurar soporte nativo de GPS para Huawei (sin Google Play Services)
   const geoJavaDest = path.join(
     targetDir,

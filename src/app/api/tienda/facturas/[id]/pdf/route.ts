@@ -53,6 +53,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   if (tienda.telefono) linea(doc, `Tel: ${tienda.telefono}`, { centro: true, gris: true });
   separador(doc);
   linea(doc, `FACTURA ${venta.numeroComprobante}`, { bold: true, centro: true, tamano: 12 });
+  if (venta.codigoPin) linea(doc, `PIN: ${venta.codigoPin}`, { bold: true, centro: true, tamano: 11 });
   linea(doc, `Fecha: ${venta.createdAt.toLocaleString('es-NI', { dateStyle: 'medium', timeStyle: 'short' })}`, { centro: true, gris: true });
   linea(doc, `Cliente: ${venta.clienteNombre || 'Cliente General'}`, { centro: true });
   separador(doc);

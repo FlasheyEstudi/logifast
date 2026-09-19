@@ -416,6 +416,7 @@ model VentaPOS {
   id                String         @id @default(cuid())
   tiendaId          String
   numeroComprobante String
+  codigoPin         String?
   clienteNombre     String?        @default("Cliente General")
   clienteRuc        String?
   clienteTelefono   String?

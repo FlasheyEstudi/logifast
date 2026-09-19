@@ -28,6 +28,7 @@ export async function GET() {
       facturas: ventas.map((v) => ({
         id: v.id,
         numeroComprobante: v.numeroComprobante,
+        codigoPin: v.codigoPin,
         createdAt: v.createdAt,
         total: v.total,
         subtotal: v.subtotal,

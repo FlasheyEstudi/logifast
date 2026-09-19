@@ -36,6 +36,7 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
   const [referencia, setReferencia] = useState('');
   const [clienteNombre, setClienteNombre] = useState('');
   const [enviando, setEnviando] = useState(false);
+  const [pinFactura, setPinFactura] = useState('');
   const [resultado, setResultado] = useState<ResultadoDevolucion | null>(null);
 
   useEffect(() => {
@@ -97,6 +98,7 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
           })),
           referencia: referencia.trim(),
           clienteNombre: clienteNombre.trim() || undefined,
+          pinFactura: pinFactura.trim(),
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -356,11 +358,21 @@ export function TiendaDevolucion({ abierto, onCerrar, productos, onDevuelto }: P
               {/* Referencia y Cliente */}
               <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                 <Input
+                  value={pinFactura}
+                  onChange={(e) => setPinFactura(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                  placeholder="PIN de la factura (4 dígitos) *"
+                  inputMode="numeric"
+                  className="h-11 rounded-[var(--lf-input-radius)] border-[var(--border)] bg-[var(--bg-alt)] text-xs text-[var(--text)] focus-visible:ring-2 focus-visible:ring-[var(--primario)]"
+                />
+                <Input
                   value={referencia}
                   onChange={(e) => setReferencia(e.target.value)}
                   placeholder="N.º Ticket o Referencia (opcional)"
                   className="h-11 rounded-[var(--lf-input-radius)] border-[var(--border)] bg-[var(--bg-alt)] text-xs text-[var(--text)] focus-visible:ring-2 focus-visible:ring-[var(--primario)]"
                 />
+              </div>
+
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                 <Input
                   value={clienteNombre}
                   onChange={(e) => setClienteNombre(e.target.value)}

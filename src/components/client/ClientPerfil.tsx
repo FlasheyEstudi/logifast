@@ -2050,6 +2050,36 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
 
         <MisFacturas />
 
+        {/* Lector de barras del POS (acceso para dueños de tienda) */}
+        <div style={{ marginTop: 16 }}>
+          <button
+            type="button"
+            onClick={() => {
+              const esApp = !!(window as any).Capacitor?.isNativePlatform?.();
+              window.location.href = esApp ? '/escaner.html' : '/escaner';
+            }}
+            style={{
+              width: '100%',
+              minHeight: 44,
+              borderRadius: 'var(--lf-button-radius, 14px)',
+              border: '1px solid var(--border)',
+              background: 'var(--surface)',
+              color: 'var(--text)',
+              fontSize: 13,
+              fontWeight: 700,
+              fontFamily: "'DM Sans', sans-serif",
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+            }}
+          >
+            <span style={{ fontSize: 16 }}>📷</span>
+            Lector de barras (POS)
+          </button>
+        </div>
+
         <PerfilSeguridad onLogout={onLogout} />
 
         {/* Cerrar sesion */}
