@@ -317,11 +317,24 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
     setEscanerAbierto(true);
     setEscanerQr(null);
     realtime.escanerAbrir(pin);
-    if (origenWeb) {
-      QRCode.toDataURL(`${origenWeb}/escaner?pin=${pin}`, { width: 360, margin: 1 })
-        .then(setEscanerQr)
-        .catch(() => setEscanerQr(null));
-    }
+    // Vinculación persistente (estilo WhatsApp Web):
+    // 1) la caja registra su PIN para que el celular ya vinculado se una solo, sin volver a escanear.
+    fetch('/api/qr-sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pin }),
+    }).catch(() => null);
+    // 2) el QR lleva el TOKEN de vinculación (se escanea UNA sola vez); el PIN queda de respaldo manual.
+    fetch('/api/qr-sync?action=token')
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.token) {
+          QRCode.toDataURL(d.token, { width: 360, margin: 1 })
+            .then(setEscanerQr)
+            .catch(() => setEscanerQr(null));
+        }
+      })
+      .catch(() => setEscanerQr(null));
   };
 
   // ─── Apertura del escáner pedida desde el navbar (bandera + evento) ───
@@ -1027,7 +1040,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
                   className="w-44 h-44 rounded-xl border border-[var(--border)] bg-white"
                 />
                 <p className="text-xs text-[var(--text-muted)] text-center leading-snug">
-                  Escanea este QR con la cámara de tu celular (o abre <b>{origenWeb}/escaner</b> y teclea el PIN).
+                  Escanea este QR <b>una sola vez</b> para vincular tu celular. Después se conectará solo. PIN de respaldo: {escanerPin}
                 </p>
               </div>
             )}

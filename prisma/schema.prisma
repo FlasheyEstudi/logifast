@@ -1182,6 +1182,7 @@ model QrSyncSession {
   userId    String
   tokenHash String   @unique // sha256 del token JWT; nunca se guarda el token crudo
   estado    String   @default("pendiente") // "pendiente" | "vinculado" | "expirado"
+  pinActivo String? // último PIN de sala abierto por la caja (para auto-conectar el celular)
   creadoEn  DateTime @default(now())
   expiraEn  DateTime
 

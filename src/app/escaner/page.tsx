@@ -235,6 +235,33 @@ export default function EscanerPage() {
     }
   }, []);
 
+  // ─── Vinculación persistente: si el celular ya está vinculado a la caja (WhatsApp Web),
+  //      se une SOLO a la sala activa sin volver a escanear el QR. ───
+  useEffect(() => {
+    let vivo = true;
+    const poll = async () => {
+      try {
+        const d = await fetch('/api/qr-sync?action=pin-activo').then((r) => r.json());
+        if (!vivo || !d?.vinculado || !d?.pinActivo) return;
+        const pinLimpio = String(d.pinActivo).replace(/\D/g, '').slice(0, 6);
+        if (pinLimpio.length === 6) {
+          setPin(pinLimpio);
+          pinRef.current = pinLimpio;
+          setEstado('Emparejando…');
+          realtime.escanerUnir(pinLimpio);
+        }
+      } catch {
+        /* reintentar en el siguiente tick */
+      }
+    };
+    poll();
+    const id = setInterval(poll, 4000);
+    return () => {
+      vivo = false;
+      clearInterval(id);
+    };
+  }, []);
+
   const color = (ok: boolean | null) => (ok === null ? 'var(--text-muted)' : ok ? '#22C55E' : '#EF4444');
 
   return (

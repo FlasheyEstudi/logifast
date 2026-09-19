@@ -190,12 +190,29 @@ export function TiendaNavbar({
       }
       const resultado: any = await BarcodeScanner.startScan();
       if (resultado?.hasContent && resultado.content) {
-        const m = String(resultado.content).match(/(?:escaner\?pin=|pin[=:])(\d{6})/i);
-        if (m?.[1]) {
-          realtime.escanerUnir(m[1]);
-          window.location.href = esApp ? `/escaner.html?pin=${m[1]}` : `/escaner?pin=${m[1]}`;
+        const contenido = String(resultado.content).trim();
+        // Token de vinculación (JWT) → vincular cuenta una sola vez (WhatsApp Web).
+        if (/^[A-Za-z0-9._-]{40,}$/.test(contenido)) {
+          const r = await fetch('/api/qr-sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: contenido }),
+          });
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok || !d.ok) {
+            notify.error(d.error || 'No se pudo vincular con la caja.');
+          } else {
+            localStorage.setItem('qr_pos_vinculado', '1');
+            window.location.href = esApp ? '/escaner.html' : '/escaner';
+          }
         } else {
-          notify.error('Ese QR no es del POS. Escanea el código que muestra la caja.');
+          const m = contenido.match(/(?:escaner\?pin=|pin[=:])(\d{6})/i);
+          if (m?.[1]) {
+            realtime.escanerUnir(m[1]);
+            window.location.href = esApp ? `/escaner.html?pin=${m[1]}` : `/escaner?pin=${m[1]}`;
+          } else {
+            notify.error('Ese QR no es del POS. Escanea el código que muestra la caja.');
+          }
         }
       }
       try { await BarcodeScanner.stopScan?.(); } catch { /* ignorar */ }

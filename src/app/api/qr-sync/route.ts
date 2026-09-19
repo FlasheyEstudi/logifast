@@ -62,6 +62,17 @@ export async function GET(req: NextRequest) {
       }
       return NextResponse.json({ estado: fila.estado });
     }
+
+    if (action === 'pin-activo') {
+      const fila = await db.qrSyncSession.findFirst({
+        where: { userId: user.id, estado: 'vinculado' },
+        orderBy: { creadoEn: 'desc' },
+      });
+      return NextResponse.json({
+        vinculado: !!fila,
+        pinActivo: fila?.pinActivo ?? null,
+      });
+    }
   } catch (e) {
     console.error('[QR_SYNC]', e);
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });
@@ -75,6 +86,20 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Sin sesión' }, { status: 401 });
 
   const body = await req.json().catch(() => ({}));
+
+  // La caja (PC/tablet) registra el PIN de su sala abierta para que el celular vinculado se una solo.
+  const pin = typeof body?.pin === 'string' ? body.pin.trim() : '';
+  if (pin && /^\d{6}$/.test(pin)) {
+    const fila = await db.qrSyncSession.findFirst({
+      where: { userId: user.id, estado: 'vinculado' },
+      orderBy: { creadoEn: 'desc' },
+    });
+    if (fila) {
+      await db.qrSyncSession.update({ where: { id: fila.id }, data: { pinActivo: pin } });
+    }
+    return NextResponse.json({ ok: true, pinRegistrado: true });
+  }
+
   const token = typeof body?.token === 'string' ? body.token : '';
 
   if (!token) return NextResponse.json({ error: 'Falta el código QR' }, { status: 400 });
