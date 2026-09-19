@@ -5,13 +5,13 @@ import dynamic from 'next/dynamic';
 import { RoleLoader } from '@/components/ui/loaders';
 import { aplicarTema } from '@/store/configStore';
 
-const ClientShell = dynamic(() => import('@/components/client/ClientShell'), {
+const IngenieroApp = dynamic(() => import('@/components/ingeniero/IngenieroApp'), {
   ssr: false,
-  loading: () => <RoleLoader role="cliente" message="Cargando LogiFast..." />,
+  loading: () => <RoleLoader role="ingeniero" />,
 });
 
-export default function ClienteInicioPage() {
-  const [userName, setUserName] = useState('Cliente');
+export default function IngenieroPage() {
+  const [userName, setUserName] = useState('Ingeniero');
   const [isDark, setIsDark] = useState(true);
 
   useEffect(() => {
@@ -40,5 +40,5 @@ export default function ClienteInicioPage() {
     window.location.href = '/';
   }, []);
 
-  return <ClientShell isDark={isDark} toggleTheme={toggleTheme} onLogout={onLogout} userName={userName} />;
+  return <IngenieroApp isDark={isDark} toggleTheme={toggleTheme} onLogout={onLogout} userName={userName} />;
 }

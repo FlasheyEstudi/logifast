@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { use, useEffect, useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { RoleLoader } from '@/components/ui/loaders';
 import { aplicarTema } from '@/store/configStore';
@@ -10,7 +10,11 @@ const ClientShell = dynamic(() => import('@/components/client/ClientShell'), {
   loading: () => <RoleLoader role="cliente" message="Cargando LogiFast..." />,
 });
 
-export default function ClienteInicioPage() {
+const MODULOS_VALIDOS = ['inicio', 'solicitar', 'explorar', 'envios', 'pedidos', 'puntos', 'perfil'];
+
+export default function ClienteModuloPage({ params }: { params: Promise<{ mod: string }> }) {
+  const { mod } = use(params);
+  const initialModule = (MODULOS_VALIDOS.includes(mod) ? mod : 'inicio') as 'inicio' | 'solicitar' | 'explorar' | 'envios' | 'pedidos' | 'puntos' | 'perfil';
   const [userName, setUserName] = useState('Cliente');
   const [isDark, setIsDark] = useState(true);
 
@@ -40,5 +44,13 @@ export default function ClienteInicioPage() {
     window.location.href = '/';
   }, []);
 
-  return <ClientShell isDark={isDark} toggleTheme={toggleTheme} onLogout={onLogout} userName={userName} />;
+  return (
+    <ClientShell
+      isDark={isDark}
+      toggleTheme={toggleTheme}
+      onLogout={onLogout}
+      userName={userName}
+      initialModule={initialModule}
+    />
+  );
 }

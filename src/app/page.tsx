@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import Dashboard from './dashboard';
 import ClientDashboard from './client-dashboard';
 import dynamic from 'next/dynamic';
@@ -26,6 +27,15 @@ import { ThemeToggleButton } from '@/components/ui/ThemeToggleButton';
 const RepartidorApp = dynamic(() => import('@/components/repartidor/RepartidorApp'), { ssr: false, loading: () => <RoleLoader role="repartidor" /> });
 const IngenieroApp = dynamic(() => import('@/components/ingeniero/IngenieroApp'), { ssr: false, loading: () => <RoleLoader role="ingeniero" /> });
 const TiendaApp = dynamic(() => import('@/components/tienda/TiendaApp'), { ssr: false, loading: () => <RoleLoader role="cliente" /> });
+
+/* Ruta real de panel por rol (sin hash) */
+const ROLE_PATHS: Record<string, string> = {
+  admin: '/dashboard',
+  cliente: '/cliente',
+  repartidor: '/app/repartidor',
+  ingeniero: '/ingeniero',
+  tienda: '/tienda',
+};
 
 /* ═══════════════════════════════════════════════════════
    SVG HIGH-TECH ICONS
@@ -242,6 +252,7 @@ class DashboardErrorBoundary extends React.Component<{ onGoHome: () => void; chi
 export default function Home() {
   /* ─── View state ─── */
   const [currentView, setCurrentView] = useState<'landing' | 'login' | 'register' | 'dashboard'>('landing');
+  const router = useRouter();
   const [viewTransition, setViewTransition] = useState<'enter' | 'exit' | null>(null);
   const [loginRole, setLoginRole] = useState<string>('admin');
   const [loginUserName, setLoginUserName] = useState<string>('Administrador');
@@ -421,8 +432,9 @@ export default function Home() {
         if (savedRole) {
           setLoginRole(savedRole);
           if (savedName) setLoginUserName(savedName);
-          setCurrentView('dashboard');
           document.body.style.overflow = '';
+          router.push(ROLE_PATHS[savedRole] ?? '/dashboard');
+          return;
         } else {
           // Intentar verificar token o cookie del servidor si localStorage no tiene savedRole
           const currentToken = typeof window !== 'undefined' ? localStorage.getItem('lf-jwt-token') : null;
@@ -437,8 +449,8 @@ export default function Home() {
                 setLoginUserName(data.user.name || data.user.email);
                 localStorage.setItem('lf-session-role', data.user.role);
                 localStorage.setItem('lf-session-name', data.user.name || data.user.email);
-                setCurrentView('dashboard');
                 document.body.style.overflow = '';
+                router.push(ROLE_PATHS[data.user.role] ?? '/dashboard');
               } else {
                 setCurrentView('landing');
                 window.location.hash = '#/';
@@ -585,7 +597,7 @@ export default function Home() {
       setLoginLoading(false);
       addToast(`Bienvenido, ${name}`, 'Ingresando al sistema...', 'success');
       setCurrentView('dashboard');
-      window.location.hash = '#/dashboard';
+      router.push(ROLE_PATHS[role] ?? '/dashboard');
     } catch (err) {
       console.error('[LOGIN]', err);
       addToast('Error', 'No se pudo conectar con el servidor', 'error');
@@ -632,7 +644,7 @@ export default function Home() {
       setLoginLoading(false);
       addToast(`Bienvenido, ${name}`, 'Ingresando al sistema...', 'success');
       setCurrentView('dashboard');
-      window.location.hash = '#/dashboard';
+      router.push(ROLE_PATHS[userRole] ?? '/dashboard');
     } catch (err) {
       console.error('[DEMO_LOGIN]', err);
       addToast('Error', 'No se pudo conectar con el servidor', 'error');
@@ -705,11 +717,10 @@ export default function Home() {
       document.body.style.overflow = '';
       addToast(`¡Bienvenido, ${user.name}!`, 'Cuenta creada con éxito', 'success');
       setCurrentView('dashboard');
-      window.location.hash = '#/dashboard';
       // El registro YA deja la sesión creada en el servidor, pero la app todavía tiene
-      // en memoria el perfil de demostración. Se recarga para que arranque leyendo la
-      // sesión real: antes te dejaba en el perfil demo y había que iniciar sesión otra vez.
-      window.location.reload();
+      // en memoria el perfil de demostración. Navegación completa para arrancar leyendo
+      // la sesión real: antes te dejaba en el perfil demo y había que iniciar sesión otra vez.
+      window.location.href = ROLE_PATHS[user.role] ?? '/dashboard';
       return;
     } catch (err) {
       console.error('[REGISTER]', err);
@@ -732,11 +743,11 @@ export default function Home() {
       localStorage.removeItem('lf-session-view');
       localStorage.removeItem('lf-session-role');
       localStorage.removeItem('lf-session-name');
-      window.location.hash = '#/';
     }
     setCurrentView('landing');
     document.body.style.overflow = '';
     addToast('Sesión cerrada', 'Has cerrado sesión correctamente', 'info');
+    router.push('/');
   }, [addToast]);
 
   /* ─── Validation helper execution ─── */
@@ -765,9 +776,9 @@ export default function Home() {
             localStorage.setItem('lf-session-view', 'dashboard');
             localStorage.setItem('lf-session-role', role);
             localStorage.setItem('lf-session-name', name);
-            window.location.hash = '#/dashboard';
           }
           setCurrentView('dashboard');
+          router.push(ROLE_PATHS[role] ?? '/dashboard');
         }}
       />
     );

@@ -102,6 +102,7 @@ interface ClientShellProps {
   toggleTheme: () => void;
   onLogout: () => void;
   userName: string;
+  initialModule?: ClientModuleKey;
 }
 
 /* ═══════════════════════════════════════════════
@@ -260,7 +261,7 @@ const ICONO_POR_TIPO: Record<string, typeof Bell> = {
   te_extranamos: Heart,
 };
 
-export default function ClientShell({ isDark, toggleTheme, onLogout, userName }: ClientShellProps) {
+export default function ClientShell({ isDark, toggleTheme, onLogout, userName, initialModule }: ClientShellProps) {
   const {
     clientActiveModule,
     clientModuleFade,
@@ -509,7 +510,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
 
     // Inicializar estado del historial si es la primera carga
     if (!window.history.state || window.history.state.type !== 'client_module') {
-      window.history.replaceState({ type: 'client_module', module: clientActiveModule }, '', `#/cliente/${clientActiveModule}`);
+      window.history.replaceState({ type: 'client_module', module: clientActiveModule }, '', `/cliente/${clientActiveModule}`);
     }
 
     const handlePopState = (e: PopStateEvent) => {
@@ -559,6 +560,21 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, [clientActiveModule, setClientActiveModule]);
+
+  /* ─── Módulo inicial desde la ruta real (/cliente/<mod>) o hash antiguo ─── */
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    let mod: ClientModuleKey | undefined = initialModule;
+    if (!mod) {
+      const seg = window.location.pathname.split('/').filter(Boolean);
+      if (seg[0] === 'cliente' && seg[1]) mod = seg[1] as ClientModuleKey;
+    }
+    if (!mod && window.location.hash.startsWith('#/cliente/')) {
+      mod = window.location.hash.replace('#/cliente/', '') as ClientModuleKey;
+    }
+    if (mod && mod !== 'inicio') setClientActiveModule(mod);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialModule, setClientActiveModule]);
 
   /* ─── Receptor de Ubicación Compartida Externa (WhatsApp, Telegram, Google Maps) ─── */
   useEffect(() => {
@@ -859,7 +875,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName }:
       if (mod === clientActiveModule) return;
 
       if (pushHistory && typeof window !== 'undefined') {
-        window.history.pushState({ type: 'client_module', module: mod }, '', `#/cliente/${mod}`);
+        window.history.pushState({ type: 'client_module', module: mod }, '', `/cliente/${mod}`);
       }
 
       setClientActiveModule(mod);
