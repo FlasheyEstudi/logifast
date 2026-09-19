@@ -41,6 +41,7 @@ import { Map as MapComponent, MapMarker, MapRoute, MapControls, MarkerContent, M
 import { PinRecogida, PinEntrega, PinTienda } from '@/components/ui/MapPins';
 import { useMapaPuntos } from '@/hooks/useMapaPuntos';
 import { dispararNotificacionNativa } from '@/services/native-notifications';
+import { getTarifasGlobales, type TarifasGlobales } from '@/services/config';
 import { parsearUbicacionCompartida } from '@/lib/location-parser';
 import { Share2, MessageSquare, CheckCircle2 } from 'lucide-react';
 
@@ -940,6 +941,11 @@ function CostCard({ breakdown, showPromo }: { breakdown: CostBreakdown; showProm
 export default function ClientSolicitar({ isDark, userName, onNavigate }: ClientSolicitarProps) {
   const { tiendas: tiendasMapa } = useMapaPuntos();
   const [clientPhone, setClientPhone] = useState('');
+  const [tarifasGlobal, setTarifasGlobal] = useState<TarifasGlobales | null>(null);
+
+  useEffect(() => {
+    getTarifasGlobales().then(setTarifasGlobal).catch(() => null);
+  }, []);
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -1151,6 +1157,13 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
           if (parsed.recargoNocturno) NIGHT_SURCHARGE_CONFIG = Number(parsed.recargoNocturno) || 20;
         }
       }
+      // Fuente única global (AppConfig vía /api/config): pisa cualquier valor legado.
+      if (tarifasGlobal) {
+        PER_KM = tarifasGlobal.costoEnvioKm;
+        BASE = tarifasGlobal.tarifaBase;
+        MIN_PRICE = tarifasGlobal.tarifaMin;
+        NIGHT_SURCHARGE_CONFIG = tarifasGlobal.recargoNocturno;
+      }
     } catch {}
 
     const hasValidCoords =
@@ -1237,7 +1250,7 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
       total,
       estimatedTime: `~${estimatedMinutes} min`,
     };
-  }, [solicitudEnvio, promoDiscount, promoTipo]);
+  }, [solicitudEnvio, promoDiscount, promoTipo, tarifasGlobal]);
 
   /* ─── Step navigation ─── */
   const goToStep = useCallback(

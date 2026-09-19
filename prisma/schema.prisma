@@ -1186,3 +1186,13 @@ model QrSyncSession {
   @@index([estado])
 }
 
+// Configuración global de la plataforma (fila única id=1).
+model AppConfig {
+  id              Int      @id
+  tarifaBase      Float    @default(40)
+  costoEnvioKm    Float    @default(15)
+  tarifaMin       Float    @default(40)
+  recargoNocturno Float    @default(20)
+  updatedAt       DateTime @updatedAt
+}
+

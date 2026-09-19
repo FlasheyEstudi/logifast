@@ -129,14 +129,20 @@ export async function POST(req: NextRequest) {
         },
       }).catch(() => null);
 
+      // Fuente única global: AppConfig (fila id=1). Cliente y repartidor leen de aquí.
+      const base = Number(tarifaBase) || 40;
+      const km = Number(tarifaKm) || 15;
+      const min = Number(tarifaMin) || 40;
+      const nocturno = Number(recargoNocturno) || 20;
+      await db.appConfig.upsert({
+        where: { id: 1 },
+        update: { tarifaBase: base, costoEnvioKm: km, tarifaMin: min, recargoNocturno: nocturno },
+        create: { id: 1, tarifaBase: base, costoEnvioKm: km, tarifaMin: min, recargoNocturno: nocturno },
+      });
+
       return NextResponse.json({
         ok: true,
-        tarifas: {
-          tarifaBase: Number(tarifaBase) || 0,
-          tarifaKm: Number(tarifaKm) || 15,
-          tarifaMin: Number(tarifaMin) || 40,
-          recargoNocturno: Number(recargoNocturno) || 20,
-        },
+        tarifas: { tarifaBase: base, tarifaKm: km, tarifaMin: min, recargoNocturno: nocturno },
       });
     }
 

@@ -150,10 +150,15 @@ export async function POST(req: NextRequest) {
     const kmReales = (Number(body.kmEstimados) > 0) ? Number(body.kmEstimados) : kmCalc;
     const tiempoEstimadoMin = (Number(body.tiempoEstimado) > 0) ? Number(body.tiempoEstimado) : (kmReales > 0 ? calcularTiempoEstimado(kmReales) : 0);
 
-    // Tarifa base C$40 (cubre primeros 2km) + C$15 por km adicional
-    let tarifaCalculada = 40;
+    // Tarifa global desde AppConfig (fila id=1); fallback a los valores históricos.
+    const cfg = await db.appConfig.findUnique({ where: { id: 1 } }).catch(() => null);
+    const TARIFA_BASE = cfg?.tarifaBase ?? 40;
+    const COSTO_KM = cfg?.costoEnvioKm ?? 15;
+
+    // Tarifa base (cubre primeros 2km) + costo por km adicional (configurable por admin)
+    let tarifaCalculada = TARIFA_BASE;
     if (kmReales > 2) {
-      tarifaCalculada += Math.round((kmReales - 2) * 15);
+      tarifaCalculada += Math.round((kmReales - 2) * COSTO_KM);
     }
     if (fragil) tarifaCalculada += 20;
     if (tamano === 'Grande') tarifaCalculada += 30;
