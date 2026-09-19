@@ -708,11 +708,11 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontFamily: "'DM Mono', monospace", fontWeight: 700, fontSize: 14, color: '#fff',
             }}>LF</div>
-            <span className="font-serif" style={{ fontSize: 20, color: 'var(--lf-text-main)', letterSpacing: '-0.02em' }}>LOGIFAST</span>
+            <span className="font-serif lf-dash-brand" style={{ fontSize: 20, color: 'var(--lf-text-main)', letterSpacing: '-0.02em' }}>LOGIFAST</span>
           </div>
 
           {/* Breadcrumb */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 8, paddingLeft: 12, borderLeft: '1px solid var(--lf-border)' }}>
+          <div className="lf-dash-breadcrumb" style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 8, paddingLeft: 12, borderLeft: '1px solid var(--lf-border)' }}>
             <span style={{ fontSize: 12, color: 'var(--lf-text-muted)' }}>Dashboard</span>
             <span style={{ fontSize: 11, color: 'var(--lf-text-muted)' }}>›</span>
             <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--lf-text-main)' }}>{MODULE_LABELS[activeModule]}</span>
@@ -802,6 +802,7 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           {/* Indicador estático: datos reales en tiempo real (P0: simulación eliminada) */}
           <div
+            className="lf-dash-live"
             style={{
               display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 8,
               background: 'rgba(22,163,74,0.08)',
@@ -824,8 +825,9 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
           {/* Command Palette trigger */}
           <button
             onClick={() => setCommandPaletteOpen(true)}
+            className="lf-dash-search"
             style={{
-              height: 36, padding: '0 10px', borderRadius: 8, border: '1px solid var(--lf-border)',
+              height: 44, padding: '0 10px', borderRadius: 8, border: '1px solid var(--lf-border)',
               background: 'var(--lf-surface)', cursor: 'pointer', display: 'flex',
               alignItems: 'center', gap: 6, color: 'var(--lf-text-muted)',
               fontSize: 12, transition: 'all 0.2s',
@@ -840,7 +842,7 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
           <button
             onClick={handleFullscreen}
             style={{
-              width: 36, height: 36, borderRadius: 8, border: '1px solid var(--lf-border)',
+              width: 44, height: 44, borderRadius: 8, border: '1px solid var(--lf-border)',
               background: 'var(--lf-surface)', cursor: 'pointer', display: 'flex',
               alignItems: 'center', justifyContent: 'center', color: 'var(--lf-text-muted)',
             }}
@@ -853,7 +855,7 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
           <button
             onClick={toggleTheme}
             style={{
-              width: 36, height: 36, borderRadius: 8, border: '1px solid var(--lf-border)',
+              width: 44, height: 44, borderRadius: 8, border: '1px solid var(--lf-border)',
               background: 'var(--lf-surface)', cursor: 'pointer', display: 'flex',
               alignItems: 'center', justifyContent: 'center', color: 'var(--lf-text-muted)',
             }}
@@ -867,7 +869,7 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
             <button
               onClick={() => setAvatarOpen((p) => !p)}
               style={{
-                width: 36, height: 36, borderRadius: 8, border: '1px solid var(--lf-border)',
+                width: 44, height: 44, borderRadius: 8, border: '1px solid var(--lf-border)',
                 background: 'var(--lf-primary-soft)', cursor: 'pointer', display: 'flex',
                 alignItems: 'center', justifyContent: 'center',
                 fontFamily: "'DM Mono', monospace", fontWeight: 700, fontSize: 12,
@@ -1193,6 +1195,13 @@ export default function DashboardShell({ isDark, toggleTheme, onLogout }: { isDa
           .lf-dash-bottom-nav { display: flex !important; }
           .lf-fab-container { bottom: 80px !important; }
           .lf-skeleton-side-panel { display: none !important; }
+          .lf-dash-breadcrumb { display: none !important; }
+          .lf-dash-live { display: none !important; }
+          .lf-dash-search span, .lf-dash-search kbd { display: none !important; }
+          .lf-dash-search { width: 44px !important; padding: 0 !important; justify-content: center !important; }
+        }
+        @media (max-width: 480px) {
+          .lf-dash-brand { display: none !important; }
         }
       ` }} />
     </div>

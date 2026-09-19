@@ -155,11 +155,11 @@ export default function IngenieroApp({ onLogout, userName, isDark, toggleTheme }
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontFamily: "'DM Mono', monospace", fontWeight: 700, fontSize: 14, color: '#fff',
             }}>LF</div>
-            <span className="font-serif" style={{ fontSize: 20, color: 'var(--lf-text-main, #1a1a2e)', letterSpacing: '-0.02em', fontWeight: 700 }}>LOGIFAST</span>
+            <span className="font-serif lf-dash-brand" style={{ fontSize: 20, color: 'var(--lf-text-main, #1a1a2e)', letterSpacing: '-0.02em', fontWeight: 700 }}>LOGIFAST</span>
           </div>
 
           {/* Breadcrumb */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 8, paddingLeft: 12, borderLeft: '1px solid var(--lf-border, #e5e7eb)' }}>
+          <div className="lf-dash-breadcrumb" style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 8, paddingLeft: 12, borderLeft: '1px solid var(--lf-border, #e5e7eb)' }}>
             <span style={{ fontSize: 12, color: 'var(--lf-text-muted, #6B7280)' }}>Ingeniería</span>
             <span style={{ fontSize: 11, color: 'var(--lf-text-muted, #6B7280)' }}>›</span>
             <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--lf-text-main, #1a1a2e)' }}>
@@ -209,7 +209,7 @@ export default function IngenieroApp({ onLogout, userName, isDark, toggleTheme }
           <button
             onClick={toggleTheme}
             style={{
-              width: 36, height: 36, borderRadius: 8, border: '1px solid var(--lf-border, #e5e7eb)',
+              width: 44, height: 44, borderRadius: 8, border: '1px solid var(--lf-border, #e5e7eb)',
               background: 'var(--lf-surface, #ffffff)', cursor: 'pointer', display: 'flex',
               alignItems: 'center', justifyContent: 'center', color: 'var(--lf-text-muted, #6B7280)',
             }}
@@ -227,7 +227,7 @@ export default function IngenieroApp({ onLogout, userName, isDark, toggleTheme }
             <button
               onClick={() => setAvatarOpen(!avatarOpen)}
               style={{
-                width: 36, height: 36, borderRadius: 8, border: '1px solid var(--lf-border, #e5e7eb)',
+                width: 44, height: 44, borderRadius: 8, border: '1px solid var(--lf-border, #e5e7eb)',
                 background: 'var(--lf-accent-soft, rgba(255, 87, 34, 0.08))', cursor: 'pointer', display: 'flex',
                 alignItems: 'center', justifyContent: 'center',
                 fontFamily: "'DM Mono', monospace", fontWeight: 700, fontSize: 12,
@@ -402,11 +402,15 @@ export default function IngenieroApp({ onLogout, userName, isDark, toggleTheme }
           .lf-dash-desktop-nav { display: none !important; }
           .lf-dash-bottom-nav { display: flex !important; }
           .ingeniero-content-wrapper { padding-bottom: 72px !important; }
+          .lf-dash-breadcrumb { display: none !important; }
           .flota-lista {
             display: flex !important;
             flex-direction: column !important;
             gap: 12px !important;
           }
+        }
+        @media (max-width: 480px) {
+          .lf-dash-brand { display: none !important; }
         }
       ` }} />
     </div>

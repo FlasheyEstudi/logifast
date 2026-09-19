@@ -668,6 +668,7 @@ function MapInner({
             onClick={() => setFilterTiendas((p) => !p)}
             style={{
               padding: '4px 10px',
+              minHeight: 40,
               borderRadius: 99,
               fontSize: 11,
               fontWeight: 700,
@@ -687,6 +688,7 @@ function MapInner({
             onClick={() => setFilterRepartidores((p) => !p)}
             style={{
               padding: '4px 10px',
+              minHeight: 40,
               borderRadius: 99,
               fontSize: 11,
               fontWeight: 700,
@@ -706,6 +708,7 @@ function MapInner({
             onClick={() => setFilterMotos((p) => !p)}
             style={{
               padding: '4px 10px',
+              minHeight: 40,
               borderRadius: 99,
               fontSize: 11,
               fontWeight: 700,
@@ -741,8 +744,8 @@ function MapInner({
           title="Centrar en Managua"
           className="lf-map-ctrl-btn"
           style={{
-            width: 36,
-            height: 36,
+            width: 44,
+            height: 44,
             borderRadius: 10,
             border: '1px solid var(--lf-border, rgba(255,255,255,0.15))',
             background: isDark ? 'rgba(22,27,34,0.92)' : 'rgba(255,255,255,0.92)',
@@ -762,8 +765,8 @@ function MapInner({
           title="Enfocar todas las motos"
           className="lf-map-ctrl-btn"
           style={{
-            width: 36,
-            height: 36,
+            width: 44,
+            height: 44,
             borderRadius: 10,
             border: '1px solid var(--lf-border, rgba(255,255,255,0.15))',
             background: isDark ? 'rgba(22,27,34,0.92)' : 'rgba(255,255,255,0.92)',
@@ -783,8 +786,8 @@ function MapInner({
           title="Enfocar todas las tiendas"
           className="lf-map-ctrl-btn"
           style={{
-            width: 36,
-            height: 36,
+            width: 44,
+            height: 44,
             borderRadius: 10,
             border: '1px solid var(--lf-border, rgba(255,255,255,0.15))',
             background: isDark ? 'rgba(22,27,34,0.92)' : 'rgba(255,255,255,0.92)',
@@ -831,6 +834,7 @@ const statusBadge = (status: string) => {
 /* ─── Toggle button style helper ─── */
 const toggleBtnStyle = (active: boolean, isDark: boolean): React.CSSProperties => ({
   display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px',
+  minHeight: 40,
   borderRadius: 10,
   background: isDark ? 'rgba(22,27,34,0.9)' : 'rgba(255,255,255,0.9)',
   backdropFilter: 'blur(16px)',
@@ -976,6 +980,7 @@ export default function ModuleOverview({ isDark }: { isDark: boolean }) {
         {/* Map Legend */}
         <div style={{
           position: 'absolute', bottom: 16, left: 16, zIndex: 1000, display: 'flex', gap: 12,
+          flexWrap: 'wrap', maxWidth: 'calc(100% - 32px)',
           padding: '6px 12px', borderRadius: 8,
           background: isDark ? 'rgba(22,27,34,0.9)' : 'rgba(255,255,255,0.9)',
           backdropFilter: 'blur(16px)', border: '1px solid var(--lf-border)',
@@ -1021,7 +1026,7 @@ export default function ModuleOverview({ isDark }: { isDark: boolean }) {
         {/* Panel toggle */}
         {!panelOpen && (
           <button onClick={() => setPanelOpen(true)} style={{
-            position: 'absolute', top: 12, right: 12, zIndex: 1000, width: 36, height: 36,
+            position: 'absolute', top: 12, right: 12, zIndex: 1000, width: 44, height: 44,
             borderRadius: 8, border: '1px solid var(--lf-border)', background: 'var(--lf-surface)',
             cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: 'var(--lf-text-muted)', boxShadow: '0 2px 8px rgba(0,0,0,0.08)',

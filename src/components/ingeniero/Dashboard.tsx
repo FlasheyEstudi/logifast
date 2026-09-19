@@ -58,6 +58,7 @@ export default function Dashboard() {
               onClick={() => store.setTabActiva('inventario')}
               style={{
                 padding: '9px 16px',
+                minHeight: 44,
                 borderRadius: 12,
                 border: '1px solid var(--lf-border, #e5e7eb)',
                 background: 'var(--lf-surface, #ffffff)',
@@ -78,6 +79,7 @@ export default function Dashboard() {
               onClick={() => store.toggleCrearMoto()}
               style={{
                 padding: '9px 16px',
+                minHeight: 44,
                 borderRadius: 12,
                 border: '1px solid var(--lf-border, #e5e7eb)',
                 background: 'var(--lf-surface, #ffffff)',
@@ -98,6 +100,7 @@ export default function Dashboard() {
               onClick={() => store.toggleCrearMantenimiento()}
               style={{
                 padding: '9px 18px',
+                minHeight: 44,
                 borderRadius: 12,
                 border: 'none',
                 background: 'var(--lf-accent, #FF5722)',
@@ -358,7 +361,7 @@ export default function Dashboard() {
               </h3>
               <button
                 onClick={() => store.setTabActiva('mantenimientos')}
-                style={{ background: 'none', border: 'none', color: 'var(--lf-accent, #FF5722)', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+                style={{ background: 'none', border: 'none', color: 'var(--lf-accent, #FF5722)', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, padding: '10px 8px', minHeight: 44 }}
               >
                 <span>Ver todos</span>
                 <ArrowRight size={13} />

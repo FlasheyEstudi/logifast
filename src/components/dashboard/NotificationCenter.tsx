@@ -194,8 +194,8 @@ export default function NotificationCenter({ isOpen, onClose }: NotificationCent
         <button
           onClick={() => setNotificationsOpen(!notificationsOpen)}
           style={{
-            width: 36,
-            height: 36,
+            width: 44,
+            height: 44,
             borderRadius: 8,
             border: '1px solid var(--lf-border)',
             background: 'var(--lf-surface)',
