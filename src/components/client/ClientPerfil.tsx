@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import PerfilSeguridad from '@/components/seguridad/PerfilSeguridad';
+import MisFacturas from '@/components/client/MisFacturas';
 import {
   User, Mail, Phone, MapPin, Edit3, Save, X, Plus, Trash2,
   LogOut, Shield, Bell, Globe, ChevronRight, AlertTriangle,
@@ -2046,6 +2047,8 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
           </div>
           <SonidoToggle />
         </div>
+
+        <MisFacturas />
 
         <PerfilSeguridad onLogout={onLogout} />
 

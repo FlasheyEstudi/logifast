@@ -49,6 +49,7 @@ export async function POST(req: NextRequest) {
       clienteNombre = 'Cliente General',
       clienteRuc = '',
       clienteTelefono = '',
+      clienteId = '',
       metodoPago = 'efectivo',
       descuento = 0,
       montoRecibido = 0,
@@ -136,6 +137,17 @@ export async function POST(req: NextRequest) {
           cambioDado,
           notas,
           vendedorId: user.id,
+          clienteId: typeof clienteId === 'string' && clienteId ? clienteId : null,
+          tiendaZona: (() => {
+            try {
+              const z = JSON.parse(tienda.zonaCobertura || '[]');
+              return z[0] || tienda.direccion;
+            } catch {
+              return tienda.direccion;
+            }
+          })(),
+          tiendaCategoria: tienda.categoria,
+          facturaUrlPdf: '',
           items: {
             create: itemsFormatted.map((it) => ({
               productoId: it.productoId,
@@ -149,6 +161,12 @@ export async function POST(req: NextRequest) {
         include: {
           items: true,
         },
+      });
+
+      // URL canónica del PDF de esta factura (se genera bajo demanda en el endpoint)
+      await tx.ventaPOS.update({
+        where: { id: v.id },
+        data: { facturaUrlPdf: `/api/tienda/facturas/${v.id}/pdf` },
       });
 
       for (const item of itemsFormatted) {
@@ -210,6 +228,7 @@ export async function POST(req: NextRequest) {
         clienteNombre,
         clienteRuc,
         metodoPago,
+        facturaUrlPdf: `/api/tienda/facturas/${venta.id}/pdf`,
         items: itemsFormatted,
         subtotal,
         descuento: descNum,

@@ -428,6 +428,10 @@ model VentaPOS {
   cambioDado        Float          @default(0)
   notas             String?
   vendedorId        String?
+  clienteId         String?
+  tiendaZona        String?
+  tiendaCategoria   String?
+  facturaUrlPdf     String?
   createdAt         DateTime       @default(now())
 
   tienda Tienda         @relation(fields: [tiendaId], references: [id], onDelete: Cascade)

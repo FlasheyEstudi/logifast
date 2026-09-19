@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
+import HistorialFacturas from './HistorialFacturas';
 
 export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
   const [ruc, setRuc] = useState('');
@@ -280,6 +281,8 @@ export function TiendaFacturacion({ isDark }: { isDark: boolean }) {
           </div>
         </CardContent>
       </Card>
+
+      <HistorialFacturas />
     </div>
   );
 }
