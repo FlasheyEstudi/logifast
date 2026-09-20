@@ -16529,19 +16529,27 @@ body {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: contain;
   scrollbar-width: none;
-  scroll-padding-left: var(--lf-gutter);
-  padding-inline: var(--lf-gutter);
   padding-block: 2px;
 }
+/* Los rails se sacan del gutter con margen negativo y devuelven ese espacio como
+   padding interno, de modo que la PRIMERA tarjeta queda alineada con el contenido
+   y la ÚLTIMA puede deslizarse hasta el borde real de la pantalla. */
+.lf-rail-bleed {
+  margin-inline: calc(var(--lf-client-gutter, 16px) * -1);
+  padding-inline: var(--lf-client-gutter, 16px);
+  scroll-padding-left: var(--lf-client-gutter, 16px);
+}
+
 .lf-rail::-webkit-scrollbar { display: none; }
 .lf-rail > * { scroll-snap-align: start; flex: 0 0 auto; }
 
-/* Tarjeta ancha del carrusel principal (casi todo el ancho, con la siguiente asomando) */
-.lf-rail-card { width: min(92vw, 460px); }
+/* Tarjeta ancha del carrusel principal: ocupa casi toda la pantalla y deja asomar
+   la siguiente, que es lo que invita a deslizar. */
+.lf-rail-card { width: calc(100vw - (var(--lf-gutter) * 2) - 28px); }
 /* Tarjeta de tienda / categoría */
-.lf-rail-tile { width: min(64vw, 240px); }
+.lf-rail-tile { width: min(66vw, 250px); }
 /* Tarjeta compacta de producto */
-.lf-rail-prod { width: min(44vw, 176px); }
+.lf-rail-prod { width: min(46vw, 184px); }
 
 /* ── Área táctil mínima (Apple HIG 44pt / Material 48dp) ──
    Todo control interactivo debe poder tocarse sin zoom ni precisión. */
@@ -16570,6 +16578,32 @@ body {
   max-width: 100%;
   margin-inline: auto;
   padding-inline: var(--lf-gutter);
+}
+/* El contenedor del cliente NO lleva padding lateral: cada seccion lo pone.
+   Antes era `paddingLeft/Right: 16` inline, y eso hacia imposible que un carrusel
+   hijo llegara al borde de la pantalla (el margen negativo no puede crecer dentro
+   de un contenedor con padding fijo). */
+.lf-client-inner-pad {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* Bloque de contenido con el gutter normal, para todo lo que no sea carrusel. */
+.lf-block-gutter {
+  padding-inline: var(--lf-client-gutter, 16px);
+}
+
+/* Carrusel a sangre (ver definicion unica mas arriba). */
+@media (min-width: 1024px) {
+  .lf-block-gutter,
+  .lf-client-inner-pad {
+    padding-inline: 32px;
+  }
+  .lf-rail-bleed {
+    margin-inline: -32px;
+    padding-inline: 32px;
+    scroll-padding-left: 32px;
+  }
 }
 /* En tablet se limita para que las líneas no queden larguísimas, pero en teléfono
    el contenido usa TODO el ancho: antes topaba en 640px y dejaba franjas vacías. */

@@ -263,7 +263,6 @@ export default function BannerCard({
             Canjeado
           </span>
         )}
-
         {codigo && estado !== 'disponible' && estado !== 'usado' && onReclamar && (
           <button
             type="button"

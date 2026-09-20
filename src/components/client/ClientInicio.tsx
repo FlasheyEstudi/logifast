@@ -302,6 +302,8 @@ export default function ClientInicio({
           flexDirection: 'column',
           gap: 22,
           fontFamily: "'DM Sans', sans-serif",
+          /* Gutter aqui: los carruseles lo reponen por su cuenta con `.lf-rail-bleed`. */
+          paddingInline: 'var(--lf-client-gutter, 16px)',
         }}
       >
       {/* ── HEADER NATIVO DE BIENVENIDA ── */}
@@ -424,6 +426,7 @@ export default function ClientInicio({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -12 }}
             onClick={() => onOpenTracking(activeOrders[0].id)}
+            className="lf-organic lf-sheen"
             style={{
               ...sectionCard,
               background: 'linear-gradient(135deg, var(--primario) 0%, #D84315 100%)',
@@ -545,8 +548,7 @@ export default function ClientInicio({
       {banners.length > 0 ? (
         <>
           <div
-            className="lf-rail"
-            style={{ marginInline: 'calc(var(--lf-gutter) * -1)' }}
+            className="lf-rail lf-rail-bleed"
             ref={bannerRailRef}
             onScroll={(e) => {
               // El indicador sigue al dedo: antes avanzaba solo por temporizador y
@@ -823,7 +825,7 @@ export default function ClientInicio({
 
           {/* Carrusel horizontal: antes era una columna, así que solo se veía la
               primera publicación y el resto quedaba fuera de pantalla. */}
-          <div className="lf-rail" style={{ marginInline: 'calc(var(--lf-gutter) * -1)' }}>
+          <div className="lf-rail lf-rail-bleed">
             {feedItems.map((item) => {
               const itemStatus = getCuponStatus(item.codigoPromo);
 
@@ -975,14 +977,17 @@ export default function ClientInicio({
                             }
                           }}
                           style={{
-                            padding: '6px 14px',
-                            borderRadius: 8,
+                            padding: '8px 16px',
+                            minHeight: 44,
+                            borderRadius: 999,
                             background: item.tipo === 'novedad' ? 'var(--exito)' : 'var(--primario)',
                             color: '#FFFFFF',
-                            fontSize: 12,
-                            fontWeight: 700,
+                            fontSize: 12.5,
+                            fontWeight: 800,
                             border: 'none',
                             cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
                           }}
                         >
                           {item.botonTexto}
@@ -1022,7 +1027,7 @@ export default function ClientInicio({
           </button>
         </div>
 
-        <div className="lf-rail" style={{ marginInline: 'calc(var(--lf-gutter) * -1)' }}>
+        <div className="lf-rail lf-rail-bleed">
           {featuredTiendas.map((tienda) => (
             <StoreCard
               key={tienda.id}

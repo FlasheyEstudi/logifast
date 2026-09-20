@@ -142,6 +142,21 @@ export default function StoreCard({ tienda, onAbrir, variante = 'rail', distanci
             background: 'linear-gradient(180deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.16) 58%, rgba(0,0,0,0.5) 100%)',
           }}
         />
+        {/* Ola que separa la portada del cuerpo blanco: el corte recto entre la foto
+            y la tarjeta era lo que se veía "impreso". Se dibuja con el color de la
+            superficie, asi el contenido de abajo arranca en curva. */}
+        <div
+          style={{
+            position: 'absolute',
+            left: -2,
+            right: -2,
+            bottom: -1,
+            height: 16,
+            background: 'var(--surface)',
+            borderRadius: '100% 100% 0 0 / 100% 100% 0 0',
+            pointerEvents: 'none',
+          }}
+        />
         {/* Halo de luz sobre el color de la tienda: da volumen sin sombras duras. */}
         <div
           style={{

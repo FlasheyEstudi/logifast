@@ -1309,8 +1309,6 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName, i
             style={{
               maxWidth: 960,
               margin: '0 auto',
-              paddingLeft: 16,
-              paddingRight: 16,
               paddingTop: 4,
               paddingBottom: 16,
             }}
