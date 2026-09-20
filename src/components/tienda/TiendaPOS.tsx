@@ -65,6 +65,9 @@ import CamaraEscaneo from './CamaraEscaneo';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 
+/** Texto del aviso al agregar una línea desde pistola o cámara local. */
+const mensajeAgregado = (nombre: string, cantidad: number) =>
+  cantidad > 1 ? `${nombre} ×${cantidad} agregado` : `${nombre} agregado`;
 
 export function TiendaPOS({ isDark }: { isDark: boolean }) {
   const [productos, setProductos] = useState<Producto[]>([]);
@@ -94,7 +97,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
 
   // Devolución de mercadería (reingreso de stock + Kardex)
   const [devolucionAbierta, setDevolucionAbierta] = useState(false);
-    const manejarCodigoRef = useRef<(codigo: string, origen: 'inalambrico' | 'pistola') => void>(() => {});
+  const manejarCodigoRef = useRef<(codigo: string, origen: 'inalambrico' | 'pistola', cantidad?: number) => void>(() => {});
 
   useEffect(() => {
     setOrigenWeb(window.location.origin);
@@ -119,14 +122,18 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
     cargarProductos();
   }, [cargarProductos]);
 
-  const agregarAlCarrito = (p: Producto) => {
+  /** Agrega `cantidad` unidades de un producto respetando el stock disponible.
+   *  La cantidad la fija el lector (hoja +1 +2 +3) o vale 1 para la pistola/teclado. */
+  const agregarAlCarrito = useCallback((p: Producto, cantidad = 1) => {
+    const n = Math.max(1, Math.min(999, Math.round(Number(cantidad) || 1)));
     const stockDisponible = p.stock ?? null;
 
     if (stockDisponible !== null) {
       const enCarrito = carrito.find((it) => it.producto.id === p.id)?.cantidad ?? 0;
-      if (stockDisponible <= 0 || enCarrito + 1 > stockDisponible) {
-        notify.warning(`Stock insuficiente para "${p.nombre}". Disponible: ${stockDisponible}`);
-        return;
+      if (stockDisponible <= 0 || enCarrito + n > stockDisponible) {
+        const disponibles = Math.max(0, stockDisponible - enCarrito);
+        notify.warning(`Stock insuficiente para "${p.nombre}". Disponible: ${disponibles}`);
+        return false;
       }
     }
 
@@ -135,29 +142,39 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
       if (existe) {
         return prev.map((it) =>
           it.producto.id === p.id
-            ? { ...it, cantidad: it.cantidad + 1, subtotal: (it.cantidad + 1) * it.precioUnitario }
+            ? { ...it, cantidad: it.cantidad + n, subtotal: (it.cantidad + n) * it.precioUnitario }
             : it
         );
       }
       return [
         ...prev,
-        { producto: p, cantidad: 1, precioUnitario: p.precio, subtotal: p.precio },
+        { producto: p, cantidad: n, precioUnitario: p.precio, subtotal: p.precio * n },
       ];
     });
-  };
+    return true;
+  }, [carrito]);
 
   // ─── Escáner: resolver un código contra el catálogo y agregarlo a la venta ───
+  // `cantidad` llega de la hoja de cantidad del celular (el POS solo cobra); el POS
+  // devuelve al lector la ficha del producto para que muestre nombre, precio y stock.
   const manejarCodigo = useCallback(
-    (codigoCrudo: string, origen: 'inalambrico' | 'pistola') => {
+    (codigoCrudo: string, origen: 'inalambrico' | 'pistola', cantidad = 1) => {
       const codigo = String(codigoCrudo ?? '').trim();
       if (!codigo) return;
       const encontrados = productos.filter(
         (p) => (p.codigoBarras && p.codigoBarras.trim() === codigo) || p.id === codigo || `ID${p.id}` === codigo
       );
+      const ficha = (p: Producto) => ({
+        precio: p.precio,
+        stock: p.stock ?? null,
+        imagenUrl: p.imagenUrl ?? p.portadaUrl ?? null,
+      });
+
       if (encontrados.length === 1) {
-        agregarAlCarrito(encontrados[0]);
-        if (origen === 'pistola') notify.success(`${encontrados[0].nombre} agregado`);
-        responderCodigo(codigo, true, encontrados[0].nombre);
+        const p = encontrados[0];
+        agregarAlCarrito(p, cantidad);
+        if (origen === 'pistola') notify.success(mensajeAgregado(p.nombre, cantidad));
+        responderCodigo(codigo, true, p.nombre, ficha(p));
         return;
       }
 
@@ -166,17 +183,18 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
         notify.warning(`Código ${codigo}: sin producto registrado`);
         responderCodigo(codigo, false, null);
       } else {
+        // Varios productos comparten el código: decide el cajero en la lista, no el escáner.
         responderCodigo(codigo, true, null);
       }
     },
-    [productos, carrito]
+    [productos, agregarAlCarrito]
   );
 
   useEffect(() => {
     manejarCodigoRef.current = manejarCodigo;
   }, [manejarCodigo]);
 
-  // ─── Escaneo con cámara (único botón "Escanear"): plugin nativo en la app, zxing en web ───
+  // ─── Escaneo con cámara (único botón "Escanear"): el visor de la app siempre suma 1 ───
   const procesarCodigoEscaneado = useCallback(
     (crudo: string) => {
       const codigo = String(crudo ?? '').trim();
@@ -236,7 +254,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
   useEffect(() => {
     iniciarPosScanner();
     const offEstado = onEstadoPos(setLectorConectado);
-    const offCodigo = onCodigoPos((codigo) => manejarCodigoRef.current(codigo, 'inalambrico'));
+    const offCodigo = onCodigoPos((codigo, cantidad) => manejarCodigoRef.current(codigo, 'inalambrico', cantidad));
     return () => {
       offEstado();
       offCodigo();
@@ -727,7 +745,7 @@ export function TiendaPOS({ isDark }: { isDark: boolean }) {
               return (
                 <div
                   key={p.id}
-                  onClick={() => !sinStock && agregarAlCarrito(p)}
+                  onClick={() => !sinStock && agregarAlCarrito(p, 1)}
                   className={`group relative flex flex-col transition-all duration-200 overflow-hidden cursor-pointer active:scale-[0.98] rounded-[var(--lf-card-radius)] bg-[var(--surface)] ${
                     enCarritoCant > 0
                       ? 'border-2 border-primary shadow-[var(--lf-shadow-card)] shadow-primary/15'
