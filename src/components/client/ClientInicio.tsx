@@ -603,21 +603,67 @@ export default function ClientInicio({
           )}
         </>
       ) : (
-        /* Sin banners activos en el sistema: se deja el espacio preparado sin
-           inventar una promoción que no existe. El administrador lo llena desde
-           Marketing (GET /api/banners) y aparece aquí automáticamente. */
+        /* Sin banners activos en el sistema: se deja el espacio preparado con
+           diseño orgánico de olas sin inventar promociones falsas. */
         <div
-          className="lf-empty lf-nudge-up"
-          style={{ background: 'var(--bg-alt)', borderStyle: 'solid', padding: '24px 20px' }}
+          className="lf-nudge-up"
+          style={{
+            position: 'relative',
+            borderRadius: '28px 28px 28px 12px',
+            overflow: 'hidden',
+            background: 'linear-gradient(135deg, var(--surface) 0%, var(--bg-alt) 100%)',
+            border: '1px solid var(--border)',
+            padding: '24px 20px',
+            boxShadow: 'var(--lf-shadow-card)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            textAlign: 'center',
+            gap: 8,
+          }}
         >
-          <div className="lf-empty-icon" style={{ width: 46, height: 46 }}>
-            <Sparkles size={20} />
+          {/* Ola suave decorativa en el fondo */}
+          <svg
+            viewBox="0 0 500 120"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              bottom: 0,
+              width: '100%',
+              height: 48,
+              pointerEvents: 'none',
+              opacity: 0.12,
+            }}
+          >
+            <path
+              d="M 0,50 Q 140,10 260,60 T 500,40 L 500,120 L 0,120 Z"
+              fill="var(--primario)"
+            />
+          </svg>
+          <div
+            style={{
+              position: 'relative',
+              zIndex: 1,
+              width: 48,
+              height: 48,
+              borderRadius: '50%',
+              background: 'var(--primario-soft)',
+              color: 'var(--primario)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Sparkles size={22} />
           </div>
-          <div style={{ fontSize: 14, fontWeight: 800, fontFamily: "'Syne', sans-serif", color: 'var(--text)' }}>
+          <div style={{ position: 'relative', zIndex: 1, fontSize: 15, fontWeight: 800, fontFamily: "'Syne', sans-serif", color: 'var(--text)' }}>
             Pronto habrá promociones aquí
           </div>
-          <div className="lf-caption" style={{ maxWidth: 260 }}>
-            Los banners y campañas que publique LogiFast aparecerán en este espacio.
+          <div style={{ position: 'relative', zIndex: 1, fontSize: 12.5, color: 'var(--text-secondary)', maxWidth: 280, lineHeight: 1.4 }}>
+            Los banners y campañas que publique LogiFast aparecerán en este espacio con beneficios exclusivos.
           </div>
         </div>
       )}
@@ -846,49 +892,88 @@ export default function ClientInicio({
               return (
                 <div
                   key={item.id}
-                  className="lf-press lf-organic-soft lf-rail-card lf-sheen"
+                  className="lf-press lf-rail-card lf-sheen"
                   style={{
-                    padding: '14px 16px',
+                    padding: '16px 18px',
                     position: 'relative',
-                    /* Velo de color del tipo arriba: rompe el blanco plano. */
-                    background: `linear-gradient(160deg, ${acentoFeed}1F 0%, transparent 46%), var(--surface)`,
-                    border: `1px solid ${acentoFeed}33`,
+                    /* Borde orgánico asimétrico suave */
+                    borderRadius: '26px 26px 26px 12px',
+                    background: 'var(--surface)',
+                    border: `1px solid ${acentoFeed}38`,
                     boxShadow: 'var(--lf-shadow-card)',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: 10,
+                    gap: 12,
                     overflow: 'hidden',
                     boxSizing: 'border-box',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                  {/* Ola fluida orgánica en la cabecera del anuncio */}
+                  <svg
+                    viewBox="0 0 400 95"
+                    preserveAspectRatio="none"
+                    aria-hidden="true"
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      width: '100%',
+                      height: 72,
+                      pointerEvents: 'none',
+                      zIndex: 0,
+                    }}
+                  >
+                    <defs>
+                      <linearGradient id={`wave-bg-${item.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor={acentoFeed} stopOpacity="0.25" />
+                        <stop offset="65%" stopColor={acentoFeed} stopOpacity="0.08" />
+                        <stop offset="100%" stopColor={acentoFeed} stopOpacity="0.01" />
+                      </linearGradient>
+                      <linearGradient id={`wave-sub-${item.id}`} x1="0%" y1="0%" x2="100%" y2="80%">
+                        <stop offset="0%" stopColor={acentoFeed} stopOpacity="0.14" />
+                        <stop offset="100%" stopColor={acentoFeed} stopOpacity="0.03" />
+                      </linearGradient>
+                    </defs>
+                    <path
+                      d="M 0,0 L 400,0 L 400,48 Q 280,78 180,45 T 0,55 Z"
+                      fill={`url(#wave-sub-${item.id})`}
+                    />
+                    <path
+                      d="M 0,0 L 400,0 L 400,34 Q 300,66 170,32 T 0,44 Z"
+                      fill={`url(#wave-bg-${item.id})`}
+                    />
+                  </svg>
+
+                  <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <span
                         style={{
-                          padding: '4px 10px',
+                          padding: '4px 11px',
                           borderRadius: 999,
-                          background: `${acentoFeed}22`,
+                          background: `${acentoFeed}24`,
+                          border: `1px solid ${acentoFeed}44`,
                           color: acentoFeed,
                           fontSize: 10,
                           fontWeight: 800,
                           textTransform: 'uppercase',
-                          letterSpacing: 0.5,
+                          letterSpacing: 0.6,
                         }}
                       >
                         {item.tipo}
                       </span>
-                      <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', fontFamily: "'Syne', sans-serif" }}>
+                      <span style={{ fontSize: 14.5, fontWeight: 800, color: 'var(--text)', fontFamily: "'Syne', sans-serif" }}>
                         {item.titulo}
                       </span>
                     </div>
                   </div>
 
-                  <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.45 }}>
+                  <p style={{ position: 'relative', zIndex: 1, fontSize: 13, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.45 }}>
                     {item.descripcion}
                   </p>
 
                   {(item.codigoPromo || item.botonTexto) && (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingTop: 6, flexWrap: 'wrap', borderTop: '1px solid var(--border)' }}>
+                    <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingTop: 8, flexWrap: 'wrap', borderTop: '1px solid var(--border)' }}>
                       {item.codigoPromo ? (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                           <span
@@ -896,8 +981,8 @@ export default function ClientInicio({
                               display: 'inline-flex',
                               alignItems: 'center',
                               gap: 5,
-                              padding: '5px 10px',
-                              borderRadius: 8,
+                              padding: '5px 11px',
+                              borderRadius: 999,
                               background: 'var(--primario-soft)',
                               border: '1px dashed var(--primario)',
                               color: 'var(--primario)',
@@ -915,9 +1000,9 @@ export default function ClientInicio({
                                 display: 'inline-flex',
                                 alignItems: 'center',
                                 gap: 4,
-                                padding: '4px 10px',
-                                borderRadius: 8,
-                                background: 'rgba(52, 199, 89, 0.12)',
+                                padding: '5px 12px',
+                                borderRadius: 999,
+                                background: 'rgba(52, 199, 89, 0.14)',
                                 color: '#16A34A',
                                 fontSize: 11,
                                 fontWeight: 800,
@@ -936,18 +1021,20 @@ export default function ClientInicio({
                                 titulo: item.titulo,
                                 descripcion: item.descripcion,
                               })}
+                              className="lf-press"
                               style={{
                                 display: 'inline-flex',
                                 alignItems: 'center',
                                 gap: 5,
-                                padding: '6px 12px',
-                                borderRadius: 8,
+                                padding: '7px 14px',
+                                borderRadius: 999,
                                 background: 'var(--primario)',
                                 color: '#FFFFFF',
                                 border: 'none',
                                 fontSize: 12,
                                 fontWeight: 700,
                                 cursor: 'pointer',
+                                boxShadow: '0 4px 12px rgba(255, 87, 34, 0.25)',
                               }}
                             >
                               <Wallet size={12} /> Guardar en Billetera

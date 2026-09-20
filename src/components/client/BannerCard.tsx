@@ -108,20 +108,70 @@ export default function BannerCard({
       style={{
         position: 'relative',
         width: '100%',
-        minHeight: 178,
-        /* Forma orgánica: una esquina "levantada" en vez de un rectángulo parejo. */
-        borderRadius: '28px 28px 28px 10px',
+        minHeight: 182,
+        /* Forma orgánica: bordes fluidos con esquina libre y elevación suave */
+        borderRadius: '30px 30px 30px 12px',
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        gap: 12,
-        padding: '18px 18px',
-        boxShadow: '0 12px 30px rgba(0, 0, 0, 0.16)',
+        gap: 14,
+        padding: '18px 20px 20px',
+        boxShadow: '0 14px 34px -8px rgba(0, 0, 0, 0.22)',
         ...fondoDe(banner),
         color: colorTexto,
       }}
     >
+      {/* Halo orgánico superior para profundidad de luz */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          top: -45,
+          right: -35,
+          width: 170,
+          height: 170,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0) 70%)',
+          pointerEvents: 'none',
+          filter: 'blur(8px)',
+          zIndex: 1,
+        }}
+      />
+
+      {/* Olas orgánicas en capas: dan volumen y movimiento fluido sin imágenes pesadas */}
+      <svg
+        viewBox="0 0 500 160"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100%',
+          height: '65%',
+          pointerEvents: 'none',
+          zIndex: 1,
+        }}
+      >
+        {/* Capa de ola 1: profunda */}
+        <path
+          d="M 0,85 C 130,30 240,95 380,50 C 430,35 470,42 500,52 L 500,160 L 0,160 Z"
+          fill="rgba(255, 255, 255, 0.08)"
+        />
+        {/* Capa de ola 2: intermedia ondulante */}
+        <path
+          d="M 0,110 C 140,65 260,115 390,75 C 440,60 475,70 500,80 L 500,160 L 0,160 Z"
+          fill="rgba(255, 255, 255, 0.12)"
+        />
+        {/* Capa de ola 3: cresta delantera translúcida */}
+        <path
+          d="M 0,132 C 160,95 300,135 410,105 C 455,92 480,102 500,110 L 500,160 L 0,160 Z"
+          fill="rgba(255, 255, 255, 0.07)"
+        />
+      </svg>
+
       {banner.imagenUrl && (
         <>
           <img
@@ -140,16 +190,16 @@ export default function BannerCard({
         </>
       )}
 
-      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+      <div style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
         <span
           style={{
             display: 'inline-flex',
             alignItems: 'center',
             gap: 5,
-            padding: '4px 11px',
+            padding: '5px 12px',
             borderRadius: 999,
             background: 'rgba(255,255,255,0.22)',
-            border: '1px solid rgba(255,255,255,0.3)',
+            border: '1px solid rgba(255,255,255,0.35)',
             fontSize: 10.5,
             fontWeight: 800,
             letterSpacing: 0.6,
@@ -167,7 +217,7 @@ export default function BannerCard({
         )}
       </div>
 
-      <div style={{ position: 'relative' }}>
+      <div style={{ position: 'relative', zIndex: 2 }}>
         <h2
           style={{
             fontFamily: "'Syne', sans-serif",
@@ -198,7 +248,7 @@ export default function BannerCard({
         )}
       </div>
 
-      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+      <div style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
         <button
           type="button"
           onClick={() => onAccion(banner)}
@@ -206,9 +256,9 @@ export default function BannerCard({
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: 5,
-            padding: '9px 16px',
-            borderRadius: 12,
+            gap: 6,
+            padding: '10px 18px',
+            borderRadius: 999,
             border: 'none',
             background: '#FFFFFF',
             color: '#0F172A',
@@ -216,7 +266,7 @@ export default function BannerCard({
             fontWeight: 800,
             fontFamily: "'DM Sans', sans-serif",
             cursor: 'pointer',
-            boxShadow: '0 4px 14px rgba(0,0,0,0.2)',
+            boxShadow: '0 6px 18px rgba(0,0,0,0.18)',
           }}
         >
           {banner.botonTexto || 'Aprovechar'}
