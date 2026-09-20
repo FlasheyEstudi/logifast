@@ -1632,6 +1632,20 @@ export default function Home() {
             </div>
           </section>
 
+          {/* ─── OLA ORGÁNICA: HERO → CÓMO FUNCIONA ─── */}
+          <div style={{ position: 'relative', width: '100%', overflow: 'hidden', lineHeight: 0, marginBottom: -1 }}>
+            <svg viewBox="0 0 1200 64" preserveAspectRatio="none" aria-hidden="true" style={{ width: '100%', height: 44, display: 'block' }}>
+              <path
+                d="M0,20 C240,54 440,2 660,34 C880,66 1040,16 1200,30 L1200,64 L0,64 Z"
+                fill="rgba(255, 87, 34, 0.12)"
+              />
+              <path
+                d="M0,36 C220,66 460,20 700,48 C920,72 1060,30 1200,42 L1200,64 L0,64 Z"
+                fill="var(--bg-alt)"
+              />
+            </svg>
+          </div>
+
           {/* ─── SECTION: CÓMO FUNCIONA ─── */}
           <section className="apple-section border-t border-[var(--border)]">
             <div className="apple-section-header">
@@ -1665,6 +1679,20 @@ export default function Home() {
             </div>
           </section>
 
+          {/* ─── OLA ORGÁNICA: CÓMO FUNCIONA → CONSOLA ─── */}
+          <div style={{ position: 'relative', width: '100%', overflow: 'hidden', lineHeight: 0, marginBottom: -1 }}>
+            <svg viewBox="0 0 1200 64" preserveAspectRatio="none" aria-hidden="true" style={{ width: '100%', height: 44, display: 'block' }}>
+              <path
+                d="M0,0 L1200,0 L1200,24 C1040,52 860,8 640,38 C420,68 200,16 0,36 Z"
+                fill="var(--bg-alt)"
+              />
+              <path
+                d="M0,0 L1200,0 L1200,12 C1060,38 880,0 660,24 C440,48 220,8 0,22 Z"
+                fill="rgba(0, 102, 255, 0.1)"
+              />
+            </svg>
+          </div>
+
             {/* Premium Mockup Widget */}
           <section className="apple-section border-t border-[var(--border)]">
             <div className="apple-section-header">
@@ -1678,25 +1706,29 @@ export default function Home() {
             </div>
             <div className="apple-mockup-frame border-[var(--border)] shadow-2xl">
               <div className="apple-mockup-screen flex flex-col justify-between p-5 bg-[var(--bg-alt)]">
-                <div className="flex justify-between items-center text-[var(--text)]/90">
+                <div className="flex justify-between items-center border-b border-white/5 pb-3">
                   <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 bg-success rounded-full animate-ping" />
-                    <span className="text-[10px] font-bold tracking-wider uppercase">Operaciones de Flota Activas</span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#00C853] animate-pulse"></span>
+                    <span className="text-xs font-mono font-bold text-white tracking-wider">RADAR ACTIVO • 12 MOTORIZADOS</span>
                   </div>
-                  <span className="text-[9px] text-gray-400 font-mono">Consola GPS Satelital</span>
+                  <span className="text-[11px] font-mono text-gray-500">12.1364° N, 86.2514° W</span>
                 </div>
-
-                {/* Radar Grid and sweep animation */}
-                <div className="relative flex-grow flex items-center justify-center overflow-hidden my-3 bg-slate-950/40 border border-slate-900/60 rounded-xl">
-                  <div className="radar-sweep" />
-                  <div className="radar-circle w-20 h-20" />
-                  <div className="radar-circle w-40 h-40" />
-                  <div className="radar-circle w-60 h-60" />
+                
+                {/* Visual radar field */}
+                <div className="h-44 my-4 relative flex items-center justify-center border border-white/5 rounded-xl overflow-hidden bg-[#0A0A10]">
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,102,255,0.15)_0%,transparent_70%)]" />
+                  <div className="w-32 h-32 rounded-full border border-[#0066FF]/20 animate-ping absolute" />
+                  <div className="w-20 h-20 rounded-full border border-[#0066FF]/40 absolute" />
                   
-                  {/* Blinking points */}
-                  <div className="absolute top-1/4 left-1/3 w-2.5 h-2.5 bg-success rounded-full shadow-[0_0_10px_#00c853]" style={{ animation: 'pulse-dot 1.4s infinite' }} />
-                  <div className="absolute bottom-1/3 right-1/4 w-2.5 h-2.5 bg-success rounded-full shadow-[0_0_10px_#00c853]" style={{ animation: 'pulse-dot 1.9s infinite' }} />
-                  <div className="absolute top-1/2 right-1/3 w-2.5 h-2.5 bg-warning rounded-full shadow-[0_0_10px_#ffb300]" style={{ animation: 'pulse-dot 1.1s infinite' }} />
+                  {/* Blips */}
+                  <div className="absolute top-10 left-16 flex items-center gap-1.5 bg-[#0066FF]/20 border border-[#0066FF]/50 px-2 py-0.5 rounded-full">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#0066FF]"></span>
+                    <span className="text-[9px] font-mono text-blue-300">MOTO-04</span>
+                  </div>
+                  <div className="absolute bottom-8 right-20 flex items-center gap-1.5 bg-[#00C853]/20 border border-[#00C853]/50 px-2 py-0.5 rounded-full">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#00C853]"></span>
+                    <span className="text-[9px] font-mono text-green-300">MOTO-09 (En Ruta)</span>
+                  </div>
                   
                   <span className="absolute bottom-3 text-[8.5px] text-slate-500 font-mono tracking-widest">
                     ZONA METROPOLITANA MANAGUA
@@ -1705,6 +1737,20 @@ export default function Home() {
               </div>
             </div>
           </section>
+
+          {/* ─── OLA ORGÁNICA: CONSOLA → ROLES & HERRAMIENTAS ─── */}
+          <div style={{ position: 'relative', width: '100%', overflow: 'hidden', lineHeight: 0, marginBottom: -1 }}>
+            <svg viewBox="0 0 1200 64" preserveAspectRatio="none" aria-hidden="true" style={{ width: '100%', height: 44, display: 'block' }}>
+              <path
+                d="M0,20 C240,54 440,2 660,34 C880,66 1040,16 1200,30 L1200,64 L0,64 Z"
+                fill="rgba(0, 102, 255, 0.14)"
+              />
+              <path
+                d="M0,36 C220,66 460,20 700,48 C920,72 1060,30 1200,42 L1200,64 L0,64 Z"
+                fill="var(--surface)"
+              />
+            </svg>
+          </div>
 
           {/* ─── BENTO FEATURES SECTION ─── */}
           <section className="apple-section border-t border-[var(--border)]" id="features">
@@ -1777,6 +1823,20 @@ export default function Home() {
             </div>
           </section>
 
+          {/* ─── OLA ORGÁNICA: ROLES → CALCULADORA ─── */}
+          <div style={{ position: 'relative', width: '100%', overflow: 'hidden', lineHeight: 0, marginBottom: -1 }}>
+            <svg viewBox="0 0 1200 64" preserveAspectRatio="none" aria-hidden="true" style={{ width: '100%', height: 44, display: 'block' }}>
+              <path
+                d="M0,0 L1200,0 L1200,24 C1040,52 860,8 640,38 C420,68 200,16 0,36 Z"
+                fill="var(--surface)"
+              />
+              <path
+                d="M0,0 L1200,0 L1200,12 C1060,38 880,0 660,24 C440,48 220,8 0,22 Z"
+                fill="rgba(0, 102, 255, 0.12)"
+              />
+            </svg>
+          </div>
+
           {/* ─── INTERACTIVE COST CALCULATOR SECTION ─── */}
           <section className="apple-section border-t border-[var(--border)]" id="calculator">
             <div className="apple-section-header">
@@ -1842,6 +1902,20 @@ export default function Home() {
             </div>
           </section>
 
+          {/* ─── OLA ORGÁNICA: CALCULADORA → PROCESO ─── */}
+          <div style={{ position: 'relative', width: '100%', overflow: 'hidden', lineHeight: 0, marginBottom: -1 }}>
+            <svg viewBox="0 0 1200 64" preserveAspectRatio="none" aria-hidden="true" style={{ width: '100%', height: 44, display: 'block' }}>
+              <path
+                d="M0,20 C240,54 440,2 660,34 C880,66 1040,16 1200,30 L1200,64 L0,64 Z"
+                fill="rgba(0, 102, 255, 0.12)"
+              />
+              <path
+                d="M0,36 C220,66 460,20 700,48 C920,72 1060,30 1200,42 L1200,64 L0,64 Z"
+                fill="var(--bg)"
+              />
+            </svg>
+          </div>
+
           {/* ─── PROCESS STEPS SECTION ─── */}
           <section className="apple-section border-t border-[var(--border)]" id="how-it-works">
             <div className="apple-section-header">
@@ -1873,10 +1947,17 @@ export default function Home() {
             </div>
           </section>
 
-          {/* ─── WAVE TRANSITION ─── */}
+          {/* ─── OLA ORGÁNICA FLUIDA DUAL: PROCESO → PLANES ─── */}
           <div style={{ position: 'relative', width: '100%', overflow: 'hidden', lineHeight: 0, bottom: -1 }}>
-            <svg viewBox="0 0 500 24" preserveAspectRatio="none" aria-hidden="true" style={{ width: '100%', height: 24, display: 'block' }}>
-              <path d="M0,0 C150,24 350,0 500,16 L500,24 L0,24 Z" fill="var(--surface)" />
+            <svg viewBox="0 0 1200 64" preserveAspectRatio="none" aria-hidden="true" style={{ width: '100%', height: 48, display: 'block' }}>
+              <path
+                d="M0,20 C240,54 440,2 660,34 C880,66 1040,16 1200,30 L1200,64 L0,64 Z"
+                fill="rgba(0, 102, 255, 0.16)"
+              />
+              <path
+                d="M0,36 C220,66 460,20 700,48 C920,72 1060,30 1200,42 L1200,64 L0,64 Z"
+                fill="var(--surface)"
+              />
             </svg>
           </div>
 
@@ -2045,10 +2126,17 @@ export default function Home() {
             </div>
           </section>
 
-          {/* ─── WAVE TRANSITION INTO ALLIES ─── */}
+          {/* ─── OLA ORGÁNICA FLUIDA DUAL: PLANES → ALIANZAS ─── */}
           <div style={{ position: 'relative', width: '100%', overflow: 'hidden', lineHeight: 0, bottom: -1 }}>
-            <svg viewBox="0 0 500 24" preserveAspectRatio="none" aria-hidden="true" style={{ width: '100%', height: 24, display: 'block' }}>
-              <path d="M0,16 C150,0 350,24 500,0 L500,24 L0,24 Z" fill="var(--bg)" />
+            <svg viewBox="0 0 1200 64" preserveAspectRatio="none" aria-hidden="true" style={{ width: '100%', height: 48, display: 'block' }}>
+              <path
+                d="M0,0 L1200,0 L1200,24 C1040,52 860,8 640,38 C420,68 200,16 0,36 Z"
+                fill="var(--surface)"
+              />
+              <path
+                d="M0,0 L1200,0 L1200,12 C1060,38 880,0 660,24 C440,48 220,8 0,22 Z"
+                fill="rgba(0, 102, 255, 0.16)"
+              />
             </svg>
           </div>
 

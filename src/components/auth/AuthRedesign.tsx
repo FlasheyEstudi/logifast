@@ -6,6 +6,11 @@ import { sileo } from 'sileo';
 import { useConfigStore } from '@/store/configStore';
 import { MiniSpinner } from '@/components/ui/loaders';
 import { ImageUploader } from '@/components/ui/ImageUploader';
+import {
+  ReceivePackageIllustration,
+  MapIllustration,
+  SecurePackageIllustration,
+} from '@/components/illustrations';
 
 type View = 'landing' | 'login' | 'register';
 
@@ -18,6 +23,11 @@ interface AuthRedesignProps {
 }
 
 const Icon = {
+  Check: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 6 9 17 4 12"/>
+    </svg>
+  ),
   Mail: () => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <rect x="2" y="4" width="20" height="16" rx="3.5"/>
@@ -538,6 +548,23 @@ function LandingView({
     ? 'inset 0 1px 1px 0 rgba(255, 255, 255, 0.16), 0 24px 60px rgba(0,0,0,0.5)'
     : 'inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95), 0 20px 50px rgba(0,102,255,0.07)';
 
+  // Calculadora interactiva de tarifas
+  const [distance, setDistance] = useState(5);
+  const [weight, setWeight] = useState<'ligero' | 'medio' | 'pesado'>('ligero');
+
+  const calculatePrice = () => {
+    let base = 35;
+    let perKm = 10;
+    if (weight === 'medio') {
+      base = 50;
+      perKm = 12;
+    } else if (weight === 'pesado') {
+      base = 75;
+      perKm = 15;
+    }
+    return Math.round(base + distance * perKm);
+  };
+
   return (
     <div>
       {/* ─── ISLA FLOTANTE DE CRISTAL LÍQUIDO (CAPSULA COMPLETA) ─── */}
@@ -782,26 +809,61 @@ function LandingView({
                 </div>
 
                 {/* Enlaces de Secciones */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: '#007AFF', letterSpacing: '0.1em', marginBottom: 4 }}>NAVEGACIÓN RÁPIDA</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 320, overflowY: 'auto' }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: '#007AFF', letterSpacing: '0.1em', marginBottom: 2 }}>NAVEGACIÓN RÁPIDA</div>
+                  <a
+                    href="#como-funciona"
+                    onClick={() => setSideDrawerOpen(false)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, color: textColor, textDecoration: 'none', fontSize: 13, fontWeight: 600, padding: '8px 12px', borderRadius: 12, background: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}
+                  >
+                    <Icon.Sparkles /> <span>Cómo Funciona</span>
+                  </a>
+                  <a
+                    href="#radar"
+                    onClick={() => setSideDrawerOpen(false)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, color: textColor, textDecoration: 'none', fontSize: 13, fontWeight: 600, padding: '8px 12px', borderRadius: 12, background: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}
+                  >
+                    <Icon.MapPin /> <span>Consola Satelital</span>
+                  </a>
                   <a
                     href="#ecosistema"
                     onClick={() => setSideDrawerOpen(false)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 10, color: textColor, textDecoration: 'none', fontSize: 14, fontWeight: 600, padding: '10px 12px', borderRadius: 14, background: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, color: textColor, textDecoration: 'none', fontSize: 13, fontWeight: 600, padding: '8px 12px', borderRadius: 12, background: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}
                   >
                     <Icon.Shield /> <span>Ecosistema Logístico</span>
                   </a>
                   <a
                     href="#aliados"
                     onClick={() => setSideDrawerOpen(false)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 10, color: textColor, textDecoration: 'none', fontSize: 14, fontWeight: 600, padding: '10px 12px', borderRadius: 14, background: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, color: textColor, textDecoration: 'none', fontSize: 13, fontWeight: 600, padding: '8px 12px', borderRadius: 12, background: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}
                   >
                     <Icon.Store /> <span>Aliados Comerciales</span>
                   </a>
                   <a
+                    href="#calculadora"
+                    onClick={() => setSideDrawerOpen(false)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, color: textColor, textDecoration: 'none', fontSize: 13, fontWeight: 600, padding: '8px 12px', borderRadius: 12, background: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}
+                  >
+                    <Icon.Bike /> <span>Calculadora de Envíos</span>
+                  </a>
+                  <a
+                    href="#planes"
+                    onClick={() => setSideDrawerOpen(false)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, color: textColor, textDecoration: 'none', fontSize: 13, fontWeight: 600, padding: '8px 12px', borderRadius: 12, background: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}
+                  >
+                    <Icon.Check /> <span>Planes y Precios</span>
+                  </a>
+                  <a
+                    href="#proceso"
+                    onClick={() => setSideDrawerOpen(false)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, color: textColor, textDecoration: 'none', fontSize: 13, fontWeight: 600, padding: '8px 12px', borderRadius: 12, background: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}
+                  >
+                    <Icon.ArrowRight /> <span>Proceso Operativo</span>
+                  </a>
+                  <a
                     href="#cta"
                     onClick={() => setSideDrawerOpen(false)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 10, color: textColor, textDecoration: 'none', fontSize: 14, fontWeight: 600, padding: '10px 12px', borderRadius: 14, background: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, color: textColor, textDecoration: 'none', fontSize: 13, fontWeight: 600, padding: '8px 12px', borderRadius: 12, background: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}
                   >
                     <Icon.Headphones /> <span>Contacto & Soporte</span>
                   </a>
@@ -1030,8 +1092,231 @@ function LandingView({
         </div>
       </section>
 
+      {/* ─── OLA ORGÁNICA: HERO → CÓMO FUNCIONA ─── */}
+      <div style={{ position: 'relative', width: '100%', overflow: 'hidden', lineHeight: 0, marginBottom: -1 }}>
+        <svg viewBox="0 0 1200 64" preserveAspectRatio="none" aria-hidden="true" style={{ width: '100%', height: 48, display: 'block' }}>
+          <path
+            d="M0,20 C240,54 440,2 660,34 C880,66 1040,16 1200,30 L1200,64 L0,64 Z"
+            fill={isDark ? 'rgba(255, 87, 34, 0.14)' : 'rgba(255, 87, 34, 0.08)'}
+          />
+          <path
+            d="M0,36 C220,66 460,20 700,48 C920,72 1060,30 1200,42 L1200,64 L0,64 Z"
+            fill={isDark ? 'rgba(14, 14, 22, 0.7)' : 'rgba(245, 245, 250, 0.75)'}
+          />
+        </svg>
+      </div>
+
+      {/* ─── SECTION: CÓMO FUNCIONA (CON SQUIRCLES ORGÁNICOS) ─── */}
+      <section id="como-funciona" style={{ padding: '64px 18px', background: isDark ? 'rgba(14, 14, 22, 0.7)' : 'rgba(245, 245, 250, 0.75)' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto', textAlign: 'center' }}>
+          <motion.div
+            initial={{ opacity: 0, y: 22 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: false, amount: 0.3 }}
+            transition={{ duration: 0.5 }}
+            style={{ marginBottom: 44 }}
+          >
+            <span style={{ fontSize: 11, fontWeight: 800, color: '#FF5722', letterSpacing: '0.14em', textTransform: 'uppercase' }}>Cómo funciona</span>
+            <h2 style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, color: textColor, margin: '8px 0 0', letterSpacing: '-0.03em' }}>
+              Tres pasos. Cero complicaciones.
+            </h2>
+          </motion.div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
+            {/* Paso 1: Solicita */}
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: false, amount: 0.2 }}
+              transition={{ duration: 0.45 }}
+              whileHover={{ y: -6, scale: 1.01 }}
+              style={{
+                background: glassCardBg,
+                backdropFilter: 'blur(36px) saturate(190%)',
+                WebkitBackdropFilter: 'blur(36px) saturate(190%)',
+                border: specularBorder,
+                borderRadius: '28px 28px 26px 14px',
+                padding: '30px 22px',
+                boxShadow: glassShadow,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                textAlign: 'center',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 18, height: 140, alignItems: 'center' }}>
+                <ReceivePackageIllustration size={130} />
+              </div>
+              <h3 style={{ fontSize: 19, fontWeight: 800, color: textColor, margin: '0 0 8px', letterSpacing: '-0.02em' }}>1. Solicita</h3>
+              <p style={{ fontSize: 13, color: subColor, margin: 0, lineHeight: 1.6 }}>Pide un envío o compra productos del marketplace en segundos.</p>
+            </motion.div>
+
+            {/* Paso 2: Rastrea */}
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: false, amount: 0.2 }}
+              transition={{ duration: 0.45, delay: 0.1 }}
+              whileHover={{ y: -6, scale: 1.01 }}
+              style={{
+                background: glassCardBg,
+                backdropFilter: 'blur(36px) saturate(190%)',
+                WebkitBackdropFilter: 'blur(36px) saturate(190%)',
+                border: specularBorder,
+                borderRadius: '28px 28px 26px 14px',
+                padding: '30px 22px',
+                boxShadow: glassShadow,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                textAlign: 'center',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 18, height: 140, alignItems: 'center' }}>
+                <MapIllustration size={130} />
+              </div>
+              <h3 style={{ fontSize: 19, fontWeight: 800, color: textColor, margin: '0 0 8px', letterSpacing: '-0.02em' }}>2. Rastrea</h3>
+              <p style={{ fontSize: 13, color: subColor, margin: 0, lineHeight: 1.6 }}>Sigue al repartidor en tiempo real, chatea y recibe notificaciones.</p>
+            </motion.div>
+
+            {/* Paso 3: Recibe */}
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: false, amount: 0.2 }}
+              transition={{ duration: 0.45, delay: 0.2 }}
+              whileHover={{ y: -6, scale: 1.01 }}
+              style={{
+                background: glassCardBg,
+                backdropFilter: 'blur(36px) saturate(190%)',
+                WebkitBackdropFilter: 'blur(36px) saturate(190%)',
+                border: specularBorder,
+                borderRadius: '28px 28px 26px 14px',
+                padding: '30px 22px',
+                boxShadow: glassShadow,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                textAlign: 'center',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 18, height: 140, alignItems: 'center' }}>
+                <SecurePackageIllustration size={130} />
+              </div>
+              <h3 style={{ fontSize: 19, fontWeight: 800, color: textColor, margin: '0 0 8px', letterSpacing: '-0.02em' }}>3. Recibe</h3>
+              <p style={{ fontSize: 13, color: subColor, margin: 0, lineHeight: 1.6 }}>Tu paquete llega seguro. Califica al repartidor y repite.</p>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── OLA ORGÁNICA: CÓMO FUNCIONA → CONSOLA GPS ─── */}
+      <div style={{ position: 'relative', width: '100%', overflow: 'hidden', lineHeight: 0, marginTop: -1 }}>
+        <svg viewBox="0 0 1200 64" preserveAspectRatio="none" aria-hidden="true" style={{ width: '100%', height: 48, display: 'block' }}>
+          <path
+            d="M0,0 L1200,0 L1200,24 C1040,52 860,8 640,38 C420,68 200,16 0,36 Z"
+            fill={isDark ? 'rgba(14, 14, 22, 0.7)' : 'rgba(245, 245, 250, 0.75)'}
+          />
+          <path
+            d="M0,0 L1200,0 L1200,12 C1060,38 880,0 660,24 C440,48 220,8 0,22 Z"
+            fill={isDark ? 'rgba(0, 102, 255, 0.16)' : 'rgba(0, 102, 255, 0.08)'}
+          />
+        </svg>
+      </div>
+
+      {/* ─── SECTION: CONSOLA EN VIVO / RADAR SATELITAL ─── */}
+      <section id="radar" style={{ padding: '60px 18px', maxWidth: 1100, margin: '0 auto' }}>
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: false, amount: 0.3 }}
+          transition={{ duration: 0.5 }}
+          style={{ textAlign: 'center', marginBottom: 36 }}
+        >
+          <span style={{ fontSize: 11, fontWeight: 800, color: '#007AFF', letterSpacing: '0.14em', textTransform: 'uppercase' }}>Consola en vivo</span>
+          <h2 style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, color: textColor, margin: '8px 0 0', letterSpacing: '-0.03em' }}>
+            Rastreo GPS satelital en tiempo real
+          </h2>
+          <p style={{ fontSize: 'clamp(13px, 1.8vw, 15px)', color: subColor, maxWidth: 620, margin: '10px auto 0', lineHeight: 1.6 }}>
+            Visualiza tu flota activa, monitorea-position y recibe alertas instantáneas desde una sola pantalla.
+          </p>
+        </motion.div>
+
+        {/* Radar Mockup Frame */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 24 }}
+          whileInView={{ opacity: 1, scale: 1, y: 0 }}
+          viewport={{ once: false, amount: 0.2 }}
+          transition={{ duration: 0.55 }}
+          style={{
+            background: isDark ? 'rgba(10, 10, 16, 0.9)' : 'rgba(255, 255, 255, 0.85)',
+            backdropFilter: 'blur(36px)',
+            WebkitBackdropFilter: 'blur(36px)',
+            border: specularBorder,
+            borderRadius: '32px 34px 28px 24px',
+            padding: 24,
+            boxShadow: glassShadow,
+            maxWidth: 900,
+            margin: '0 auto',
+            overflow: 'hidden',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)', paddingBottom: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#00C853', boxShadow: '0 0 10px #00C853' }} />
+              <span style={{ fontSize: 13, fontWeight: 800, color: textColor, letterSpacing: '0.04em' }}>RADAR ACTIVO • 12 MOTORIZADOS</span>
+            </div>
+            <span style={{ fontSize: 12, fontFamily: 'monospace', color: subColor }}>12.1364° N, 86.2514° W</span>
+          </div>
+
+          <div style={{
+            height: 200,
+            margin: '18px 0',
+            position: 'relative',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,102,255,0.1)',
+            borderRadius: '20px 22px 18px 16px',
+            overflow: 'hidden',
+            background: isDark ? '#06060C' : '#F0F4FF',
+          }}>
+            <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at center, rgba(0,102,255,0.2) 0%, transparent 70%)' }} />
+            
+            {/* Blips Satelitales */}
+            <div style={{ position: 'absolute', top: 32, left: '22%', display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(0,102,255,0.18)', border: '1px solid rgba(0,102,255,0.45)', padding: '3px 10px', borderRadius: 100 }}>
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#0066FF' }} />
+              <span style={{ fontSize: 11, fontFamily: 'monospace', fontWeight: 700, color: '#007AFF' }}>MOTO-04</span>
+            </div>
+
+            <div style={{ position: 'absolute', bottom: 38, right: '24%', display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(0,200,83,0.18)', border: '1px solid rgba(0,200,83,0.45)', padding: '3px 10px', borderRadius: 100 }}>
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#00C853' }} />
+              <span style={{ fontSize: 11, fontFamily: 'monospace', fontWeight: 700, color: '#00C853' }}>MOTO-09 (En Ruta)</span>
+            </div>
+
+            <span style={{ position: 'absolute', bottom: 12, fontSize: 10, color: subColor, fontFamily: 'monospace', letterSpacing: '0.16em' }}>
+              ZONA METROPOLITANA MANAGUA
+            </span>
+          </div>
+        </motion.div>
+      </section>
+
+      {/* ─── OLA ORGÁNICA: CONSOLA GPS → ALIADOS ─── */}
+      <div style={{ position: 'relative', width: '100%', overflow: 'hidden', lineHeight: 0, marginBottom: -1 }}>
+        <svg viewBox="0 0 1200 64" preserveAspectRatio="none" aria-hidden="true" style={{ width: '100%', height: 48, display: 'block' }}>
+          <path
+            d="M0,20 C240,54 440,2 660,34 C880,66 1040,16 1200,30 L1200,64 L0,64 Z"
+            fill={isDark ? 'rgba(0, 102, 255, 0.16)' : 'rgba(0, 102, 255, 0.09)'}
+          />
+          <path
+            d="M0,36 C220,66 460,20 700,48 C920,72 1060,30 1200,42 L1200,64 L0,64 Z"
+            fill={isDark ? 'rgba(12,12,18,0.75)' : 'rgba(238,242,255,0.7)'}
+          />
+        </svg>
+      </div>
+
       {/* SECCIÓN ALIADOS ESTRATÉGICOS CON SCROLL ANIMATION LATERAL */}
-      <section id="aliados" style={{ padding: '44px 18px', borderTop: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)', borderBottom: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)', background: isDark ? 'rgba(12,12,18,0.45)' : 'rgba(255,255,255,0.4)' }}>
+      <section id="aliados" style={{ padding: '44px 18px', background: isDark ? 'rgba(12,12,18,0.75)' : 'rgba(238,242,255,0.7)' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -1076,6 +1361,20 @@ function LandingView({
           </div>
         </div>
       </section>
+
+      {/* ─── OLA ORGÁNICA: ALIADOS → ECOSISTEMA ─── */}
+      <div style={{ position: 'relative', width: '100%', overflow: 'hidden', lineHeight: 0, marginTop: -1 }}>
+        <svg viewBox="0 0 1200 64" preserveAspectRatio="none" aria-hidden="true" style={{ width: '100%', height: 48, display: 'block' }}>
+          <path
+            d="M0,0 L1200,0 L1200,24 C1040,52 860,8 640,38 C420,68 200,16 0,36 Z"
+            fill={isDark ? 'rgba(12,12,18,0.75)' : 'rgba(238,242,255,0.7)'}
+          />
+          <path
+            d="M0,0 L1200,0 L1200,12 C1060,38 880,0 660,24 C440,48 220,8 0,22 Z"
+            fill={isDark ? 'rgba(0, 102, 255, 0.16)' : 'rgba(0, 102, 255, 0.09)'}
+          />
+        </svg>
+      </div>
 
       {/* SECCIÓN ECOSISTEMA (4 TARJETAS CON ANIMACIONES BIDIRECCIONALES AL SCROLLEAR) */}
       <section id="ecosistema" style={{ padding: '68px 18px', maxWidth: 1200, margin: '0 auto' }}>
@@ -1235,6 +1534,437 @@ function LandingView({
         </div>
       </section>
 
+      {/* ─── OLA ORGÁNICA: ECOSISTEMA → CALCULADORA ─── */}
+      <div style={{ position: 'relative', width: '100%', overflow: 'hidden', lineHeight: 0, marginBottom: -1 }}>
+        <svg viewBox="0 0 1200 64" preserveAspectRatio="none" aria-hidden="true" style={{ width: '100%', height: 48, display: 'block' }}>
+          <path
+            d="M0,20 C240,54 440,2 660,34 C880,66 1040,16 1200,30 L1200,64 L0,64 Z"
+            fill={isDark ? 'rgba(0, 102, 255, 0.16)' : 'rgba(0, 102, 255, 0.09)'}
+          />
+          <path
+            d="M0,36 C220,66 460,20 700,48 C920,72 1060,30 1200,42 L1200,64 L0,64 Z"
+            fill={isDark ? 'rgba(14, 16, 24, 0.7)' : 'rgba(242, 246, 255, 0.75)'}
+          />
+        </svg>
+      </div>
+
+      {/* ─── SECTION: CALCULADORA INTERACTIVA DE COSTOS ─── */}
+      <section id="calculadora" style={{ padding: '64px 18px', background: isDark ? 'rgba(14, 16, 24, 0.7)' : 'rgba(242, 246, 255, 0.75)' }}>
+        <div style={{ maxWidth: 860, margin: '0 auto', textAlign: 'center' }}>
+          <motion.div
+            initial={{ opacity: 0, y: 22 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: false, amount: 0.3 }}
+            transition={{ duration: 0.5 }}
+            style={{ marginBottom: 36 }}
+          >
+            <span style={{ fontSize: 11, fontWeight: 800, color: '#007AFF', letterSpacing: '0.14em', textTransform: 'uppercase' }}>Calculadora</span>
+            <h2 style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, color: textColor, margin: '8px 0 0', letterSpacing: '-0.03em' }}>
+              Tarifas transparentes al instante
+            </h2>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            whileInView={{ opacity: 1, scale: 1, y: 0 }}
+            viewport={{ once: false, amount: 0.25 }}
+            transition={{ duration: 0.5 }}
+            style={{
+              background: glassCardBg,
+              backdropFilter: 'blur(36px) saturate(190%)',
+              WebkitBackdropFilter: 'blur(36px) saturate(190%)',
+              border: specularBorder,
+              borderRadius: '32px 34px 28px 24px',
+              padding: '36px 28px',
+              boxShadow: glassShadow,
+              textAlign: 'left',
+            }}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: textColor }}>Distancia del envío</span>
+                  <span style={{ fontSize: 16, fontWeight: 800, color: '#007AFF', fontFamily: 'monospace' }}>{distance} km</span>
+                </div>
+                <input
+                  type="range"
+                  min="1"
+                  max="30"
+                  value={distance}
+                  onChange={(e) => setDistance(parseInt(e.target.value))}
+                  style={{ width: '100%', accentColor: '#007AFF', cursor: 'pointer', height: 8 }}
+                />
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: subColor, marginTop: 6 }}>
+                  <span>1 km</span>
+                  <span>30 km (Límite Managua)</span>
+                </div>
+              </div>
+
+              <div>
+                <span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: textColor, marginBottom: 12 }}>Peso estimado del paquete</span>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
+                  {[
+                    { value: 'ligero', label: 'Ligero (< 5 kg)' },
+                    { value: 'medio', label: 'Medio (5-15 kg)' },
+                    { value: 'pesado', label: 'Pesado (> 15 kg)' },
+                  ].map((pkg) => (
+                    <motion.button
+                      key={pkg.value}
+                      whileTap={{ scale: 0.96 }}
+                      type="button"
+                      onClick={() => setWeight(pkg.value as any)}
+                      style={{
+                        padding: '12px 14px',
+                        borderRadius: 16,
+                        border: weight === pkg.value ? '2px solid #007AFF' : specularBorder,
+                        background: weight === pkg.value ? (isDark ? 'rgba(0,102,255,0.2)' : 'rgba(0,102,255,0.1)') : (isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.7)'),
+                        color: weight === pkg.value ? '#007AFF' : textColor,
+                        fontSize: 13,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {pkg.label}
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ borderTop: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)', paddingTop: 24, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: subColor, marginBottom: 4 }}>Costo Estimado</span>
+                <span style={{ fontSize: 38, fontWeight: 800, color: '#007AFF', fontFamily: 'monospace' }}>C$ {calculatePrice()}</span>
+                <p style={{ fontSize: 11, color: subColor, marginTop: 6, textAlign: 'center', maxWidth: 440 }}>
+                  *El precio final puede variar ligeramente según condiciones climáticas excepcionales o congestión vial en tiempo real.
+                </p>
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={onRegister}
+                  style={{
+                    marginTop: 20,
+                    width: '100%',
+                    maxWidth: 320,
+                    height: 50,
+                    borderRadius: 100,
+                    background: 'linear-gradient(180deg, #1A8CFF 0%, #0066FF 100%)',
+                    color: 'white',
+                    border: '1px solid rgba(255,255,255,0.3)',
+                    fontSize: 15,
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.4), 0 10px 26px rgba(0,102,255,0.42)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                  }}
+                >
+                  <span>Solicitar envío ahora</span>
+                  <Icon.ArrowRight />
+                </motion.button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ─── OLA ORGÁNICA: CALCULADORA → PLANES ─── */}
+      <div style={{ position: 'relative', width: '100%', overflow: 'hidden', lineHeight: 0, marginTop: -1 }}>
+        <svg viewBox="0 0 1200 64" preserveAspectRatio="none" aria-hidden="true" style={{ width: '100%', height: 48, display: 'block' }}>
+          <path
+            d="M0,0 L1200,0 L1200,24 C1040,52 860,8 640,38 C420,68 200,16 0,36 Z"
+            fill={isDark ? 'rgba(14, 16, 24, 0.7)' : 'rgba(242, 246, 255, 0.75)'}
+          />
+          <path
+            d="M0,0 L1200,0 L1200,12 C1060,38 880,0 660,24 C440,48 220,8 0,22 Z"
+            fill={isDark ? 'rgba(0, 102, 255, 0.16)' : 'rgba(0, 102, 255, 0.08)'}
+          />
+        </svg>
+      </div>
+
+      {/* ─── SECTION: PLANES Y SUSCRIPCIONES (SQUIRCLES ASIMÉTRICOS) ─── */}
+      <section id="planes" style={{ padding: '64px 18px', maxWidth: 1200, margin: '0 auto' }}>
+        <motion.div
+          initial={{ opacity: 0, y: 22 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: false, amount: 0.3 }}
+          transition={{ duration: 0.5 }}
+          style={{ textAlign: 'center', marginBottom: 44 }}
+        >
+          <span style={{ fontSize: 11, fontWeight: 800, color: '#007AFF', letterSpacing: '0.14em', textTransform: 'uppercase' }}>Ecosistema Comercial & Suscripciones</span>
+          <h2 style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, color: textColor, margin: '8px 0 0', letterSpacing: '-0.03em' }}>
+            Planes transparentes para tu negocio
+          </h2>
+          <p style={{ fontSize: 'clamp(13px, 1.8vw, 15px)', color: subColor, maxWidth: 620, margin: '10px auto 0', lineHeight: 1.6 }}>
+            Sin comisiones abusivas sobre tus ventas de mostrador. Digitaliza tu caja física, cocina y despachos con el plan adecuado a tu ritmo.
+          </p>
+        </motion.div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24, alignItems: 'stretch' }}>
+          {/* Plan Inicial */}
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: false, amount: 0.2 }}
+            transition={{ duration: 0.45 }}
+            whileHover={{ y: -6 }}
+            style={{
+              background: glassCardBg,
+              backdropFilter: 'blur(36px) saturate(190%)',
+              WebkitBackdropFilter: 'blur(36px) saturate(190%)',
+              border: specularBorder,
+              borderRadius: '28px 28px 26px 14px',
+              padding: 28,
+              boxShadow: glassShadow,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+            }}
+          >
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <span style={{ fontSize: 12, fontWeight: 800, color: subColor, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Plan Inicial</span>
+                <span style={{ fontSize: 10, fontWeight: 800, padding: '4px 10px', borderRadius: 100, background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', color: textColor }}>
+                  Emprendedores
+                </span>
+              </div>
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 32, fontWeight: 800, color: textColor, fontFamily: 'monospace' }}>
+                  C$ 0 <span style={{ fontSize: 13, fontWeight: 500, color: subColor }}>/ mes</span>
+                </div>
+                <div style={{ fontSize: 12, color: subColor, marginTop: 4 }}>Comisión estándar en ventas de delivery app (12% – 15%).</div>
+              </div>
+              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 28px', display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13, color: textColor }}>
+                <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ color: '#00C853', fontWeight: 800 }}><Icon.Check /></span><span>Catálogo digital en app móvil (hasta 30 productos)</span></li>
+                <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ color: '#00C853', fontWeight: 800 }}><Icon.Check /></span><span>Recepción de pedidos a domicilio en vivo</span></li>
+                <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ color: '#00C853', fontWeight: 800 }}><Icon.Check /></span><span>Red de repartidores LogiFast asignada</span></li>
+                <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ color: '#00C853', fontWeight: 800 }}><Icon.Check /></span><span>1 usuario de gestión (propietario)</span></li>
+              </ul>
+            </div>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={onRegister}
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: 100,
+                background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                border: specularBorder,
+                color: textColor,
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              Comenzar Gratis
+            </motion.button>
+          </motion.div>
+
+          {/* Plan PRO (Destacado) */}
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: false, amount: 0.2 }}
+            transition={{ duration: 0.45, delay: 0.1 }}
+            whileHover={{ y: -8 }}
+            style={{
+              background: isDark ? 'rgba(20, 24, 38, 0.88)' : 'rgba(255, 255, 255, 0.95)',
+              backdropFilter: 'blur(36px) saturate(190%)',
+              WebkitBackdropFilter: 'blur(36px) saturate(190%)',
+              border: '2px solid #007AFF',
+              borderRadius: '28px 28px 26px 14px',
+              padding: 28,
+              boxShadow: '0 20px 60px rgba(0, 102, 255, 0.18)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              position: 'relative',
+            }}
+          >
+            <div style={{ position: 'absolute', top: -14, left: '50%', transform: 'translateX(-50%)', background: '#007AFF', color: 'white', fontSize: 10, fontWeight: 800, padding: '3px 14px', borderRadius: 100, textTransform: 'uppercase', letterSpacing: '0.06em', boxShadow: '0 4px 12px rgba(0,102,255,0.4)' }}>
+              Más Popular • Recomendado
+            </div>
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, marginTop: 4 }}>
+                <span style={{ fontSize: 12, fontWeight: 800, color: '#007AFF', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Plan PRO</span>
+                <span style={{ fontSize: 10, fontWeight: 800, padding: '4px 10px', borderRadius: 100, background: 'rgba(0,102,255,0.12)', color: '#007AFF', border: '1px solid rgba(0,102,255,0.25)' }}>
+                  0% Comisión en Local
+                </span>
+              </div>
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 32, fontWeight: 800, color: textColor, fontFamily: 'monospace' }}>
+                  C$ 450 <span style={{ fontSize: 13, fontWeight: 500, color: subColor }}>/ mes</span>
+                </div>
+                <div style={{ fontSize: 12, color: '#00C853', fontWeight: 700, marginTop: 4 }}>Ventas de mostrador físicas: ¡0% de comisión!</div>
+              </div>
+              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 28px', display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13, color: textColor }}>
+                <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ color: '#00C853', fontWeight: 800 }}><Icon.Check /></span><span><strong>Punto de Venta (POS) Mostrador</strong> ilimitado</span></li>
+                <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ color: '#00C853', fontWeight: 800 }}><Icon.Check /></span><span><strong>Pantalla de Cocina (KDS)</strong> en vivo con tiempos</span></li>
+                <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ color: '#00C853', fontWeight: 800 }}><Icon.Check /></span><span>Control de <strong>Kardex, stock y mermas</strong></span></li>
+                <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ color: '#00C853', fontWeight: 800 }}><Icon.Check /></span><span>Facturación DGI con RUC, logo y serie fiscal</span></li>
+                <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ color: '#00C853', fontWeight: 800 }}><Icon.Check /></span><span>Lector de código de barras por cámara y etiquetas</span></li>
+                <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ color: '#00C853', fontWeight: 800 }}><Icon.Check /></span><span>Hasta 5 empleados con roles (caja, cocina, admin)</span></li>
+              </ul>
+            </div>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={onRegister}
+              style={{
+                width: '100%',
+                padding: '13px',
+                borderRadius: 100,
+                background: 'linear-gradient(180deg, #1A8CFF 0%, #0066FF 100%)',
+                color: 'white',
+                border: '1px solid rgba(255,255,255,0.3)',
+                fontSize: 13,
+                fontWeight: 800,
+                cursor: 'pointer',
+                boxShadow: '0 6px 20px rgba(0,102,255,0.35)',
+              }}
+            >
+              Activar Plan PRO
+            </motion.button>
+          </motion.div>
+
+          {/* Plan Empresarial */}
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: false, amount: 0.2 }}
+            transition={{ duration: 0.45, delay: 0.2 }}
+            whileHover={{ y: -6 }}
+            style={{
+              background: glassCardBg,
+              backdropFilter: 'blur(36px) saturate(190%)',
+              WebkitBackdropFilter: 'blur(36px) saturate(190%)',
+              border: specularBorder,
+              borderRadius: '28px 28px 26px 14px',
+              padding: 28,
+              boxShadow: glassShadow,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+            }}
+          >
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <span style={{ fontSize: 12, fontWeight: 800, color: subColor, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Empresarial</span>
+                <span style={{ fontSize: 10, fontWeight: 800, padding: '4px 10px', borderRadius: 100, background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', color: textColor }}>
+                  Multi-Sucursal
+                </span>
+              </div>
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 32, fontWeight: 800, color: textColor, fontFamily: 'monospace' }}>
+                  C$ 1,400 <span style={{ fontSize: 13, fontWeight: 500, color: subColor }}>/ mes</span>
+                </div>
+                <div style={{ fontSize: 12, color: subColor, marginTop: 4 }}>Para cadenas, franquicias y bodegas centrales.</div>
+              </div>
+              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 28px', display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13, color: textColor }}>
+                <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ color: '#00C853', fontWeight: 800 }}><Icon.Check /></span><span>Gestión centralizada de hasta 3 sucursales</span></li>
+                <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ color: '#00C853', fontWeight: 800 }}><Icon.Check /></span><span>Reportes consolidados multi-bodega</span></li>
+                <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ color: '#00C853', fontWeight: 800 }}><Icon.Check /></span><span>Usuarios y cajeros ilimitados</span></li>
+                <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ color: '#00C853', fontWeight: 800 }}><Icon.Check /></span><span>Soporte prioritario y capacitación dedicada</span></li>
+              </ul>
+            </div>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={onRegister}
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: 100,
+                background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                border: specularBorder,
+                color: textColor,
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              Contactar Asesor
+            </motion.button>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ─── OLA ORGÁNICA: PLANES → PROCESO ─── */}
+      <div style={{ position: 'relative', width: '100%', overflow: 'hidden', lineHeight: 0, marginBottom: -1 }}>
+        <svg viewBox="0 0 1200 64" preserveAspectRatio="none" aria-hidden="true" style={{ width: '100%', height: 48, display: 'block' }}>
+          <path
+            d="M0,20 C240,54 440,2 660,34 C880,66 1040,16 1200,30 L1200,64 L0,64 Z"
+            fill={isDark ? 'rgba(0, 102, 255, 0.16)' : 'rgba(0, 102, 255, 0.08)'}
+          />
+          <path
+            d="M0,36 C220,66 460,20 700,48 C920,72 1060,30 1200,42 L1200,64 L0,64 Z"
+            fill={isDark ? 'rgba(12, 14, 20, 0.65)' : 'rgba(245, 247, 255, 0.7)'}
+          />
+        </svg>
+      </div>
+
+      {/* ─── SECTION: PROCESO OPERATIVO (4 PASOS) ─── */}
+      <section id="proceso" style={{ padding: '64px 18px', background: isDark ? 'rgba(12, 14, 20, 0.65)' : 'rgba(245, 247, 255, 0.7)' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto', textAlign: 'center' }}>
+          <motion.div
+            initial={{ opacity: 0, y: 22 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: false, amount: 0.3 }}
+            transition={{ duration: 0.5 }}
+            style={{ marginBottom: 44 }}
+          >
+            <span style={{ fontSize: 11, fontWeight: 800, color: '#007AFF', letterSpacing: '0.14em', textTransform: 'uppercase' }}>Proceso</span>
+            <h2 style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, color: textColor, margin: '8px 0 0', letterSpacing: '-0.03em' }}>
+              Cómo opera el sistema
+            </h2>
+          </motion.div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
+            {[
+              { num: '01', title: 'Solicitud', desc: 'Establece el origen y destino en el mapa inteligente.' },
+              { num: '02', title: 'Asignación', desc: 'El algoritmo selecciona al motorizado óptimo cercano.' },
+              { num: '03', title: 'Rastreo', desc: 'Sigue el avance en vivo con notificaciones activas.' },
+              { num: '04', title: 'Entrega', desc: 'Tu paquete llega a salvo y calificas el servicio prestado.' },
+            ].map((step, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: false, amount: 0.2 }}
+                transition={{ duration: 0.45, delay: idx * 0.08 }}
+                whileHover={{ y: -4 }}
+                style={{
+                  background: glassCardBg,
+                  backdropFilter: 'blur(36px) saturate(190%)',
+                  WebkitBackdropFilter: 'blur(36px) saturate(190%)',
+                  border: specularBorder,
+                  borderRadius: '24px 26px 20px 16px',
+                  padding: '24px 20px',
+                  boxShadow: glassShadow,
+                  textAlign: 'left',
+                }}
+              >
+                <div style={{ fontSize: 28, fontWeight: 900, color: '#007AFF', fontFamily: 'monospace', marginBottom: 8 }}>{step.num}</div>
+                <h4 style={{ fontSize: 17, fontWeight: 800, color: textColor, margin: '0 0 6px', letterSpacing: '-0.02em' }}>{step.title}</h4>
+                <p style={{ fontSize: 13, color: subColor, margin: 0, lineHeight: 1.5 }}>{step.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── OLA ORGÁNICA: PROCESO → CTA BANNER ─── */}
+      <div style={{ position: 'relative', width: '100%', overflow: 'hidden', lineHeight: 0, marginBottom: -1 }}>
+        <svg viewBox="0 0 1200 50" preserveAspectRatio="none" aria-hidden="true" style={{ width: '100%', height: 38, display: 'block' }}>
+          <path
+            d="M 0,16 Q 300,48 600,18 T 1200,24 L 1200,50 L 0,50 Z"
+            fill={isDark ? 'rgba(0, 102, 255, 0.16)' : 'rgba(0, 102, 255, 0.08)'}
+          />
+          <path
+            d="M 0,28 Q 320,54 620,28 T 1200,36 L 1200,50 L 0,50 Z"
+            fill={isDark ? 'rgba(10, 12, 22, 0.45)' : 'rgba(235, 242, 255, 0.5)'}
+          />
+        </svg>
+      </div>
+
       {/* SUPER BANNER CTA CRISTALINO CON EXPANSION BIDIRECCIONAL AL SCROLL */}
       <section id="cta" style={{ padding: '32px 18px 80px', maxWidth: 1200, margin: '0 auto' }}>
         <motion.div
@@ -1313,8 +2043,22 @@ function LandingView({
         </motion.div>
       </section>
 
+      {/* ─── OLA ORGÁNICA: HACIA EL FOOTER ─── */}
+      <div style={{ position: 'relative', width: '100%', overflow: 'hidden', lineHeight: 0, bottom: -1 }}>
+        <svg viewBox="0 0 1200 50" preserveAspectRatio="none" aria-hidden="true" style={{ width: '100%', height: 38, display: 'block' }}>
+          <path
+            d="M0,18 C320,44 600,0 900,32 C1050,46 1140,24 1200,20 L1200,50 L0,50 Z"
+            fill={isDark ? 'rgba(0, 102, 255, 0.18)' : 'rgba(0, 102, 255, 0.1)'}
+          />
+          <path
+            d="M0,28 C340,52 620,12 920,40 C1060,52 1150,32 1200,28 L1200,50 L0,50 Z"
+            fill={isDark ? '#06060A' : '#EBEBF0'}
+          />
+        </svg>
+      </div>
+
       {/* FOOTER */}
-      <footer style={{ padding: '36px 18px', background: isDark ? '#06060A' : '#EBEBF0', borderTop: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)', textAlign: 'center', color: subColor, fontSize: 12 }}>
+      <footer style={{ padding: '36px 18px', background: isDark ? '#06060A' : '#EBEBF0', borderTop: 'none', textAlign: 'center', color: subColor, fontSize: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
           <Icon.Logo size={26} />
           <span style={{ fontWeight: 800, color: textColor }}>LOGIFAST</span>
@@ -1474,12 +2218,55 @@ function LoginView({
           textAlign: 'center',
           marginTop: 44,
           boxSizing: 'border-box',
+          overflow: 'hidden',
+          position: 'relative',
         }}
       >
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 22 }}>
-          <Icon.Logo size={46} />
-          <h2 style={{ fontSize: 23, fontWeight: 800, color: textColor, margin: '10px 0 4px', letterSpacing: '-0.03em' }}>Iniciar Sesión</h2>
-          <p style={{ fontSize: 13, color: subColor, margin: 0 }}>Ingresa tus credenciales para acceder a LOGIFAST</p>
+        {/* Cabecera con Ola Orgánica y Escudo de Acceso */}
+        <div style={{
+          position: 'relative',
+          margin: '-36px -24px 22px -24px',
+          background: isDark
+            ? 'linear-gradient(135deg, rgba(0, 102, 255, 0.28) 0%, rgba(124, 58, 237, 0.18) 100%)'
+            : 'linear-gradient(135deg, rgba(0, 102, 255, 0.14) 0%, rgba(0, 200, 83, 0.1) 100%)',
+          padding: '28px 20px 22px',
+          borderBottom: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,102,255,0.1)',
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+        }}>
+          {/* Olas SVG Decorativas de doble capa en la cabecera */}
+          <svg
+            viewBox="0 0 500 44"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              bottom: -1,
+              width: '100%',
+              height: 28,
+              pointerEvents: 'none',
+            }}
+          >
+            <path
+              d="M 0,16 Q 130,2 260,24 T 500,14 L 500,44 L 0,44 Z"
+              fill={glassBg}
+              opacity={0.4}
+            />
+            <path
+              d="M 0,26 Q 140,14 270,32 T 500,22 L 500,44 L 0,44 Z"
+              fill={glassBg}
+            />
+          </svg>
+
+          <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <Icon.Logo size={46} />
+            <h2 style={{ fontSize: 23, fontWeight: 800, color: textColor, margin: '10px 0 4px', letterSpacing: '-0.03em' }}>Iniciar Sesión</h2>
+            <p style={{ fontSize: 13, color: subColor, margin: 0 }}>Ingresa tus credenciales para acceder a LOGIFAST</p>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, textAlign: 'left' }}>
@@ -1912,33 +2699,79 @@ function RegisterView({
           textAlign: 'center',
           marginTop: 44,
           boxSizing: 'border-box',
+          overflow: 'hidden',
+          position: 'relative',
         }}
       >
-        {/* Step Header */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 20 }}>
-          <Icon.Logo size={42} />
-          <h2 style={{ fontSize: 22, fontWeight: 800, color: textColor, margin: '10px 0 4px', letterSpacing: '-0.03em' }}>
-            {step === 1 ? 'Paso 1: Identificación Legal' : step === 2 ? 'Paso 2: Foto & Ubicación' : 'Paso 3: Perfil & Vehículo'}
-          </h2>
-          <p style={{ fontSize: 13, color: subColor, margin: 0 }}>
-            {step === 1 ? 'Datos personales y cédula de Nicaragua' : step === 2 ? 'Foto de perfil y captura de GPS satelital' : 'Selecciona tu rol y datos de vehículo'}
-          </p>
+        {/* Cabecera con Ola Orgánica y Stepper Dinámico */}
+        <div style={{
+          position: 'relative',
+          margin: '-36px -24px 22px -24px',
+          background: form.role === 'repartidor'
+            ? (isDark
+                ? 'linear-gradient(135deg, rgba(0, 200, 83, 0.28) 0%, rgba(0, 102, 255, 0.16) 100%)'
+                : 'linear-gradient(135deg, rgba(0, 200, 83, 0.16) 0%, rgba(0, 102, 255, 0.08) 100%)')
+            : (isDark
+                ? 'linear-gradient(135deg, rgba(0, 102, 255, 0.28) 0%, rgba(124, 58, 237, 0.18) 100%)'
+                : 'linear-gradient(135deg, rgba(0, 102, 255, 0.14) 0%, rgba(0, 200, 83, 0.1) 100%)'),
+          padding: '28px 20px 22px',
+          borderBottom: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,102,255,0.1)',
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+        }}>
+          {/* Olas SVG Decorativas de doble capa en la cabecera */}
+          <svg
+            viewBox="0 0 500 44"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              bottom: -1,
+              width: '100%',
+              height: 28,
+              pointerEvents: 'none',
+            }}
+          >
+            <path
+              d="M 0,16 Q 130,2 260,24 T 500,14 L 500,44 L 0,44 Z"
+              fill={glassBg}
+              opacity={0.4}
+            />
+            <path
+              d="M 0,26 Q 140,14 270,32 T 500,22 L 500,44 L 0,44 Z"
+              fill={glassBg}
+            />
+          </svg>
 
-          {/* Dynamic iOS Pills Stepper */}
-          <div style={{ display: 'flex', gap: 6, marginTop: 14 }}>
-            {[1, 2, 3].map((s) => (
-              <div
-                key={s}
-                style={{
-                  width: s === step ? 28 : 8,
-                  height: 6,
-                  borderRadius: 100,
-                  background: s <= step ? '#007AFF' : (isDark ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.15)'),
-                  boxShadow: s === step ? '0 0 10px rgba(0,122,255,0.6)' : 'none',
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                }}
-              />
-            ))}
+          <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <Icon.Logo size={42} />
+            <h2 style={{ fontSize: 22, fontWeight: 800, color: textColor, margin: '10px 0 4px', letterSpacing: '-0.03em' }}>
+              {step === 1 ? 'Paso 1: Identificación Legal' : step === 2 ? 'Paso 2: Foto & Ubicación' : 'Paso 3: Perfil & Vehículo'}
+            </h2>
+            <p style={{ fontSize: 13, color: subColor, margin: 0 }}>
+              {step === 1 ? 'Datos personales y cédula de Nicaragua' : step === 2 ? 'Foto de perfil y captura de GPS satelital' : 'Selecciona tu rol y datos de vehículo'}
+            </p>
+
+            {/* Dynamic iOS Pills Stepper */}
+            <div style={{ display: 'flex', gap: 6, marginTop: 14 }}>
+              {[1, 2, 3].map((s) => (
+                <div
+                  key={s}
+                  style={{
+                    width: s === step ? 28 : 8,
+                    height: 6,
+                    borderRadius: 100,
+                    background: s <= step ? (form.role === 'repartidor' ? '#00C853' : '#007AFF') : (isDark ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.15)'),
+                    boxShadow: s === step ? (form.role === 'repartidor' ? '0 0 10px rgba(0,200,83,0.6)' : '0 0 10px rgba(0,122,255,0.6)') : 'none',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  }}
+                />
+              ))}
+            </div>
           </div>
         </div>
 

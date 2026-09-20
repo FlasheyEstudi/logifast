@@ -223,6 +223,20 @@ export default function ClienteAppPage() {
           pointerEvents: 'none',
         }} />
 
+        {/* Ondas orgánicas ambientales superiores */}
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 180, overflow: 'hidden', pointerEvents: 'none', zIndex: 1 }}>
+          <svg viewBox="0 0 500 120" preserveAspectRatio="none" aria-hidden="true" style={{ width: '100%', height: '100%', display: 'block' }}>
+            <path
+              d="M 0,0 L 500,0 L 500,64 Q 370,115 250,75 T 0,95 Z"
+              fill={isDark ? 'rgba(0, 102, 255, 0.16)' : 'rgba(0, 102, 255, 0.08)'}
+            />
+            <path
+              d="M 0,0 L 500,0 L 500,42 Q 380,95 240,56 T 0,76 Z"
+              fill={isDark ? 'rgba(0, 200, 83, 0.1)' : 'rgba(0, 200, 83, 0.05)'}
+            />
+          </svg>
+        </div>
+
         {/* ─── ISLA FLOTANTE DE CRISTAL LÍQUIDO (HEADER) ─── */}
         <header style={{
           position: 'relative',
@@ -365,18 +379,30 @@ export default function ClienteAppPage() {
           </div>
         </div>
 
+        {/* ─── OLA ORGÁNICA FLUIDA: TRANSICIÓN A BANDEJA DE ACCIÓN ─── */}
+        <div style={{ position: 'relative', width: '100%', overflow: 'hidden', lineHeight: 0, marginBottom: -1, zIndex: 90 }}>
+          <svg viewBox="0 0 500 36" preserveAspectRatio="none" aria-hidden="true" style={{ width: '100%', height: 32, display: 'block' }}>
+            <path
+              d="M 0,14 Q 130,0 250,20 T 500,10 L 500,36 L 0,36 Z"
+              fill={isDark ? 'rgba(0, 102, 255, 0.22)' : 'rgba(0, 102, 255, 0.1)'}
+            />
+            <path
+              d="M 0,22 Q 140,8 260,26 T 500,16 L 500,36 L 0,36 Z"
+              fill={isDark ? '#0B0B10' : '#F2F2F7'}
+            />
+          </svg>
+        </div>
+
         {/* ─── BOTONES DE ACCIÓN DE ALTO NIVEL ─── */}
         <div style={{
           position: 'relative',
           zIndex: 100,
-          padding: '20px 20px calc(20px + env(safe-area-inset-bottom, 12px))',
+          padding: '16px 20px calc(20px + env(safe-area-inset-bottom, 12px))',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           gap: 12,
-          background: isDark
-            ? 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.9) 60%, #000000 100%)'
-            : 'linear-gradient(180deg, transparent 0%, rgba(242,242,247,0.9) 60%, #F2F2F7 100%)',
+          background: isDark ? '#0B0B10' : '#F2F2F7',
         }}>
           <div style={{ width: '100%', maxWidth: 400, display: 'flex', flexDirection: 'column', gap: 10 }}>
             <motion.button
