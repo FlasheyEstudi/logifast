@@ -23,7 +23,6 @@ import {
   ShoppingCart,
   Wallet,
   X,
-  Zap,
 } from '@/components/icons';
 import { useStore, type ClientModuleKey } from '@/lib/store';
 import type { ClientNotificacion } from '@/lib/store';
@@ -1222,66 +1221,51 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName, i
         <header
             style={{
               position: 'fixed',
-              top: 'calc(env(safe-area-inset-top, 10px) + 8px)',
+              top: 'calc(env(safe-area-inset-top, 8px) + 6px)',
               left: '50%',
               transform: 'translateX(-50%)',
               zIndex: 9980,
-              width: 'calc(100vw - 28px)',
-              maxWidth: 680,
+              width: 'calc(100vw - 24px)',
+              maxWidth: 640,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '7px 8px 7px 18px',
+              padding: '4px 6px 4px 16px',
               borderRadius: 100,
-              background: isDark ? 'rgba(20, 20, 28, 0.82)' : 'rgba(255, 255, 255, 0.86)',
-              backdropFilter: 'blur(36px) saturate(190%)',
-              WebkitBackdropFilter: 'blur(36px) saturate(190%)',
-              border: isDark ? '1px solid rgba(255, 255, 255, 0.14)' : '1px solid rgba(255, 255, 255, 0.85)',
+              background: isDark ? 'rgba(20, 20, 28, 0.86)' : 'rgba(255, 255, 255, 0.90)',
+              backdropFilter: 'blur(30px) saturate(190%)',
+              WebkitBackdropFilter: 'blur(30px) saturate(190%)',
+              border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(255, 255, 255, 0.85)',
               boxShadow: isDark
-                ? 'inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.18), 0 8px 32px rgba(0,0,0,0.45)'
-                : 'inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95), 0 8px 28px rgba(0, 102, 255, 0.08)',
+                ? '0 6px 20px rgba(0,0,0,0.4)'
+                : '0 4px 18px rgba(0, 102, 255, 0.07)',
               transition: 'all 0.3s ease',
             }}
           >
-            {/* Left: Brand Identity orgánica (evita duplicar el título del módulo en pantalla) */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 7, userSelect: 'none' }}>
-              <div
-                style={{
-                  width: 26,
-                  height: 26,
-                  borderRadius: '9px 13px 10px 14px',
-                  background: 'linear-gradient(135deg, var(--primario) 0%, #00C2FF 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 2px 10px rgba(0, 102, 255, 0.35)',
-                  flexShrink: 0,
-                }}
-              >
-                <Zap size={14} color="#FFFFFF" strokeWidth={2.6} />
-              </div>
-              <span
-                style={{
-                  fontSize: 15,
-                  fontWeight: 900,
-                  fontFamily: "'Syne', sans-serif",
-                  letterSpacing: '-0.03em',
-                  color: isDark ? '#FFFFFF' : '#0F172A',
-                }}
-              >
-                Logi<span style={{ color: 'var(--primario)' }}>Fast</span>
-              </span>
-            </div>
+            {/* Left: LogiFast typography brand (sin icono de rayo) */}
+            <span
+              style={{
+                fontSize: 16,
+                fontWeight: 900,
+                fontFamily: "'Syne', sans-serif",
+                letterSpacing: '-0.035em',
+                color: isDark ? '#FFFFFF' : '#0F172A',
+                userSelect: 'none',
+                lineHeight: 1,
+              }}
+            >
+              Logi<span style={{ color: 'var(--primario)' }}>Fast</span>
+            </span>
 
             {/* Right: acciones en cápsula compacta */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', borderRadius: 100, padding: '4px', border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.05)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 2, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)', borderRadius: 100, padding: '2px 4px', border: 'none' }}>
               {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
                 aria-label={isDark ? 'Modo claro' : 'Modo oscuro'}
-                style={{ width: 44, height: 44, borderRadius: '50%', border: 'none', background: 'transparent', color: isDark ? '#FFD60A' : '#FF9500', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
+                style={{ width: 34, height: 34, borderRadius: '50%', border: 'none', background: 'transparent', color: isDark ? '#FFD60A' : '#FF9500', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
               >
-                {isDark ? <Sun size={16} strokeWidth={1.8} /> : <Moon size={16} strokeWidth={1.8} />}
+                {isDark ? <Sun size={15} strokeWidth={1.8} /> : <Moon size={15} strokeWidth={1.8} />}
               </button>
 
               {/* Bell */}
@@ -1289,11 +1273,11 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName, i
                 <button
                   onClick={() => { abrirNotificaciones(); setAvatarOpen(false); }}
                   aria-label="Notificaciones"
-                  style={{ width: 44, height: 44, borderRadius: '50%', border: 'none', background: clientNotifOpen ? 'var(--primario)' : 'transparent', color: clientNotifOpen ? '#fff' : isDark ? '#98989D' : '#636366', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', transition: 'all 0.2s' }}
+                  style={{ width: 34, height: 34, borderRadius: '50%', border: 'none', background: clientNotifOpen ? 'var(--primario)' : 'transparent', color: clientNotifOpen ? '#fff' : isDark ? '#98989D' : '#636366', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', transition: 'all 0.2s' }}
                 >
-                  <Bell size={16} strokeWidth={1.8} />
+                  <Bell size={15} strokeWidth={1.8} />
                   {unreadCount > 0 && (
-                    <span style={{ position: 'absolute', top: 1, right: 1, width: 13, height: 13, borderRadius: '50%', background: 'var(--peligro)', color: '#fff', fontSize: 8, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>
+                    <span style={{ position: 'absolute', top: 2, right: 2, width: 12, height: 12, borderRadius: '50%', background: 'var(--peligro)', color: '#fff', fontSize: 8, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>
                       {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                   )}
@@ -1304,11 +1288,11 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName, i
               <button
                 onClick={() => setCarritoOpen(true)}
                 aria-label="Carrito"
-                style={{ width: 44, height: 44, borderRadius: '50%', border: 'none', background: carritoOpen ? 'var(--primario)' : 'transparent', color: carritoOpen ? '#fff' : 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', transition: 'all 0.2s' }}
+                style={{ width: 34, height: 34, borderRadius: '50%', border: 'none', background: carritoOpen ? 'var(--primario)' : 'transparent', color: carritoOpen ? '#fff' : 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', transition: 'all 0.2s' }}
               >
-                <ShoppingBag size={16} strokeWidth={1.8} />
+                <ShoppingBag size={15} strokeWidth={1.8} />
                 {getCartItemCount() > 0 && (
-                  <span style={{ position: 'absolute', top: 0, right: 0, minWidth: 13, height: 13, borderRadius: 7, padding: '0 3px', background: 'var(--peligro)', color: '#fff', fontSize: 8, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>
+                  <span style={{ position: 'absolute', top: 1, right: 1, minWidth: 12, height: 12, borderRadius: 6, padding: '0 2.5px', background: 'var(--peligro)', color: '#fff', fontSize: 8, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>
                     {getCartItemCount() > 9 ? '9+' : getCartItemCount()}
                   </span>
                 )}
@@ -1319,7 +1303,7 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName, i
         <main
           style={{
             flex: 1,
-            paddingTop: 'calc(58px + env(safe-area-inset-top, 0px))',
+            paddingTop: 'calc(48px + env(safe-area-inset-top, 0px))',
             paddingBottom: 'calc(var(--ios-tabbar-height) + var(--ios-tabbar-safe) + 16px)',
             minHeight: '100vh',
             backgroundColor: 'var(--ios-bg)',

@@ -110,7 +110,7 @@ export default function StoreCard({ tienda, onAbrir, variante = 'rail', distanci
         textAlign: 'left',
         padding: 0,
         borderRadius: '26px 26px 26px 14px',
-        border: '1px solid color-mix(in srgb, var(--border) 80%, rgba(255,255,255,0.12))',
+        border: '1px solid var(--border)',
         background: 'var(--surface)',
         boxShadow: '0 4px 20px -2px rgba(0, 0, 0, 0.06), 0 2px 6px -1px rgba(0, 0, 0, 0.04)',
         overflow: 'hidden',
@@ -318,22 +318,22 @@ export default function StoreCard({ tienda, onAbrir, variante = 'rail', distanci
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', fontSize: 11 }}>
           {/* Solo se muestra la valoración si hay reseñas reales. */}
           {calificacion > 0 && (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: '#FF9500', fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", background: 'rgba(255,149,0,0.1)', padding: '2px 8px', borderRadius: 9999, border: '1px solid rgba(255,149,0,0.2)' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: '#FF9500', fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", background: 'rgba(255,149,0,0.12)', padding: '2px 8px', borderRadius: 9999, border: 'none' }}>
               <Star size={11} fill="currentColor" /> {calificacion.toFixed(1)}
             </span>
           )}
           {typeof distanciaKm === 'number' && distanciaKm > 0 && (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: 'var(--text-muted)', background: 'var(--bg-alt)', padding: '2px 8px', borderRadius: 9999, border: '1px solid var(--border)' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: 'var(--text-muted)', background: 'var(--bg-alt)', padding: '2px 8px', borderRadius: 9999, border: 'none' }}>
               <MapPin size={11} /> {distanciaKm.toFixed(1)} km
             </span>
           )}
           {tiempo && (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: 'var(--text-muted)', background: 'var(--bg-alt)', padding: '2px 8px', borderRadius: 9999, border: '1px solid var(--border)' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: 'var(--text-muted)', background: 'var(--bg-alt)', padding: '2px 8px', borderRadius: 9999, border: 'none' }}>
               <Clock size={11} /> {tiempo}
             </span>
           )}
           {typeof tienda.costoEnvio === 'number' && (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: 'var(--text-muted)', background: 'var(--bg-alt)', padding: '2px 8px', borderRadius: 9999, border: '1px solid var(--border)' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: 'var(--text-muted)', background: 'var(--bg-alt)', padding: '2px 8px', borderRadius: 9999, border: 'none' }}>
               <Truck size={11} /> C${tienda.costoEnvio}
             </span>
           )}

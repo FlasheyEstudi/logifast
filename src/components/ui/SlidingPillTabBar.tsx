@@ -268,8 +268,8 @@ export default function SlidingPillTabBar({
                   borderRadius: 100,
                   background: accentColor,
                   boxShadow: isDark
-                    ? `0 4px 16px color-mix(in srgb, ${accentColor} 65%, transparent), inset 0 1px 1px rgba(255, 255, 255, 0.25)`
-                    : `0 4px 16px color-mix(in srgb, ${accentColor} 45%, transparent), inset 0 1px 1.5px rgba(255, 255, 255, 0.4)`,
+                    ? '0 4px 16px rgba(0, 102, 255, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.25)'
+                    : '0 4px 16px rgba(0, 102, 255, 0.28), inset 0 1px 1.5px rgba(255, 255, 255, 0.4)',
                   zIndex: 0,
                 }}
                 transition={{

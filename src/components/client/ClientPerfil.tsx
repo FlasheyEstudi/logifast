@@ -174,7 +174,7 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
 const sectionCard: React.CSSProperties = {
   background: 'var(--surface)',
   borderRadius: '26px 26px 26px 14px',
-  border: '1px solid color-mix(in srgb, var(--border) 80%, rgba(255, 255, 255, 0.12))',
+  border: '1px solid var(--border)',
   boxShadow: '0 6px 24px -2px rgba(0, 102, 255, 0.06), 0 2px 6px -1px rgba(0, 0, 0, 0.04)',
   padding: 24,
 };
@@ -819,7 +819,7 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
               fontWeight: 800,
               fontSize: 30,
               flexShrink: 0,
-              border: '3px solid color-mix(in srgb, var(--primario) 80%, white)',
+              border: '3px solid var(--primario)',
               overflow: 'hidden',
               position: 'relative',
               cursor: 'pointer',

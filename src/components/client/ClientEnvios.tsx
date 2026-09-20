@@ -172,7 +172,7 @@ export default function ClientEnvios({ onNavigate, onOpenTracking, onOpenChat }:
                   style={{
                     borderRadius: '26px 26px 26px 14px',
                     overflow: 'hidden',
-                    border: '1px solid color-mix(in srgb, var(--border) 80%, rgba(255,255,255,0.12))',
+                    border: '1px solid var(--border)',
                     background: 'var(--surface)',
                     boxShadow: '0 8px 26px -4px rgba(0, 102, 255, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04)',
                   }}>
@@ -277,7 +277,7 @@ export default function ClientEnvios({ onNavigate, onOpenTracking, onOpenChat }:
           ) : filteredHistory.map(order => {
             const badge = STATUS_BADGE[order.estado] || STATUS_BADGE['entregado'];
             return (
-              <motion.div key={order.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} style={{ background: 'var(--surface)', borderRadius: '24px 24px 24px 12px', border: '1px solid color-mix(in srgb, var(--border) 80%, rgba(255,255,255,0.12))', padding: '15px 16px', display: 'flex', flexDirection: 'column', gap: 10, boxShadow: '0 4px 18px -2px rgba(0, 0, 0, 0.04)' }}>
+              <motion.div key={order.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} style={{ background: 'var(--surface)', borderRadius: '24px 24px 24px 12px', border: '1px solid var(--border)', padding: '15px 16px', display: 'flex', flexDirection: 'column', gap: 10, boxShadow: '0 4px 18px -2px rgba(0, 0, 0, 0.04)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div style={{ width: 44, height: 44, borderRadius: '14px 16px 12px 18px', overflow: 'hidden', background: 'var(--bg-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     {order.paqueteFotoUrl ? (
