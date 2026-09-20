@@ -121,40 +121,49 @@ export default function StoreCard({ tienda, onAbrir, variante = 'rail', distanci
           position: 'relative',
           height: esRail ? 92 : 104,
           background: fondoPortada || colorBase,
-          overflow: 'hidden',
+          /* Sin overflow hidden: la ola debe poder salir por debajo de la portada
+             para invadir el cuerpo blanco. La tarjeta ya recorta lo que sobra. */
+          borderTopLeftRadius: 26,
+          borderTopRightRadius: 26,
+          borderBottomLeftRadius: 26,
         }}
       >
-        {imagen && (
-          <img
-            src={imagen}
-            alt=""
-            aria-hidden="true"
-            crossOrigin="anonymous"
-            referrerPolicy="no-referrer"
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        {/* Capa recortada: la imagen y el velo sí deben quedar dentro de la portada. */}
+        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', borderTopLeftRadius: 26, borderTopRightRadius: 26, borderBottomLeftRadius: 26, borderBottomRightRadius: 0 }}>
+          {imagen && (
+            <img
+              src={imagen}
+              alt=""
+              aria-hidden="true"
+              crossOrigin="anonymous"
+              referrerPolicy="no-referrer"
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+          )}
+          {/* Velo sutil para que el texto y la etiqueta se lean sobre cualquier foto. */}
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'linear-gradient(180deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.16) 58%, rgba(0,0,0,0.5) 100%)',
+            }}
           />
-        )}
-        {/* Velo sutil para que el texto y la etiqueta se lean sobre cualquier foto. */}
+        </div>
+        {/* Ola entre la portada y el cuerpo. Para que se VEA (y no quede como un
+            borde recto) la curva la dibuja la PORTADA invadiendo el cuerpo: el mismo
+            color de la portada se extiende 20px hacia abajo con radio eliptico. Una
+            ola del color de la superficie sobre la superficie no se percibe. */}
         <div
           style={{
             position: 'absolute',
-            inset: 0,
-            background: 'linear-gradient(180deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.16) 58%, rgba(0,0,0,0.5) 100%)',
-          }}
-        />
-        {/* Ola que separa la portada del cuerpo blanco: el corte recto entre la foto
-            y la tarjeta era lo que se veía "impreso". Se dibuja con el color de la
-            superficie, asi el contenido de abajo arranca en curva. */}
-        <div
-          style={{
-            position: 'absolute',
-            left: -2,
-            right: -2,
-            bottom: -1,
-            height: 16,
-            background: 'var(--surface)',
-            borderRadius: '100% 100% 0 0 / 100% 100% 0 0',
+            left: 0,
+            right: 0,
+            top: '100%',
+            height: 20,
+            background: colorBase,
+            borderRadius: '0 0 50% 50% / 0 0 100% 100%',
             pointerEvents: 'none',
+            zIndex: 2,
           }}
         />
         {/* Halo de luz sobre el color de la tienda: da volumen sin sombras duras. */}

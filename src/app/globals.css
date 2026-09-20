@@ -16548,6 +16548,8 @@ body {
 .lf-rail-card { width: calc(100vw - (var(--lf-gutter) * 2) - 28px); }
 /* Tarjeta de tienda / categoría */
 .lf-rail-tile { width: min(66vw, 250px); }
+/* Tarjeta de cupón: más ancha que la de tienda para que el código respire. */
+.lf-rail-cupon { width: min(74vw, 268px); }
 /* Tarjeta compacta de producto */
 .lf-rail-prod { width: min(46vw, 184px); }
 

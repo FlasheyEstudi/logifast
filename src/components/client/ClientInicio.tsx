@@ -1034,7 +1034,7 @@ export default function ClientInicio({
               return (
                 <div
                   key={cupon.id}
-                  className="lf-organic-alt lf-sheen lf-rail-tile"
+                  className="lf-organic-alt lf-sheen lf-rail-cupon"
                   style={{
                     padding: '14px 16px',
                     background: 'linear-gradient(150deg, var(--primario) 0%, #0051D5 100%)',
