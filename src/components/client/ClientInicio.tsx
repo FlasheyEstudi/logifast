@@ -103,6 +103,7 @@ export default function ClientInicio({
     fidelizacion,
     addToast,
     cuponesBilletera = [],
+    codigos = [],
     fetchCuponesBilletera,
     reclamarCupon,
     setCuponAplicado,
@@ -168,6 +169,8 @@ export default function ClientInicio({
     useStore.getState().fetchBanners?.();
     useStore.getState().fetchFeed?.();
     useStore.getState().fetchCuponesBilletera?.();
+    // Los cupones activos del sistema no se mostraban en ninguna parte del home.
+    useStore.getState().fetchCodigos?.();
   }, []);
 
   /* Banner auto-scroll */
@@ -1001,6 +1004,127 @@ export default function ClientInicio({
           </div>
         </div>
       )}
+      {/* ── CUPONES ACTIVOS ──
+          Los cupones del sistema (GET /api/codigos?estado=activo) no se mostraban en
+          el home. Son datos reales ya existentes, no contenido de relleno. */}
+      {codigos.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h3 className="lf-section-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Tag size={14} style={{ color: 'var(--primario)' }} /> Cupones disponibles
+            </h3>
+            <button
+              onClick={() => onNavigate('puntos')}
+              className="lf-press"
+              style={{ background: 'none', border: 'none', fontSize: 12, fontWeight: 700, color: 'var(--primario)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 2 }}
+            >
+              Mi billetera <ChevronRight size={14} />
+            </button>
+          </div>
+
+          <div className="lf-rail lf-rail-bleed">
+            {codigos.slice(0, 6).map((cupon) => {
+              const estadoCupon = getCuponStatus(cupon.codigo);
+              const ahorro =
+                cupon.tipoDescuento === 'porcentaje'
+                  ? `${cupon.valor}% OFF`
+                  : `C$ ${cupon.valor} OFF`;
+              const yaEnBilletera = estadoCupon === 'disponible';
+
+              return (
+                <div
+                  key={cupon.id}
+                  className="lf-organic-alt lf-sheen lf-rail-tile"
+                  style={{
+                    padding: '14px 16px',
+                    background: 'linear-gradient(150deg, var(--primario) 0%, #0051D5 100%)',
+                    color: '#FFFFFF',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 8,
+                    boxShadow: '0 10px 26px rgba(0, 81, 213, 0.28)',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  {/* Perforaciones laterales: dan apariencia de cupon troquelado. */}
+                  <span style={{ position: 'absolute', left: -9, top: '50%', width: 18, height: 18, borderRadius: '50%', background: 'var(--bg)' }} />
+                  <span style={{ position: 'absolute', right: -9, top: '50%', width: 18, height: 18, borderRadius: '50%', background: 'var(--bg)' }} />
+
+                  <div style={{ fontSize: 22, fontWeight: 900, fontFamily: "'Syne', sans-serif", letterSpacing: '-0.01em' }}>
+                    {ahorro}
+                  </div>
+                  <div style={{ fontSize: 11.5, opacity: 0.9, lineHeight: 1.35 }}>
+                    {cupon.aplicableA === 'primer_envio'
+                      ? 'En tu primer envío'
+                      : cupon.aplicableA === 'ambos'
+                      ? 'En envíos y compras'
+                      : 'En todos los servicios'}
+                    {cupon.montoMinimo ? ` · mínimo C$ ${cupon.montoMinimo}` : ''}
+                  </div>
+
+                  <div
+                    style={{
+                      marginTop: 2,
+                      padding: '7px 10px',
+                      borderRadius: 10,
+                      background: 'rgba(255,255,255,0.18)',
+                      border: '1px dashed rgba(255,255,255,0.5)',
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontWeight: 800,
+                      fontSize: 13,
+                      letterSpacing: 1,
+                      textAlign: 'center',
+                    }}
+                  >
+                    {cupon.codigo}
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={yaEnBilletera}
+                    onClick={() => {
+                      if (yaEnBilletera) return;
+                      void reclamarCupon?.({
+                        codigoPromo: cupon.codigo,
+                        titulo: ahorro,
+                        tipoDescuento: cupon.tipoDescuento,
+                        valor: cupon.valor,
+                        montoMinimo: cupon.montoMinimo,
+                      });
+                    }}
+                    className="lf-press"
+                    style={{
+                      minHeight: 44,
+                      borderRadius: 999,
+                      border: 'none',
+                      background: yaEnBilletera ? 'rgba(255,255,255,0.25)' : '#FFFFFF',
+                      color: yaEnBilletera ? '#FFFFFF' : '#0051D5',
+                      fontWeight: 800,
+                      fontSize: 12.5,
+                      cursor: yaEnBilletera ? 'default' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 5,
+                    }}
+                  >
+                    {yaEnBilletera ? (
+                      <>
+                        <Check size={13} /> En tu billetera
+                      </>
+                    ) : (
+                      'Guardar cupón'
+                    )}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* ── TIENDAS DESTACADAS ── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
