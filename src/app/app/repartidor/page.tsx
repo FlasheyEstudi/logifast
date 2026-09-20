@@ -177,10 +177,15 @@ export default function RepartidorAppPage() {
     });
     inicializarNotificacionesNativas().catch(() => null);
 
-    // 2. Comprobar si ya vio la bienvenida de conductor única
+    // 2. Comprobar si ya vio la bienvenida de conductor única.
+    //    OJO: el onboarding es parte del ACCESO, no del dispositivo. Si se recuerda
+    //    entre sesiones, al cerrar sesión el usuario vuelve directo al formulario y
+    //    se pierde la presentación que sí debe verse en la primera entrada.
+    //    Se recuerda solo dentro de esta sesión de navegador.
     if (typeof window !== 'undefined') {
-      const seen = localStorage.getItem('lf_driver_welcome_done');
-      setWelcomeDone(seen === 'true');
+      let visto: string | null = null;
+      try { visto = sessionStorage.getItem('lf_driver_welcome_done'); } catch { /* modo privado */ }
+      setWelcomeDone(visto === 'true');
     }
 
     // 3. Verificar si ya hay una sesión activa de repartidor
@@ -209,7 +214,7 @@ export default function RepartidorAppPage() {
 
   const handleStartRegister = () => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('lf_driver_welcome_done', 'true');
+      try { sessionStorage.setItem('lf_driver_welcome_done', 'true'); } catch { /* modo privado */ }
     }
     setWelcomeDone(true);
     setAuthMode('register');
@@ -217,10 +222,24 @@ export default function RepartidorAppPage() {
 
   const handleStartLogin = () => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('lf_driver_welcome_done', 'true');
+      try { sessionStorage.setItem('lf_driver_welcome_done', 'true'); } catch { /* modo privado */ }
     }
     setWelcomeDone(true);
     setAuthMode('login');
+  };
+
+  /**
+   * Volver a la presentación desde el formulario. Además de mostrar los slides en
+   * memoria, se olvida la marca para que un recargo de la página no devuelva al
+   * usuario al formulario que acaba de dejar.
+   */
+  const volverAlWelcome = () => {
+    if (typeof window !== 'undefined') {
+      try { sessionStorage.removeItem('lf_driver_welcome_done'); } catch { /* modo privado */ }
+    }
+    setWelcomeDone(false);
+    setSlideIndex(0);
+    setDirection(0);
   };
 
   const handleLogout = async () => {
@@ -524,7 +543,7 @@ export default function RepartidorAppPage() {
       <AuthRedesign
         currentView={authMode}
         fixedRole="repartidor"
-        onBackToWelcome={() => setWelcomeDone(false)}
+        onBackToWelcome={volverAlWelcome}
         onLoginSuccess={(role, name) => {
           setSessionUser({ name, role });
         }}

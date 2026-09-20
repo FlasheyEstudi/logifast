@@ -92,9 +92,13 @@ export default function ClienteAppPage() {
     });
     inicializarNotificacionesNativas().catch(() => null);
 
+    // El onboarding pertenece al ACCESO, no al dispositivo: se recuerda solo dentro
+    // de esta sesión de navegador para que, al cerrar sesión, la presentación vuelva
+    // a mostrarse en lugar de saltar directo al formulario.
     if (typeof window !== 'undefined') {
-      const seen = localStorage.getItem('lf_client_welcome_done');
-      setWelcomeDone(seen === 'true');
+      let visto: string | null = null;
+      try { visto = sessionStorage.getItem('lf_client_welcome_done'); } catch { /* modo privado */ }
+      setWelcomeDone(visto === 'true');
     }
 
     fetch('/api/auth/me')
@@ -110,6 +114,16 @@ export default function ClienteAppPage() {
       .finally(() => setCheckingSession(false));
   }, []);
 
+  /** Volver a la presentación desde el formulario, olvidando la marca de esta sesión. */
+  const volverAlWelcome = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      try { sessionStorage.removeItem('lf_client_welcome_done'); } catch { /* modo privado */ }
+    }
+    setWelcomeDone(false);
+    setSlideIndex(0);
+    setDirection(0);
+  }, []);
+
   const paginate = (newDirection: number) => {
     setDirection(newDirection);
     setSlideIndex((prev) => {
@@ -122,7 +136,7 @@ export default function ClienteAppPage() {
 
   const handleStartRegister = () => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('lf_client_welcome_done', 'true');
+      try { sessionStorage.setItem('lf_client_welcome_done', 'true'); } catch { /* modo privado */ }
     }
     setWelcomeDone(true);
     setAuthMode('register');
@@ -130,7 +144,7 @@ export default function ClienteAppPage() {
 
   const handleStartLogin = () => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('lf_client_welcome_done', 'true');
+      try { sessionStorage.setItem('lf_client_welcome_done', 'true'); } catch { /* modo privado */ }
     }
     setWelcomeDone(true);
     setAuthMode('login');
@@ -432,7 +446,7 @@ export default function ClienteAppPage() {
       <AuthRedesign
         currentView={authMode}
         fixedRole="cliente"
-        onBackToWelcome={() => setWelcomeDone(false)}
+        onBackToWelcome={volverAlWelcome}
         onLoginSuccess={(role, name) => {
           setSessionUser({ name, role });
         }}
