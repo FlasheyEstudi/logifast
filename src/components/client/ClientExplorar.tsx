@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   Search,
@@ -71,6 +71,10 @@ export default function ClientExplorar({ onNavigate }: ClientExplorarProps) {
     favoritosTiendas = [],
     toggleFavoritoTienda,
   } = useMarketplaceStore();
+
+  useEffect(() => {
+    useMarketplaceStore.getState().fetchTiendas();
+  }, []);
 
   const [searchQuery, setSearchQuery] = useState(explorarSearch || '');
   const [activeFilter, setActiveFilter] = useState<'todos' | 'promo' | 'favoritos'>('todos');

@@ -82,3 +82,8 @@ export function installCapacitorFetchBridge(): void {
   (window as any).__lf_fetch_bridge_installed = true;
   console.log('[Capacitor Network] Interceptor de API instalado con éxito hacia:', DEFAULT_BACKEND_URL);
 }
+
+// Auto-instalar en entorno cliente inmediatamente para asegurar que ninguna petición inicial falle
+if (typeof window !== 'undefined') {
+  installCapacitorFetchBridge();
+}

@@ -90,19 +90,29 @@ export default function StoreCard({ tienda, onAbrir, variante = 'rail', distanci
 
   const esRail = variante === 'rail';
 
-  // Si no hay banner subido, se genera un fondo orgánico con el color de marca
-  const colorBase = tienda.portadaColor || tienda.logoColor || '#1B1B2F';
+  // Color base asegurado: color de portada o logo o primario
+  const colorBase = tienda.portadaColor || tienda.logoColor || 'var(--primario)';
+  const esHex = colorBase.startsWith('#');
   const fondoPortada = tieneBannerValido
     ? undefined
-    : `radial-gradient(circle at 78% 18%, ${colorBase} 0%, transparent 62%), linear-gradient(135deg, ${colorBase} 0%, ${colorBase}CC 58%, ${colorBase}99 100%)`;
+    : esHex
+    ? `radial-gradient(circle at 80% 20%, rgba(255,255,255,0.24) 0%, transparent 60%), linear-gradient(135deg, ${colorBase} 0%, ${colorBase}E6 55%, ${colorBase}B3 100%)`
+    : `radial-gradient(circle at 80% 20%, rgba(255,255,255,0.24) 0%, transparent 60%), linear-gradient(135deg, ${colorBase} 0%, rgba(0,0,0,0.2) 100%)`;
 
   // El halo y el aro del logo toman el acento de la tienda si lo tiene.
   const acento = tienda.logoColor || 'var(--primario)';
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onAbrir}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onAbrir();
+        }
+      }}
       className={`lf-press lf-optim lf-organic ${esRail ? 'lf-rail-tile' : ''}`}
       aria-label={`Abrir ${tienda.nombre}${cerrada ? ' (cerrada)' : ''}`}
       style={{
@@ -117,114 +127,123 @@ export default function StoreCard({ tienda, onAbrir, variante = 'rail', distanci
         cursor: 'pointer',
         display: 'flex',
         flexDirection: 'column',
+        alignItems: 'stretch',
         opacity: cerrada ? 0.78 : 1,
         fontFamily: "'DM Sans', sans-serif",
+        boxSizing: 'border-box',
+        userSelect: 'none',
+        WebkitTapHighlightColor: 'transparent',
       }}
     >
-      {/* Portada: banner real si existe; si no, degradado orgánico de marca con halo */}
+      {/* Portada: banner real si existe; si no, degradado orgánico de marca con olas */}
       <div
         style={{
           position: 'relative',
-          height: esRail ? 92 : 104,
+          width: '100%',
+          height: esRail ? 94 : 108,
           background: fondoPortada || colorBase,
-          /* Sin overflow hidden: la ola debe poder salir por debajo de la portada */
           borderTopLeftRadius: 26,
           borderTopRightRadius: 26,
           borderBottomLeftRadius: 26,
+          overflow: 'hidden',
+          flexShrink: 0,
         }}
       >
-        {/* Capa recortada: la imagen de portada y el velo sí deben quedar dentro */}
-        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', borderTopLeftRadius: 26, borderTopRightRadius: 26, borderBottomLeftRadius: 26, borderBottomRightRadius: 0 }}>
-          {tieneBannerValido && (
-            <img
-              src={banner!}
-              alt={`Portada de ${tienda.nombre}`}
-              aria-hidden="true"
-              crossOrigin="anonymous"
-              referrerPolicy="no-referrer"
-              onError={() => setBannerError(true)}
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            />
-          )}
-          {/* Velo sutil para que el texto y la etiqueta se lean sobre cualquier foto */}
-          <div
+        {tieneBannerValido && (
+          <img
+            src={banner!}
+            alt={`Portada de ${tienda.nombre}`}
+            aria-hidden="true"
+            crossOrigin="anonymous"
+            onError={() => setBannerError(true)}
             style={{
               position: 'absolute',
               inset: 0,
-              background: 'linear-gradient(180deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.18) 58%, rgba(0,0,0,0.52) 100%)',
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
             }}
           />
-        </div>
+        )}
 
-        {/* Olas ambientales de fondo sobre el color de la tienda */}
-        <svg
-          viewBox="0 0 360 100"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-          style={{
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            bottom: 0,
-            width: '100%',
-            height: '75%',
-            pointerEvents: 'none',
-            zIndex: 1,
-            opacity: tieneBannerValido ? 0.35 : 0.6,
-          }}
-        >
-          <path
-            d="M 0,45 C 90,15 180,65 270,30 C 310,18 340,25 360,32 L 360,100 L 0,100 Z"
-            fill="rgba(255, 255, 255, 0.08)"
-          />
-          <path
-            d="M 0,65 C 100,35 190,75 290,45 C 325,36 345,42 360,50 L 360,100 L 0,100 Z"
-            fill="rgba(255, 255, 255, 0.12)"
-          />
-        </svg>
-
-        {/* Ola orgánica fluida en SVG entre la portada y el cuerpo */}
-        <svg
-          viewBox="0 0 360 36"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-          style={{
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            top: '100%',
-            width: '100%',
-            height: 20,
-            pointerEvents: 'none',
-            zIndex: 2,
-            marginTop: -1,
-          }}
-        >
-          <path
-            d="M 0,0 L 360,0 L 360,12 Q 260,34 170,16 T 0,24 Z"
-            fill={colorBase}
-            opacity={0.3}
-          />
-          <path
-            d="M 0,0 L 360,0 L 360,8 Q 250,30 160,12 T 0,20 Z"
-            fill={colorBase}
-          />
-        </svg>
-
-        {/* Halo de luz sobre el color de la tienda: da volumen sin sombras duras. */}
+        {/* Velo sutil para que el texto y la etiqueta se lean sobre cualquier foto */}
         <div
           style={{
             position: 'absolute',
-            top: -34,
-            right: -24,
-            width: 130,
-            height: 130,
+            inset: 0,
+            background: 'linear-gradient(180deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.15) 55%, rgba(0,0,0,0.48) 100%)',
+          }}
+        />
+
+        {/* Olas ambientales luminosas sobre la portada */}
+        <svg
+          viewBox="0 0 360 80"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 4,
+            width: '100%',
+            height: '65%',
+            pointerEvents: 'none',
+            zIndex: 1,
+            opacity: tieneBannerValido ? 0.35 : 0.65,
+          }}
+        >
+          <path
+            d="M 0,32 C 90,12 180,48 270,22 C 315,12 342,20 360,24 L 360,80 L 0,80 Z"
+            fill="rgba(255, 255, 255, 0.16)"
+          />
+          <path
+            d="M 0,48 C 100,26 190,56 290,34 C 325,26 345,32 360,38 L 360,80 L 0,80 Z"
+            fill="rgba(255, 255, 255, 0.22)"
+          />
+        </svg>
+
+        {/* Ola orgánica esculpida recortando la transición entre la portada y el cuerpo de la tarjeta */}
+        <svg
+          viewBox="0 0 360 26"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: -1,
+            width: '100%',
+            height: 22,
+            pointerEvents: 'none',
+            zIndex: 2,
+          }}
+        >
+          <path
+            d="M 0,10 Q 90,0 180,13 T 360,7 L 360,26 L 0,26 Z"
+            fill="var(--surface)"
+            opacity={0.35}
+          />
+          <path
+            d="M 0,15 Q 95,5 185,17 T 360,11 L 360,26 L 0,26 Z"
+            fill="var(--surface)"
+          />
+        </svg>
+
+        {/* Halo de luz sobre el color de la tienda */}
+        <div
+          style={{
+            position: 'absolute',
+            top: -30,
+            right: -20,
+            width: 120,
+            height: 120,
             borderRadius: '50%',
             background: `radial-gradient(circle, ${acento}66 0%, transparent 70%)`,
             filter: 'blur(6px)',
             pointerEvents: 'none',
           }}
         />
+
         {/* Estado de apertura: dato del servidor, visible en cápsula orgánica */}
         {abierta !== null && (
           <span
@@ -246,7 +265,7 @@ export default function StoreCard({ tienda, onAbrir, variante = 'rail', distanci
               display: 'inline-flex',
               alignItems: 'center',
               gap: 5,
-              zIndex: 3,
+              zIndex: 4,
             }}
           >
             <span
@@ -264,13 +283,13 @@ export default function StoreCard({ tienda, onAbrir, variante = 'rail', distanci
         )}
       </div>
 
-      <div style={{ padding: '10px 12px 12px', display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-          <span
+      <div style={{ width: '100%', padding: '8px 12px 12px', display: 'flex', flexDirection: 'column', gap: 6, flex: 1, boxSizing: 'border-box' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div
             style={{
-              width: 40,
-              height: 40,
-              /* Forma de guijarro orgánico: asimétrico y suave */
+              width: 42,
+              height: 42,
+              /* Forma de guijarro orgánico esculpido */
               borderRadius: '16px 20px 14px 22px',
               flexShrink: 0,
               display: 'flex',
@@ -280,13 +299,13 @@ export default function StoreCard({ tienda, onAbrir, variante = 'rail', distanci
               color: '#FFFFFF',
               fontFamily: "'Syne', sans-serif",
               fontWeight: 800,
-              fontSize: 13,
+              fontSize: 14,
               border: '2.5px solid var(--surface)',
               marginTop: -26,
               boxShadow: '0 4px 14px rgba(0,0,0,0.18)',
               overflow: 'hidden',
               position: 'relative',
-              zIndex: 3,
+              zIndex: 5,
             }}
           >
             {tieneLogoValido ? (
@@ -294,14 +313,13 @@ export default function StoreCard({ tienda, onAbrir, variante = 'rail', distanci
                 src={logo!}
                 alt={`Logo de ${tienda.nombre}`}
                 crossOrigin="anonymous"
-                referrerPolicy="no-referrer"
                 onError={() => setLogoError(true)}
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               />
             ) : (
-              iniciales
+              <span>{iniciales}</span>
             )}
-          </span>
+          </div>
           <div style={{ minWidth: 0, flex: 1 }}>
             <div
               className="lf-clamp-1"
@@ -346,6 +364,6 @@ export default function StoreCard({ tienda, onAbrir, variante = 'rail', distanci
           </div>
         )}
       </div>
-    </button>
+    </div>
   );
 }

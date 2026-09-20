@@ -171,6 +171,7 @@ export default function ClientInicio({
     useStore.getState().fetchCuponesBilletera?.();
     // Los cupones activos del sistema no se mostraban en ninguna parte del home.
     useStore.getState().fetchCodigos?.();
+    useMarketplaceStore.getState().fetchTiendas();
   }, []);
 
   /* Banner auto-scroll */
