@@ -101,6 +101,28 @@ function getPushPlugin(): PluginPush | null {
     ?.PushNotifications || null;
 }
 
+/**
+ * ¿El proyecto tiene Firebase configurado en este build de Android?
+ *
+ * `PushNotifications.register()` llama a `FirebaseMessaging.getInstance()`, que
+ * LANZA `IllegalStateException: Default FirebaseApp is not initialized` si no hay
+ * `google-services.json`. Esa excepción cruza el puente nativo y CIERRA la app.
+ *
+ * Por eso el registro solo se intenta cuando existe una pista real de que Firebase
+ * está configurado. Sin ella, el resto del sistema sigue igual: Socket.IO en primer
+ * plano y notificaciones locales de Capacitor.
+ *
+ * Poner el proyecto en `true` es lo único que hace falta cuando llegue
+ * `google-services.json` (ver docs/PUSH_SETUP.md). También se puede forzar por
+ * entorno con NEXT_PUBLIC_PUSH_HABILITADO=true.
+ */
+const FIREBASE_CONFIGURADO = false;
+
+function pushDisponible(): boolean {
+  if (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_PUSH_HABILITADO === 'true') return true;
+  return FIREBASE_CONFIGURADO;
+}
+
 let registrado = false;
 
 /**
@@ -108,6 +130,11 @@ let registrado = false;
  * o null cuando no hay plugin nativo (navegador) o falta la configuración de FCM.
  */
 export async function registrarPush(motivo: 'arranque' | 'manual' = 'arranque'): Promise<string | null> {
+  // Sin Firebase configurado NO se toca el plugin: `register()` abortaría el proceso.
+  if (!pushDisponible()) {
+    return null;
+  }
+
   const plugin = getPushPlugin();
   if (!plugin?.register) return null;
   if (registrado && motivo === 'arranque') return null;
