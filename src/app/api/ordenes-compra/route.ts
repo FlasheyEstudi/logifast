@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { otorgarRecompensaMensual } from '@/lib/tienda/recompensas';
 import { db } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth/session';
-import { getOrdenPin, generarPinAleatorio } from '@/lib/utils';
+import { getOrdenPin } from '@/lib/utils';
 import { validarCodigoPromocional } from '@/lib/cupones';
 import { emitOrdenCreada, emitOrdenAsignada, emitirEventoRealtime } from '@/lib/realtime-emitter';
 import { geocodeAddress, calcularDistanciaHaversine, calcularTiempoEstimado } from '@/lib/osrm';
+import { calcularApertura } from '@/lib/tienda/horarios';
+import { gananciaRepartidorCompra } from '@/lib/tarifas';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,6 +48,31 @@ export async function GET(req: NextRequest) {
       },
     });
 
+    // Facturas de esas compras. `VentaPOS` no tiene FK a la orden; el vínculo es el
+    // id de la orden anotado en sus notas al emitirla (ver lib/tienda/facturacion).
+    const ids = (ordenes as { id: string }[]).map((o) => o.id);
+    const ventas = ids.length
+      ? await db.ventaPOS
+          .findMany({
+            where: { notas: { contains: 'Orden' }, total: { not: undefined } },
+            select: { id: true, notas: true, numeroComprobante: true, facturaUrlPdf: true },
+            orderBy: { createdAt: 'desc' },
+            take: 300,
+          })
+          .catch(() => [] as { id: string; notas: string | null; numeroComprobante: string; facturaUrlPdf: string | null }[])
+      : [];
+    const facturaPorOrden = new Map<string, { id: string; numeroComprobante: string; facturaUrlPdf: string | null }>();
+    for (const v of ventas) {
+      const encontrado = ids.find((oid) => (v.notas ?? '').includes(oid));
+      if (encontrado && !facturaPorOrden.has(encontrado)) {
+        facturaPorOrden.set(encontrado, {
+          id: v.id,
+          numeroComprobante: v.numeroComprobante,
+          facturaUrlPdf: v.facturaUrlPdf,
+        });
+      }
+    }
+
     const result = (ordenes as any[]).map((o: any) => {
       const repNombre = o.repartidor?.nombre || o.repartidor?.user?.name || null;
       const repInitials = repNombre
@@ -67,6 +94,9 @@ export async function GET(req: NextRequest) {
         destinoLng: o.lng ?? 0,
         metodoPago: o.metodoPago,
         codigoPin: getOrdenPin(o.id, o.codigoPin),
+        // Modo de entrega: el retiro se recoge en el local con el PIN y no pasa por
+        // el repartidor (debe distinguirse en la tarjeta del cliente).
+        modoEntrega: o.modoEntrega ?? 'reparto',
         repartidorNombre: repNombre,
         repartidorTelefono: o.repartidor?.telefono || o.repartidor?.user?.telefono || null,
         repartidorFotoUrl: o.repartidor?.user?.fotoUrl || null,
@@ -81,6 +111,10 @@ export async function GET(req: NextRequest) {
         descuento: o.descuento,
         total: o.total,
         codigoUsado: o.codigoUsado ?? undefined,
+        // La factura existe solo si la venta ya se cerró (entrega o retiro): antes se
+        // listaba aquí para pintar un botón que no llevaba a ninguna parte.
+        facturaUrlPdf: facturaPorOrden.get(o.id)?.facturaUrlPdf ?? null,
+        numeroComprobante: facturaPorOrden.get(o.id)?.numeroComprobante ?? null,
         fecha: o.createdAt.toISOString().slice(0, 10),
         hora: o.createdAt.toLocaleTimeString('es-NI', {
           hour: '2-digit',
@@ -149,6 +183,62 @@ export async function POST(req: NextRequest) {
     const tienda = await db.tienda.findUnique({ where: { id: tiendaId } });
     if (!tienda) {
       return NextResponse.json({ error: 'Tienda no encontrada' }, { status: 404 });
+    }
+
+    // ─── TIENDA ABIERTA (autoridad del servidor) ───
+    // El cliente puede verla, llenar el carrito y llegar hasta aquí con la tienda
+    // cerrada; lo que no puede es CONFIRMAR. La comprobación vive en el backend
+    // porque el horario del navegador no es de fiar.
+    if (tienda.estado !== 'activo') {
+      return NextResponse.json(
+        { error: 'Esta tienda no está recibiendo pedidos por ahora.', codigo: 'TIENDA_CERRADA' },
+        { status: 409 }
+      );
+    }
+    const apertura = calcularApertura(tienda.horario);
+    if (!apertura.abierto && modoEntrega === 'reparto') {
+      return NextResponse.json(
+        {
+          error: `Esta tienda está cerrada. ${apertura.texto}. Puedes programar tu pedido desde "Programar compra".`,
+          codigo: 'TIENDA_CERRADA',
+          proximaApertura: apertura.proximaApertura,
+        },
+        { status: 409 }
+      );
+    }
+
+    // ─── IDEMPOTENCIA ───
+    // Un doble toque (o un reintento de red) no debe cobrar dos veces ni descontar
+    // stock dos veces. Se rechaza la repetición idéntica dentro de la ventana corta.
+    const firma = `${tiendaId}|${modoEntrega}|${direccionEntrega ?? ''}|${items
+      .map((i: { productoId: string; cantidad?: number }) => `${i.productoId}x${Math.max(1, Math.floor(Number(i.cantidad ?? 1)))}`)
+      .sort()
+      .join(',')}`;
+    const reciente = await db.ordenCompra.findFirst({
+      where: {
+        clienteId: user.id,
+        tiendaId,
+        estado: { in: ['recibido', 'preparando', 'listo', 'en_camino'] },
+        createdAt: { gte: new Date(Date.now() - 45_000) },
+      },
+      select: { id: true, tiendaId: true, items: true, modoEntrega: true, direccionEntrega: true },
+    });
+    if (reciente) {
+      const firmaPrevia = `${reciente.tiendaId}|${reciente.modoEntrega}|${reciente.direccionEntrega}|${reciente.items
+        .map((i) => `${i.productoId}x${i.cantidad}`)
+        .sort()
+        .join(',')}`;
+      if (firmaPrevia === firma) {
+        const ordenExistente = await db.ordenCompra.findUnique({ where: { id: reciente.id }, include: { items: true, tienda: true } });
+        return NextResponse.json(
+          {
+            message: 'Este pedido ya fue registrado',
+            duplicado: true,
+            orden: ordenExistente,
+          },
+          { status: 200 }
+        );
+      }
     }
 
     // Validar productos, calcular subtotal y verificar stock
@@ -236,6 +326,27 @@ export async function POST(req: NextRequest) {
 
     // Transacción: crear orden + items + decrementar stock + usar código + crear OrdenServicio
     const result = await db.$transaction(async (tx) => {
+      // Marca de entrada: dentro de la transacción se vuelve a validar el stock con
+      // el valor YA leído bajo las mismas condiciones, para que dos compras
+      // simultáneas del último producto no lo dejen en negativo. El decremento va
+      // condicional (`stock >= cantidad`) y quien no alcanza la fila aborta.
+      for (const item of itemsData) {
+        const productoActual = await tx.producto.findUnique({
+          where: { id: item.productoId },
+          select: { stock: true },
+        });
+        if (!productoActual) throw new Error(`Producto no encontrado: ${item.nombreProducto}`);
+        if (productoActual.stock === null) continue; // no gestiona stock
+
+        const descontado = await tx.producto.updateMany({
+          where: { id: item.productoId, stock: { gte: item.cantidad } },
+          data: { stock: { decrement: item.cantidad } },
+        });
+        if (descontado.count === 0) {
+          throw new Error(`Stock insuficiente para ${item.nombreProducto}`);
+        }
+      }
+
       const ordenData: any = {
         clienteId: user.id,
         tiendaId,
@@ -263,21 +374,27 @@ export async function POST(req: NextRequest) {
         include: { items: true, tienda: true },
       });
 
-      // 2. Decrementar stock por cada item
-      for (const item of itemsData) {
-        const updated = await tx.producto.update({
-          where: { id: item.productoId },
-          data: { stock: { decrement: item.cantidad } },
-        });
-        if (updated.stock !== null && updated.stock < 0) {
-          throw new Error(`Stock insuficiente para ${item.nombreProducto}`);
-        }
-      }
-
-      // 3. Si se usó código, registrar uso
+      // 2. Si se usó código, registrar uso con tope respetado.
+      //    El incremento va CONDICIONAL (`usosActuales` por debajo del tope): un
+      //    `update` a secas dejaba pasar dos canjes simultáneos del último uso,
+      //    porque ambos leían el mismo contador antes de escribir.
       if (codigoUsado) {
         const promo = await tx.codigoPromocional.findUnique({ where: { codigo: codigoUsado } });
         if (promo) {
+          if (promo.maxUsos > 0) {
+            const consumido = await tx.codigoPromocional.updateMany({
+              where: { id: promo.id, usosActuales: { lt: promo.maxUsos } },
+              data: { usosActuales: { increment: 1 } },
+            });
+            if (consumido.count === 0) {
+              throw new Error('El cupón alcanzó su límite de usos');
+            }
+          } else {
+            await tx.codigoPromocional.update({
+              where: { id: promo.id },
+              data: { usosActuales: { increment: 1 } },
+            });
+          }
           await tx.usoCodigo.create({
             data: {
               codigoId: promo.id,
@@ -286,14 +403,10 @@ export async function POST(req: NextRequest) {
               descuento: descuentoValidado,
             },
           });
-          await tx.codigoPromocional.update({
-            where: { id: promo.id },
-            data: { usosActuales: { increment: 1 } },
-          });
         }
       }
 
-      // 4. Incrementar totalPedidos de la tienda
+      // 3. Incrementar totalPedidos de la tienda
       await tx.tienda.update({
         where: { id: tiendaId },
         data: { totalPedidos: { increment: 1 } },
@@ -343,7 +456,10 @@ export async function POST(req: NextRequest) {
         tiendaNombre: tienda.nombre,
         metodoPago,
         monto: total,
-        ganancia: Math.round(costoEnvio * 0.7),
+        // La ganancia del repartidor sale del ENVÍO, no del total de la compra:
+        // `total * 0.2` pagaba distinto por el mismo trabajo y no cuadraba con lo
+        // que el repartidor veía en la oferta.
+        ganancia: gananciaRepartidorCompra(costoEnvio),
         kmEstimados: km,
         tiempoEstimado: tiempoEst,
         codigoPin: pinGenerado,

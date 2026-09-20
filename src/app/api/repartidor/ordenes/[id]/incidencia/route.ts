@@ -42,7 +42,11 @@ export async function PATCH(
       if (!ordenCompra) {
         return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
       }
-      if (ordenCompra.repartidorId && ordenCompra.repartidorId !== profile.id) {
+      // Solo el repartidor ASIGNADO puede reportar incidencia. La comprobación
+      // exige igualdad estricta: antes usaba `repartidorId &&`, así que un pedido
+      // sin asignar (null) pasaba y cualquiera podía cancelarlo reportando una
+      // incidencia.
+      if (ordenCompra.repartidorId !== profile.id) {
         return NextResponse.json({ error: 'No autorizado para esta orden' }, { status: 403 });
       }
       clienteId = ordenCompra.clienteId;
@@ -51,7 +55,7 @@ export async function PATCH(
         data: { estado: 'cancelado' },
       });
     } else {
-      if (orden.repartidorId && orden.repartidorId !== profile.id) {
+      if (orden.repartidorId !== profile.id) {
         return NextResponse.json({ error: 'No autorizado para esta orden' }, { status: 403 });
       }
       clienteId = orden.clienteId;
@@ -109,8 +113,10 @@ export async function PATCH(
     });
 
     if (clienteId) {
+      // Sala personal REAL del cliente (`usuario:{User.id}`). La antigua `cliente:{id}`
+      // nunca existió: el cliente jamás se unía a ella y la incidencia se perdía.
       emitirEventoRealtime({
-        room: `cliente:${clienteId}`,
+        room: `usuario:${clienteId}`,
         event: 'cliente:notificacion',
         data: {
           id: `notif-inc-${Date.now()}`,
@@ -119,6 +125,13 @@ export async function PATCH(
           tipo: 'incidencia',
           ordenId: id,
         },
+      });
+      // Y a la sala de la orden, para que la vista de seguimiento abierta lo pinte
+      // sin esperar al siguiente sondeo.
+      emitirEventoRealtime({
+        room: `orden:${id}`,
+        event: 'orden:estado:update',
+        data: { id, estado: 'incidencia', incidenciaTipo: tipoLabel, incidenciaDesc: desc },
       });
 
       await db.notificacionPush.create({

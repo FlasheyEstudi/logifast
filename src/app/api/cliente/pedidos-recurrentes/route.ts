@@ -38,6 +38,9 @@ export async function GET() {
         activo: r.activo,
         proximaEjecucion: r.proximaEjecucion,
         ultimaEjecucion: r.ultimaEjecucion,
+        // Ejecución avisada y esperando CONFIRMAR/CANCELAR del cliente.
+        esperandoConfirmacion: !!r.pendienteAvisoEn,
+        pendientePara: r.pendientePara,
         items: r.items,
       })),
     });
@@ -74,8 +77,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const tienda = await db.tienda.findUnique({ where: { id: String(tiendaId) }, select: { id: true } });
+    const tienda = await db.tienda.findUnique({ where: { id: String(tiendaId) }, select: { id: true, estado: true } });
     if (!tienda) return NextResponse.json({ ok: false, error: 'Tienda no encontrada' }, { status: 404 });
+    if (tienda.estado !== 'activo') {
+      return NextResponse.json(
+        { ok: false, error: 'Esa tienda no está recibiendo pedidos por ahora.', codigo: 'TIENDA_CERRADA' },
+        { status: 409 }
+      );
+    }
 
     const dias = (Array.isArray(diasSemana) ? diasSemana : [])
       .map((n) => Number(n))
@@ -112,7 +121,12 @@ export async function POST(req: NextRequest) {
       select: { id: true, proximaEjecucion: true },
     });
 
-    return NextResponse.json({ ok: true, recurrente });
+    // Aviso en vivo: el KDS ve el pedido programado apenas se crea.
+    const creado = await db.pedidoRecurrente.findUnique({
+      where: { id: recurrente.id },
+      select: { id: true, proximaEjecucion: true },
+    });
+    return NextResponse.json({ ok: true, recurrente: creado ?? recurrente });
   } catch (err) {
     console.error('[cliente/pedidos-recurrentes POST]', err);
     return NextResponse.json({ ok: false, error: 'No se pudo programar el pedido' }, { status: 500 });

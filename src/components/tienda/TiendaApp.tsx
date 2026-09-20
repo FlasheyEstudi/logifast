@@ -15,6 +15,7 @@ import { TiendaReportesExcel } from './TiendaReportesExcel';
 import { TiendaEstadisticas } from './TiendaEstadisticas';
 import { TiendaConfiguracion } from './TiendaConfiguracion';
 import { AlertCircle, RefreshCw } from '@/components/icons';
+import { realtime } from '@/services/realtime';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
@@ -109,6 +110,9 @@ export function TiendaApp({
         setTiendaCategoria(data.tienda.categoria || 'tienda');
         setTiendaEstado(data.tienda.estado || 'activo');
         setTiendaImagenUrl(data.tienda.imagenUrl || null);
+        // El portal se suscribe a la sala de SUS pedidos: el KDS recibe los avisos
+        // en vivo (el sondeo de 20 s queda solo como respaldo).
+        if (data.tienda.id) realtime.tiendaConectar(String(data.tienda.id));
       }
     } catch (err) {
       console.error(err);

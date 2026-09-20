@@ -11,10 +11,14 @@ let socket: Socket | null = null;
 // personal `usuario:{userId}` nunca se pierda tras un corte de red o un resume de la app.
 let usuarioActual: { userId: string; rol?: string } | null = null;
 
-function reclamarSalaPersonal() {
-  if (usuarioActual && socket?.connected) {
-    socket.emit('usuario:conectar', { userId: usuarioActual.userId, rol: usuarioActual.rol });
-  }
+// Tienda del usuario (si la tiene): su tablet se une a `tienda-ordenes:{tiendaId}`
+// para recibir los pedidos al instante en vez de esperar al sondeo del KDS.
+let tiendaActual: string | null = null;
+
+function reclamarSalas() {
+  if (!socket?.connected) return;
+  if (usuarioActual) socket.emit('usuario:conectar', { userId: usuarioActual.userId, rol: usuarioActual.rol });
+  if (tiendaActual) socket.emit('tienda:conectar', { tiendaId: tiendaActual });
 }
 
 // Sesión de escáner activa: el POS abrió una sala o el celular quedó emparejado.
@@ -59,7 +63,7 @@ export function getSocket(): Socket {
 
     socket.on('connect', () => {
       console.log('[realtime] conectado al servidor (id=' + socket?.id + ')');
-      reclamarSalaPersonal();
+      reclamarSalas();
       reclamarSesionEscaner();
     });
     socket.on('disconnect', (reason) => {
@@ -103,6 +107,9 @@ export type RealtimeEvent =
   | 'mantenimiento:iniciado'             // mantenimiento pasó a EN_PROCESO
   | 'mantenimiento:completado'           // mantenimiento finalizado
   | 'escaner:abierta'                    // el POS abrió una sala de escaneo (POS recibe)
+  | 'tienda:orden:nueva'                 // pedido nuevo para la tienda (KDS recibe)
+  | 'tienda:orden:actualizada'           // pedido de la tienda cambió de estado (KDS recibe)
+  | 'repartidor:orden:cancelada'         // el cliente canceló un pedido ya asignado (repartidor recibe)
   | 'escaner:unida'                      // el celular quedó emparejado a la sala (celular recibe)
   | 'escaner:codigo:recibido'            // código leído por el celular (POS recibe)
   | 'escaner:codigo:ack'                 // el servidor confirmó el código enviado (celular recibe)
@@ -134,6 +141,17 @@ export const realtime = {
   usuarioDesconectar: () => {
     usuarioActual = null;
   },
+  /**
+   * Suscribe la tablet/pC de la tienda a la sala de SUS pedidos. El id lo resuelve
+   * el servidor (`/api/tienda/perfil`) y se re-emite en cada reconexión, así que un
+   * corte de red no deja al KDS sordo: los avisos en vivo siguen llegando.
+   */
+  tiendaConectar: (tiendaId: string) => {
+    if (!tiendaId) return;
+    tiendaActual = tiendaId;
+    const s = getSocket();
+    if (s.connected) s.emit('tienda:conectar', { tiendaId });
+  },
   repartidorConectar: (repartidorId: string) => getSocket().emit('repartidor:conectar', { repartidorId }),
   repartidorPosicion: (lat: number, lng: number, heading: number, estado: string, ordenId?: string) =>
     getSocket().emit('repartidor:posicion', { lat, lng, heading, estado, ordenId }),
@@ -164,11 +182,14 @@ export const realtime = {
     escanerSesion = { pin, rol: 'lector' };
     getSocket().emit('escaner:unir', { pin });
   },
-  /** Transmite al POS un código leído por la cámara del celular. */
-  escanerEnviarCodigo: (pin: string, codigo: string) => {
+  /** Transmite al POS un código leído por la cámara del celular.
+   *  `cantidad` la fija la hoja de cantidad del lector (1 por defecto): el POS
+   *  agrega N de una sola vez en lugar de contar repeticiones del mismo código. */
+  escanerEnviarCodigo: (pin: string, codigo: string, cantidad = 1) => {
     const limpio = String(codigo ?? '').trim();
     if (!pin || limpio.length < 3) return;
-    getSocket().emit('escaner:codigo', { pin, codigo: limpio });
+    const n = Math.max(1, Math.min(999, Math.round(Number(cantidad) || 1)));
+    getSocket().emit('escaner:codigo', { pin, codigo: limpio, cantidad: n });
   },
   /** El celular se desempareja sin cerrar la sesión que abrió el POS. */
   escanerSalir: (pin?: string) => {
@@ -183,10 +204,26 @@ export const realtime = {
     if (p) getSocket().emit('escaner:cerrar', { pin: p });
   },
   escanerSesionActiva: () => escanerSesion,
-  /** El POS avisa al celular si el código resolvió a un producto del catálogo. */
-  escanerResultado: (pin: string, codigo: string, encontrado: boolean, nombre?: string | null) => {
-    if (!pin) return;
-    getSocket().emit('escaner:resultado', { pin, codigo, encontrado, nombre: nombre ?? null });
+  /** El POS avisa al celular si el código resolvió a un producto del catálogo.
+   *  Va sin `pin` a propósito: el servicio lo enruta por el socket del POS dueño,
+   *  y así el dato del producto (nombre/precio/stock) no depende de que la sala
+   *  se haya reabierto en esta pestaña. */
+  escanerResultado: (
+    codigo: string,
+    encontrado: boolean,
+    nombre?: string | null,
+    extra?: { pin?: string; precio?: number | null; stock?: number | null; imagenUrl?: string | null }
+  ) => {
+    if (!codigo) return;
+    getSocket().emit('escaner:resultado', {
+      pin: extra?.pin || (escanerSesion?.rol === 'pos' ? escanerSesion.pin : '') || undefined,
+      codigo,
+      encontrado,
+      nombre: nombre ?? null,
+      precio: extra?.precio ?? null,
+      stock: extra?.stock ?? null,
+      imagenUrl: extra?.imagenUrl ?? null,
+    });
   },
   disconnect: () => { if (socket) { socket.disconnect(); socket = null; escanerSesion = null; } },
   isConnected: () => socket?.connected ?? false,

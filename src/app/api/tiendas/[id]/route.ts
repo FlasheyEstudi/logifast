@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { requireSession } from '@/lib/auth/session';
 import { handleError } from '@/lib/auth/helpers';
+import { calcularApertura, parsearHorario } from '@/lib/tienda/horarios';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,6 +46,9 @@ export async function GET(
       fecha: r.createdAt.toISOString().slice(0, 10),
     }));
 
+    // Apertura calculada en el servidor: el cliente NO decide si la tienda está abierta.
+    const apertura = calcularApertura(t.horario);
+
     return NextResponse.json({
       id: t.id,
       nombre: t.nombre,
@@ -58,16 +62,20 @@ export async function GET(
       lng: t.lng,
       telefono: t.telefono ?? '',
       email: t.email ?? '',
+      whatsapp: t.whatsapp ?? '',
       calificacion: t.calificacion,
       totalPedidos: t.totalPedidos,
       tiempoEstimado: t.tiempoEstimado,
       costoEnvio: t.costoEnvio,
       pedidoMinimo: t.pedidoMinimo,
-      horario,
+      horario: parsearHorario(t.horario),
       zonaCobertura,
       verificado: t.verificado,
       popular: t.popular,
       estado: t.estado,
+      abierta: apertura.abierto,
+      aperturaTexto: apertura.texto,
+      proximaApertura: apertura.proximaApertura,
       badges,
       resenas,
     });

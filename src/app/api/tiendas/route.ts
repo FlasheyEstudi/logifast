@@ -4,6 +4,7 @@ import { requireSession } from '@/lib/auth/session';
 import { getSessionUser } from '@/lib/auth/session';
 import { geocodeAddress } from '@/lib/osrm';
 import { handleError } from '@/lib/auth/helpers';
+import { calcularApertura, parsearHorario } from '@/lib/tienda/horarios';
 
 export const dynamic = 'force-dynamic';
 

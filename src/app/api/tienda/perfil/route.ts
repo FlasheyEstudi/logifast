@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth/session';
 import { buscarTiendaCompleta } from '@/lib/auth/tienda-acceso';
 import { geocodeAddress } from '@/lib/osrm';
+import { parsearHorario, serializarHorario } from '@/lib/tienda/horarios';
 
 export const dynamic = 'force-dynamic';
 
@@ -186,7 +187,10 @@ export async function PATCH(req: NextRequest) {
         ...(bannerUrl !== undefined && { bannerUrl }),
         ...(costoEnvio !== undefined && { costoEnvio: parseFloat(costoEnvio) || 0 }),
         ...(pedidoMinimo !== undefined && { pedidoMinimo: parseFloat(pedidoMinimo) || 0 }),
-        ...(horario !== undefined && { horario }),
+        // El horario se guarda SIEMPRE en el formato JSON único: es la fuente que
+        // consumen cliente, checkout, KDS, cron de recurrentes y la propia tienda.
+        // Así no vuelven a convivir el texto legacy y el JSON en la misma columna.
+        ...(horario !== undefined && { horario: serializarHorario(parsearHorario(horario)) }),
         ...(estado !== undefined && { estado }),
       },
     });

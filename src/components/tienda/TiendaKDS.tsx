@@ -7,6 +7,7 @@ import {
   RefreshCw,
 } from '@/components/icons';
 import { notify } from '@/lib/notify';
+import { onRealtimeEvent, realtime } from '@/services/realtime';
 
 interface ItemOrden {
   id?: string;
@@ -84,6 +85,26 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
   useEffect(() => {
     cargarOrdenes();
 
+    // ─── TIEMPO REAL ───
+    // El KDS ya no depende del sondeo de 20 s para enterarse de un pedido nuevo: la
+    // tablet se suscribe a la sala de la tienda y recibe el aviso al instante. El
+    // sondeo se MANTIENE como respaldo (redes caídas, pestaña suspendida).
+    let vivo = true;
+    fetch('/api/tienda/perfil', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        const tiendaId = d?.tienda?.id;
+        if (vivo && tiendaId) realtime.tiendaConectar(tiendaId);
+      })
+      .catch(() => null);
+
+    const offNueva = onRealtimeEvent('tienda:orden:nueva', () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') cargarOrdenes();
+    });
+    const offActualizada = onRealtimeEvent('tienda:orden:actualizada', () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') cargarOrdenes();
+    });
+
     const handleVisibilityAndFetch = () => {
       if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
         cargarOrdenes();
@@ -101,6 +122,9 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
     }
 
     return () => {
+      vivo = false;
+      offNueva();
+      offActualizada();
       clearInterval(interval);
       if (typeof document !== 'undefined') {
         document.removeEventListener('visibilitychange', handleVisibilityAndFetch);
@@ -409,6 +433,20 @@ export function TiendaKDS({ isDark, categoriaTienda = 'tienda' }: { isDark: bool
                           Entregar a Repartidor
                         </Button>
                       )}
+
+                      {/* El rechazo es una acción real de la tienda y estaba ausente:
+                          sin él solo quedaba dejar el pedido colgado sin respuesta. */}
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          if (window.confirm('¿Rechazar este pedido? Se cancelará y se avisará al cliente.')) {
+                            cambiarEstado(ord.id, 'cancelado');
+                          }
+                        }}
+                        className="w-full h-11 rounded-full border-[var(--peligro)]/40 text-sm font-bold text-[var(--peligro)]"
+                      >
+                        Rechazar pedido
+                      </Button>
                     </div>
                   )}
                 </div>

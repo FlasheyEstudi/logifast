@@ -61,6 +61,35 @@ model User {
   cupones              CuponCliente[]
   tiendasComoUsuario   TiendaUsuario[]          // #7: cajeros/encargados invitados a una tienda
   pedidosRecurrentes   PedidoRecurrente[]       // #1: pedidos programados (lunes a viernes, hora y lugar)
+  deviceTokens         DeviceToken[]            // push real: tokens de los dispositivos del usuario
+}
+
+/**
+ * Token de notificaciones push de un dispositivo.
+ *
+ * La app Cliente/Repartidor ya traía instalado `@capacitor/push-notifications`, pero
+ * nunca se registraba ni se guardaba el token: las notificaciones existentes son
+ * LOCALES (solo suenan con la app abierta o en segundo plano). Esta tabla es el
+ * eslabón que faltaba para poder enviar un push real con la app cerrada.
+ *
+ * Un usuario puede tener varios dispositivos (teléfono + tablet), así que el token
+ * es único y se reasigna si el mismo aparato cambia de dueño.
+ */
+model DeviceToken {
+  id         String   @id @default(cuid())
+  userId     String
+  token      String   @unique
+  plataforma String   @default("android") // "android" | "ios" | "web"
+  /** Canal de Android con el que se debe mostrar (ver canales en el cliente). */
+  canal      String   @default("logifast_urgente")
+  /** Último uso: permite descartar tokens muertos sin borrar historial. */
+  ultimoUso  DateTime @default(now())
+  activo     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, activo])
 }
 
 model Post {
@@ -581,6 +610,7 @@ model RepartidorProfile {
   cedulaRepartidor String?
   chats            ChatRepartidor[]
   notificaciones   NotificacionRepartidor[]
+  ofertasRechazadas OfertaRechazada[]
   ordenes          OrdenServicio[]          @relation("OrdenRepartidor")
   ordenesCompra    OrdenCompra[]            @relation("OrdenCompraRepartidor")
   posiciones       PosicionRepartidor[]
@@ -675,6 +705,23 @@ model NotificacionRepartidor {
   repartidor   RepartidorProfile @relation(fields: [repartidorId], references: [id], onDelete: Cascade)
 
   @@index([repartidorId, createdAt])
+}
+
+/**
+ * Oferta rechazada por un repartidor. Vive en BD (no en memoria) para que una
+ * oferta descartada no reaparezca al reconectar la app; el rechazo caduca solo.
+ * Es por repartidor: que uno la rechace no la esconde a los demás.
+ */
+model OfertaRechazada {
+  id           String            @id @default(cuid())
+  repartidorId String
+  ordenId      String
+  createdAt    DateTime          @default(now())
+  repartidor   RepartidorProfile @relation(fields: [repartidorId], references: [id], onDelete: Cascade)
+
+  @@unique([repartidorId, ordenId])
+  @@index([repartidorId, createdAt])
+  @@index([ordenId])
 }
 
 model ChatRepartidor {
@@ -1125,6 +1172,12 @@ model PedidoRecurrente {
   activo           Boolean   @default(true)      // pausar = activo:false
   proximaEjecucion DateTime
   ultimaEjecucion  DateTime?
+  /**
+   * Ejecución avisada al cliente y pendiente de su CONFIRMAR/CANCELAR. Mientras
+   * exista una pendiente no se avisa otra vez; el cron no crea nada por sí solo.
+   */
+  pendienteAvisoEn DateTime?
+  pendientePara    DateTime?
   creadoEn         DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
@@ -1134,6 +1187,7 @@ model PedidoRecurrente {
   @@index([clienteId])
   @@index([tiendaId])
   @@index([proximaEjecucion])
+  @@index([pendientePara])
 }
 
 // #9 — Alianza: un comercio aliado ofrece un beneficio a los repartidores.

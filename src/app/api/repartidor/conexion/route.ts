@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getRepartidorProfile } from '@/lib/repartidor/helpers';
+import { COMPRA_ACTIVA, SERVICIO_ACTIVO } from '@/lib/estados-pedido';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,6 +25,9 @@ function calcularEstado(
   switch (estadoOrden) {
     case 'asignado': return 'ORDEN_ASIGNADA';
     case 'aceptado': return 'EN_CAMINO_RECOGER';
+    // Un pedido de tienda sale del local en `en_camino`: si esto cayera en el
+    // `default`, el repartidor aparecía EN_LINEA llevando una compra encima.
+    case 'en_camino': return 'EN_CAMINO_RECOGER';
     case 'recogido': return 'RECOGIDO';
     case 'incidencia': return 'INCIDENCIA';
     default: return 'EN_LINEA';
@@ -46,7 +50,7 @@ export async function GET() {
       db.ordenServicio.findFirst({
         where: {
           repartidorId: profile.id,
-          estado: { in: ['asignado', 'aceptado', 'en_camino', 'en_camino_recoger', 'en_punto_recogida', 'recogido', 'en_punto_entrega'] },
+          estado: { in: SERVICIO_ACTIVO },
         },
         select: { id: true, estado: true, createdAt: true },
         orderBy: { createdAt: 'desc' },
@@ -54,7 +58,7 @@ export async function GET() {
       db.ordenCompra.findFirst({
         where: {
           repartidorId: profile.id,
-          estado: { in: ['asignado', 'aceptado', 'recibido', 'preparando', 'listo', 'en_camino', 'recogido', 'en_punto_recogida', 'en_punto_entrega'] },
+          estado: { in: COMPRA_ACTIVA },
         },
         select: { id: true, estado: true, createdAt: true },
         orderBy: { createdAt: 'desc' },
@@ -154,14 +158,14 @@ export async function PATCH(req: NextRequest) {
       db.ordenServicio.findFirst({
         where: {
           repartidorId: profile.id,
-          estado: { in: ['asignado', 'aceptado', 'en_camino', 'en_camino_recoger', 'en_punto_recogida', 'recogido', 'en_punto_entrega'] },
+          estado: { in: SERVICIO_ACTIVO },
         },
         orderBy: { createdAt: 'desc' },
       }),
       db.ordenCompra.findFirst({
         where: {
           repartidorId: profile.id,
-          estado: { in: ['asignado', 'aceptado', 'recibido', 'preparando', 'listo', 'en_camino', 'recogido', 'en_punto_recogida', 'en_punto_entrega'] },
+          estado: { in: COMPRA_ACTIVA },
         },
         orderBy: { createdAt: 'desc' },
       }),

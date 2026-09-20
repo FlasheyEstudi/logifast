@@ -4,6 +4,10 @@ import { getRepartidorProfile } from '@/lib/repartidor/helpers';
 import { getOrdenPin } from '@/lib/utils';
 import type { OrdenActiva, ServicioHistorial } from '@/lib/repartidor-store';
 import { calcularDistanciaHaversine, calcularTiempoEstimado } from '@/lib/osrm';
+import { COMPRA_ACTIVA, SERVICIO_ACTIVO } from '@/lib/estados-pedido';
+import { MS_VENTANA_RECHAZOS, MAX_PEDIDOS_SIMULTANEOS } from '@/lib/repartidor/candados';
+import { ordenarParadas, resumenRuta } from '@/lib/repartidor/ruta';
+import { gananciaRepartidorCompra } from '@/lib/tarifas';
 
 export const dynamic = 'force-dynamic';
 
@@ -58,8 +62,13 @@ function mapCompraToActiva(c: any): OrdenActiva | null {
   const origenLng = c.tienda?.lng != null ? Number(c.tienda.lng) : 0;
   const totalMonto = Number(c.total || 0);
   const costoEnvio = Number(c.costoEnvio || 0);
-  const gananciaCalculada = Math.round(costoEnvio > 0 ? costoEnvio : (totalMonto * 0.2));
+  // La ganancia es SIEMPRE la del envío, igual que en aceptar/entregar: si el valor
+  // guardado no está disponible se deriva con la misma regla del servidor.
+  const gananciaGuardada = Number(c.ganancia || 0);
+  const gananciaCalculada = gananciaGuardada > 0 ? gananciaGuardada : gananciaRepartidorCompra(costoEnvio);
 
+  // Reparto o retiro: el retiro no se ofrece a repartidores (`modoEntrega`), pero si
+  // alguna fila vieja llegara aquí, el distintivo evita que el repartidor la tome.
   const destinoLat = c.lat != null ? Number(c.lat) : 0;
   const destinoLng = c.lng != null ? Number(c.lng) : 0;
 
@@ -169,7 +178,7 @@ export async function GET(req: NextRequest) {
         destino: c.direccionEntrega || 'Managua',
         hora: horaString(c.createdAt),
         kmRecorridos: Number(c.kmEstimados || 0),
-        ganancia: Math.round(c.costoEnvio > 0 ? c.costoEnvio : (c.total * 0.2)),
+        ganancia: gananciaRepartidorCompra(Number(c.costoEnvio || 0)),
         tiempoTotal: Number(c.tiempoEstimado || 0),
         estado: 'entregado' as const,
         calificacion: 5,
@@ -187,14 +196,22 @@ export async function GET(req: NextRequest) {
     }
 
     // Cargar ofertas disponibles y órdenes activas asignadas (unificando Envíos y Pedidos de Tienda)
+    // Las ofertas que este repartidor ya descartó se excluyen con la lista de
+    // rechazos persistidos (antes el filtro solo vivía en memoria del navegador).
+    const rechazos = await db.ofertaRechazada.findMany({
+      where: { repartidorId: profile.id, createdAt: { gte: new Date(Date.now() - MS_VENTANA_RECHAZOS) } },
+      select: { ordenId: true },
+    }).catch(() => [] as { ordenId: string }[]);
+    const idsRechazados = rechazos.map((r) => r.ordenId);
+
     const [ofertasServicio, ofertasCompra, ordenesServicio, ordenesCompra] = await Promise.all([
       db.ordenServicio.findMany({
-        where: { estado: 'pendiente', repartidorId: null },
+        where: { estado: 'pendiente', repartidorId: null, id: { notIn: idsRechazados } },
         orderBy: { createdAt: 'desc' },
         take: 10,
       }),
       db.ordenCompra.findMany({
-        where: { estado: { in: ['recibido', 'preparando', 'pendiente'] }, repartidorId: null },
+        where: { estado: { in: ['recibido', 'preparando', 'pendiente', 'listo'] }, repartidorId: null, id: { notIn: idsRechazados } },
         include: { tienda: true, cliente: true, items: true },
         orderBy: { createdAt: 'desc' },
         take: 10,
@@ -202,7 +219,7 @@ export async function GET(req: NextRequest) {
       db.ordenServicio.findMany({
         where: {
           repartidorId: profile.id,
-          estado: { in: ['asignado', 'aceptado', 'en_camino', 'en_camino_recoger', 'en_punto_recogida', 'recogido', 'en_punto_entrega', 'pendiente_confirmacion'] },
+          estado: { in: SERVICIO_ACTIVO },
         },
         orderBy: { createdAt: 'desc' },
         take: 5,
@@ -210,7 +227,7 @@ export async function GET(req: NextRequest) {
       db.ordenCompra.findMany({
         where: {
           repartidorId: profile.id,
-          estado: { in: ['asignado', 'aceptado', 'en_camino', 'recogido', 'en_punto_recogida', 'en_punto_entrega'] },
+          estado: { in: COMPRA_ACTIVA },
         },
         include: { tienda: true, cliente: true, items: true },
         orderBy: { createdAt: 'desc' },
@@ -235,15 +252,47 @@ export async function GET(req: NextRequest) {
       ...ofertasCompraUnicas.map((c) => mapCompraToActiva(c)).filter(Boolean),
     ] as OrdenActiva[];
 
-    const ordenesActivas = [
+    // Orden lógico de las paradas por cercanía a la posición real del repartidor.
+    // El frontend ya hacía nearest-neighbor, pero solo en memoria: al reconectar o
+    // cambiar de pestaña la ruta volvía al orden de creación.
+    const ordenesActivasRaw = [
       ...ordenesServicio.map((o) => mapOrdenToActiva(o)).filter(Boolean),
       ...ordenesCompraUnicas.map((c) => mapCompraToActiva(c)).filter(Boolean),
     ] as OrdenActiva[];
+
+    const ruta = ordenarParadas(
+      ordenesActivasRaw.map((o) => ({
+        ...o,
+        estado: o.estado ?? 'pendiente',
+      })),
+      profile.lat,
+      profile.lng
+    );
+    const ordenesActivas = ruta as OrdenActiva[];
+    const resumen = resumenRuta(
+      ordenesActivasRaw.map((o) => ({
+        id: o.id,
+        estado: o.estado ?? 'pendiente',
+        origenLat: o.origenLat,
+        origenLng: o.origenLng,
+        destinoLat: o.destinoLat,
+        destinoLng: o.destinoLng,
+      })),
+      profile.lat,
+      profile.lng
+    );
 
     return NextResponse.json({
       orden: ordenesActivas[0] || null,
       ordenes: ordenesActivas,
       ofertas: ofertasDisponibles,
+      // Orden sugerido de paradas + distancia estimada. El cliente puede reordenar
+      // con su GPS en vivo; esto garantiza un orden sensato incluso recién reconectado.
+      rutaSugerida: ordenesActivas.map((o) => o.id),
+      rutaKmEstimados: resumen.distanciaTotal,
+      primerDestinoKm: resumen.primerDestinoKm,
+      pedidosActivos: ordenesActivas.length,
+      maxPedidosSimultaneos: MAX_PEDIDOS_SIMULTANEOS,
       estadoServicio: ordenesActivas.length > 0 ? 'en_servicio' : 'disponible',
       kmRecorridos: ordenesServicio[0]?.kmRecorridos ?? 0,
       conectado: profile.conectado,

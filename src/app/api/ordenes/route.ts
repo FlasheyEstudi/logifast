@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth/session';
-import { geocodeAddress, calcularDistanciaHaversine, calcularTiempoEstimado } from '@/lib/osrm';
+import { geocodeAddress } from '@/lib/osrm';
+import { calcularTarifaEnvio, generarPinUnico } from '@/lib/tarifas';
 import { emitOrdenCreada } from '@/lib/realtime-emitter';
 
 export const dynamic = 'force-dynamic';
@@ -146,31 +147,45 @@ export async function POST(req: NextRequest) {
     }
 
     const hasCoords = finalOrigLat !== 0 && finalOrigLng !== 0 && finalDestLat !== 0 && finalDestLng !== 0;
-    const kmCalc = hasCoords ? calcularDistanciaHaversine(finalOrigLat, finalOrigLng, finalDestLat, finalDestLng) : 0;
-    const kmReales = (Number(body.kmEstimados) > 0) ? Number(body.kmEstimados) : kmCalc;
-    const tiempoEstimadoMin = (Number(body.tiempoEstimado) > 0) ? Number(body.tiempoEstimado) : (kmReales > 0 ? calcularTiempoEstimado(kmReales) : 0);
 
-    // Tarifa global desde AppConfig (fila id=1); fallback a los valores históricos.
-    const cfg = await db.appConfig.findUnique({ where: { id: 1 } }).catch(() => null);
-    const TARIFA_BASE = cfg?.tarifaBase ?? 40;
-    const COSTO_KM = cfg?.costoEnvioKm ?? 15;
+    // ─── PRECIO AUTORITATIVO DEL SERVIDOR ───
+    // El `monto`/`ganancia` del body se ignoran a propósito: solo se usan para el
+    // respaldo cuando el geocoding no dio coordenadas (no se puede calcular km).
+    const tarifa = await calcularTarifaEnvio({
+      origenLat: finalOrigLat,
+      origenLng: finalOrigLng,
+      destinoLat: finalDestLat,
+      destinoLng: finalDestLng,
+      fragil: Boolean(fragil),
+      tamano: tamano ?? null,
+    });
 
-    // Tarifa base (cubre primeros 2km) + costo por km adicional (configurable por admin)
-    let tarifaCalculada = TARIFA_BASE;
-    if (kmReales > 2) {
-      tarifaCalculada += Math.round((kmReales - 2) * COSTO_KM);
-    }
-    if (fragil) tarifaCalculada += 20;
-    if (tamano === 'Grande') tarifaCalculada += 30;
-    if (tamano === 'Mediano') tarifaCalculada += 15;
-
-    // Si el body provee un monto mayor o igual a la tarifa calculada, respetarlo; de lo contrario usar la tarifa oficial
-    const montoBody = Number(body.monto) || 0;
-    const montoFinal = montoBody >= tarifaCalculada * 0.8 ? montoBody : tarifaCalculada;
-    const gananciaRepartidor = Math.round(montoFinal * 0.7);
+    const kmReales = hasCoords && tarifa.km > 0 ? tarifa.km : Math.max(0, Number(body.kmEstimados) || 0);
+    const montoFinal = hasCoords ? tarifa.monto : Math.max(0, Number(body.monto) || tarifa.monto);
+    const gananciaRepartidor = hasCoords ? tarifa.ganancia : Math.round(montoFinal * 0.7);
+    const tiempoEstimadoMin = tarifa.tiempoEstimado > 0 ? tarifa.tiempoEstimado : Math.max(0, Number(body.tiempoEstimado) || 0);
 
     const rawPin = body.codigoPin ? String(body.codigoPin).trim() : '';
-    const pinGenerado = (rawPin.length >= 4) ? rawPin.slice(0, 4) : String(Math.floor(1000 + Math.random() * 9000));
+    const pinGenerado = (rawPin.length >= 4) ? rawPin.slice(0, 4) : await generarPinUnico(user.id);
+
+    // Idempotencia: un doble toque en "Confirmar envío" no debe crear dos órdenes
+    // idénticas. Se rechaza la repetición exacta dentro de la ventana corta.
+    const duplicada = await db.ordenServicio.findFirst({
+      where: {
+        clienteId: user.id,
+        origen,
+        destino,
+        estado: 'pendiente',
+        createdAt: { gte: new Date(Date.now() - 30_000) },
+      },
+      select: { id: true },
+    });
+    if (duplicada) {
+      return NextResponse.json(
+        { error: 'Ya registramos este envío hace un momento. Revisa tus envíos activos.', ordenId: duplicada.id },
+        { status: 409 }
+      );
+    }
 
     const createData: any = {
       clienteId: user.id,

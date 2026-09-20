@@ -31,8 +31,29 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   if (!user) return new NextResponse('No autorizado', { status: 401 });
 
   const { id } = await params;
+
+  // El comprobante de un envío puede venir de `SolicitudEnvio` (flujo viejo) o de la
+  // `OrdenServicio` real (el flujo vigente). Antes solo se miraba la primera, así que
+  // el envío entregado no tenía PDF posible.
   const s = await db.solicitudEnvio.findUnique({ where: { id } });
-  if (!s || s.clienteId !== user.id) {
+  const servicioVirtual = s
+    ? null
+    : await db.ordenServicio.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          clienteId: true,
+          createdAt: true,
+          origen: true,
+          destino: true,
+          monto: true,
+          metodoPago: true,
+          codigoPin: true,
+        },
+      });
+
+  const datos = s ?? servicioVirtual;
+  if (!datos || datos.clienteId !== user.id) {
     return new NextResponse('Factura no encontrada', { status: 404 });
   }
 
@@ -45,15 +66,18 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   linea(doc, 'Tu logística y delivery de confianza', { centro: true, gris: true, tamano: 8 });
   separador(doc);
   linea(doc, 'FACTURA DE SERVICIO', { bold: true, centro: true, tamano: 12 });
-  linea(doc, `Fecha: ${s.createdAt.toLocaleString('es-NI', { dateStyle: 'medium', timeStyle: 'short' })}`, { centro: true, gris: true });
+  if ('codigoPin' in datos && datos.codigoPin) {
+    linea(doc, `PIN: ${datos.codigoPin}`, { bold: true, centro: true, tamano: 11 });
+  }
+  linea(doc, `Fecha: ${datos.createdAt.toLocaleString('es-NI', { dateStyle: 'medium', timeStyle: 'short' })}`, { centro: true, gris: true });
   separador(doc);
   linea(doc, 'Recogida:', { bold: true, tamano: 9 });
-  linea(doc, s.origen, { gris: true, tamano: 9 });
+  linea(doc, datos.origen, { gris: true, tamano: 9 });
   linea(doc, 'Entrega:', { bold: true, tamano: 9 });
-  linea(doc, s.destino, { gris: true, tamano: 9 });
+  linea(doc, datos.destino, { gris: true, tamano: 9 });
   separador(doc);
-  linea(doc, `TOTAL   ${dinero(s.monto)}`, { bold: true, tamano: 13 });
-  linea(doc, `Pago: ${s.metodoPago === 'efectivo' ? 'Efectivo' : s.metodoPago === 'tarjeta' ? 'Tarjeta' : 'Transferencia'}`, { gris: true });
+  linea(doc, `TOTAL   ${dinero(datos.monto)}`, { bold: true, tamano: 13 });
+  linea(doc, `Pago: ${datos.metodoPago === 'efectivo' ? 'Efectivo' : datos.metodoPago === 'tarjeta' ? 'Tarjeta' : 'Transferencia'}`, { gris: true });
   separador(doc);
   linea(doc, '¡Gracias por usar LogiFast!', { centro: true, bold: true });
   linea(doc, 'Conservar esta factura para reclamos.', { centro: true, gris: true, tamano: 8 });
@@ -65,7 +89,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     status: 200,
     headers: {
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `inline; filename="factura-${s.id.slice(-8)}.pdf"`,
+      'Content-Disposition': `inline; filename="factura-${datos.id.slice(-8)}.pdf"`,
     },
   });
 }

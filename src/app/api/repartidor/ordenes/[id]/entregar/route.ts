@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getRepartidorProfile } from '@/lib/repartidor/helpers';
+import { gananciaRepartidorCompra } from '@/lib/tarifas';
+import { sincronizarServicioConCompra } from '@/lib/tienda/sincronizar-pedido';
+import { facturarCompra } from '@/lib/tienda/facturacion';
+import { enviarPushPedido, MENSAJE_ESTADO } from '@/lib/push/notificar-pedido';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,18 +31,39 @@ export async function PATCH(
         return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
       }
 
-      // Idempotencia: solo actualizar y sumar si NO estaba ya entregada
-      const ganancia = Math.round(ordenCompra.total * 0.2);
+      // El pedido tiene que ser SUYO. Sin esta comprobación, la rama de compras de
+      // esta ruta cerraba y pagaba cualquier pedido ajeno (la rama de servicios ya
+      // validaba; esta no).
+      if (ordenCompra.repartidorId !== profile.id) {
+        return NextResponse.json({ error: 'No autorizado para esta orden' }, { status: 403 });
+      }
+
+      // Idempotencia: solo actualizar y sumar si NO estaba ya entregada.
+      // La ganancia sale del ENVÍO (`ordenCompra.costoEnvio`), no del total de la
+      // compra: pagar `total * 0.2` daba montos distintos por el mismo trabajo y no
+      // cuadraba con la ganancia que el repartidor vio al aceptar la oferta.
+      const ganancia = gananciaRepartidorCompra(Number(ordenCompra.costoEnvio) || 0);
       try {
         await db.$transaction(async (tx) => {
           const upd = await tx.ordenCompra.updateMany({
-            where: { id, estado: { notIn: ['entregado', 'cancelado'] } },
+            where: { id, repartidorId: profile.id, estado: { notIn: ['entregado', 'cancelado'] } },
             data: { estado: 'entregado' },
           });
 
           if (upd.count === 0) {
             throw new Error('ALREADY_DELIVERED');
           }
+
+          // Cerrar el servicio vinculado: sin esto el pedido seguía apareciendo como
+          // activo del repartidor y como oferta para los demás.
+          await sincronizarServicioConCompra({
+            tx,
+            estadoCompra: 'entregado',
+            tiendaId: ordenCompra.tiendaId,
+            clienteId: ordenCompra.clienteId,
+            codigoPin: ordenCompra.codigoPin,
+            extra: { repartidorId: profile.id, entregadoEn: new Date() },
+          });
 
           await tx.repartidorProfile.update({
             where: { id: profile.id },
@@ -56,11 +81,42 @@ export async function PATCH(
         throw err;
       }
 
+      try {
+        const { emitirEventoRealtime } = await import('@/lib/realtime-emitter');
+        for (const room of [`orden:${id}`, `usuario:${ordenCompra.clienteId}`, `tienda-ordenes:${ordenCompra.tiendaId}`]) {
+          emitirEventoRealtime({ room, event: 'orden:estado:update', data: { id, estado: 'entregado' } });
+        }
+      } catch {}
+
+      // La compra queda cerrada: se emite su factura con la infraestructura del POS
+      // para que el cliente la vea en "Mis Facturas" y la tienda pueda autorizar
+      // devoluciones con su PIN.
+      const factura = await facturarCompra(id).catch((err) => {
+        console.error('[REPARTIDOR_ENTREGAR_FACTURA]', err);
+        return null;
+      });
+
+      // Push de entrega: el aviso que el cliente espera incluso con la app cerrada.
+      const avisoEntrega = MENSAJE_ESTADO.entregado;
+      if (avisoEntrega) {
+        void enviarPushPedido({
+          userId: ordenCompra.clienteId,
+          ordenId: id,
+          estado: 'entregado',
+          titulo: avisoEntrega.titulo,
+          cuerpo: avisoEntrega.cuerpo,
+          vista: 'tracking',
+          canal: 'logifast_estado',
+          tipoAlerta: avisoEntrega.alerta,
+        }).catch(() => null);
+      }
+
       return NextResponse.json({
         ok: true,
         estado: 'entregado',
         ordenId: id,
         ganancia,
+        factura,
       });
     }
 

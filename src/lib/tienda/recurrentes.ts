@@ -1,13 +1,25 @@
 import { db } from '@/lib/db';
-import { emitOrdenCreada } from '@/lib/realtime-emitter';
+import { emitOrdenCreada, emitirEventoRealtime } from '@/lib/realtime-emitter';
+import { calcularApertura } from '@/lib/tienda/horarios';
+import { calcularDistanciaHaversine } from '@/lib/osrm';
 
 /**
  * #1 — Pedido recurrente: mismo carrito, hora y lugar, repetido por regla.
  *
- * Un cron pide a la app que ejecute los que ya vencieron. La orden se crea con el
- * **precio del día** (no con el precio guardado) y descuenta stock igual que el
- * checkout; si un producto desapareció, simplemente no entra en el pedido.
+ * El cron NO crea el pedido por su cuenta: cuando llega la hora avisa al cliente
+ * (notificación + sala personal) y deja la ejecución pendiente de su CONFIRMAR o
+ * CANCELAR. Solo entonces se crea la orden, con el **precio del día** y descontando
+ * stock igual que el checkout; si un producto desapareció, simplemente no entra.
+ *
+ * Si la tienda está cerrada a esa hora no se avisa ni se crea nada imposible: la
+ * ejecución se corre al siguiente hueco válido.
  */
+
+/** Cuánto tiempo tiene el cliente para confirmar antes de que la ejecución caduque. */
+export const MS_VENTANA_CONFIRMACION = 45 * 60 * 1000;
+
+/** Margen de aviso previo: se avisa un poco antes de la hora pedida. */
+export const MS_AVISO_ANTICIPADO = 10 * 60 * 1000;
 
 export interface ItemSnapshot {
   productoId: string;
@@ -63,6 +75,93 @@ export interface ResultadoRecurrente {
   avisos: string[];
 }
 
+/**
+ * Avisa al cliente que su pedido programado está por ejecutarse. NO crea nada:
+ * deja la ejecución pendiente de confirmación y emite la notificación. Devuelve
+ * false cuando la tienda está cerrada a esa hora (no se avisa un pedido imposible).
+ */
+export async function avisarRecurrente(recurrenteId: string): Promise<{
+  ok: boolean;
+  motivo?: string;
+  proximaEjecucion?: Date;
+}> {
+  const rec = await db.pedidoRecurrente.findUnique({
+    where: { id: recurrenteId },
+    include: { tienda: { select: { nombre: true, horario: true, estado: true } } },
+  });
+  if (!rec || !rec.activo) return { ok: false, motivo: 'Recurrente inactivo' };
+
+  // Ya hay un aviso esperando respuesta: no se duplica.
+  if (rec.pendienteAvisoEn) return { ok: false, motivo: 'Ya espera confirmación del cliente' };
+
+  const objetivo = rec.proximaEjecucion;
+
+  // Tienda cerrada a la hora pedida: se corre al siguiente hueco con la misma regla.
+  const apertura = calcularApertura(rec.tienda.horario, objetivo);
+  if (rec.tienda.estado !== 'activo' || !apertura.abierto) {
+    const dias = parsearDias(rec.diasSemana);
+    const siguiente = calcularProximaEjecucion(dias, rec.hora, objetivo);
+    await db.pedidoRecurrente.update({
+      where: { id: rec.id },
+      data: { proximaEjecucion: siguiente },
+    });
+    return { ok: false, motivo: `La tienda está cerrada a esa hora (${apertura.texto})`, proximaEjecucion: siguiente };
+  }
+
+  const horaTexto = objetivo.toLocaleString('es-NI', {
+    weekday: 'long',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+
+  await db.pedidoRecurrente.update({
+    where: { id: rec.id },
+    data: { pendienteAvisoEn: new Date(), pendientePara: objetivo },
+  });
+
+  await db.notificacionPush.create({
+    data: {
+      userId: rec.clienteId,
+      titulo: 'Tu pedido programado está listo para confirmar',
+      contenido: `${rec.tienda.nombre} — ${horaTexto}. Confirma para generarlo o cancélalo para saltar esta vez.`,
+      tipo: 'PEDIDO_PROGRAMADO',
+      entidadId: rec.id,
+      leida: false,
+    },
+  }).catch(() => null);
+
+  // La campanita del cliente lo ve al instante, sin esperar al sondeo.
+  emitirEventoRealtime({
+    room: `usuario:${rec.clienteId}`,
+    event: 'notificacion:push',
+    data: {
+      titulo: 'Pedido programado',
+      contenido: `Confirma tu pedido en ${rec.tienda.nombre}`,
+      tipo: 'pedido_programado',
+      entidadId: rec.id,
+    },
+  });
+
+  return { ok: true, proximaEjecucion: objetivo };
+}
+
+/**
+ * Cancela UNA ejecución pendiente sin tocar la programación futura: el recurrente
+ * sigue activo y se reprograma para su siguiente día.
+ */
+export async function saltarEjecucion(recurrenteId: string, clienteId: string): Promise<{ ok: boolean; proximaEjecucion?: Date }> {
+  const rec = await db.pedidoRecurrente.findUnique({ where: { id: recurrenteId } });
+  if (!rec || rec.clienteId !== clienteId) return { ok: false };
+
+  const siguiente = calcularProximaEjecucion(parsearDias(rec.diasSemana), rec.hora, rec.pendientePara ?? new Date());
+  await db.pedidoRecurrente.update({
+    where: { id: rec.id },
+    data: { pendienteAvisoEn: null, pendientePara: null, proximaEjecucion: siguiente },
+  });
+  return { ok: true, proximaEjecucion: siguiente };
+}
+
 /** Crea la orden de un recurrente que ya venció y reprograma el siguiente. */
 export async function ejecutarRecurrente(recurrenteId: string): Promise<ResultadoRecurrente> {
   const avisos: string[] = [];
@@ -110,6 +209,21 @@ export async function ejecutarRecurrente(recurrenteId: string): Promise<Resultad
   const costoEnvio = esRetiro ? 0 : rec.tienda.costoEnvio;
   const total = subtotal + costoEnvio;
   const pin = String(Math.floor(1000 + Math.random() * 9000));
+
+  // Km reales entre la tienda y el destino: la orden nace con un estimado útil para
+  // el repartidor (antes el recurrente no traía ni km ni tiempo).
+  const kmRecurrente =
+    rec.tienda.lat !== 0 && rec.tienda.lng !== 0 && (rec.lat !== 0 || rec.lng !== 0)
+      ? Math.round(calcularDistanciaHaversine(rec.tienda.lat, rec.tienda.lng, rec.lat, rec.lng) * 10) / 10
+      : 0;
+
+  // Nombre y teléfono reales del cliente: la orden nace con el dueño, no con una
+  // etiqueta genérica que el repartidor no podía usar para contactarlo.
+  const cliente = await db.user
+    .findUnique({ where: { id: rec.clienteId }, select: { name: true, telefono: true } })
+    .catch(() => null);
+  const clienteNombreRec = cliente?.name || 'Cliente';
+  const telefonoRec = cliente?.telefono ?? null;
 
   const orden = await db.$transaction(async (tx) => {
     const creada = await tx.ordenCompra.create({
@@ -172,18 +286,26 @@ export async function ejecutarRecurrente(recurrenteId: string): Promise<Resultad
         tiendaNombre: rec.tienda.nombre,
         metodoPago: rec.metodoPago,
         monto: total,
+        // La ganancia sale del ENVÍO, igual que en el checkout normal.
         ganancia: Math.round(costoEnvio * 0.7),
-        clienteNombre: 'Cliente recurrente',
+        kmEstimados: kmRecurrente,
+        tiempoEstimado: kmRecurrente > 0 ? Math.round(kmRecurrente * 4) : 0,
+        clienteNombre: clienteNombreRec,
+        clienteTelefono: telefonoRec,
         codigoPin: pin,
       },
     });
+    // Aviso en vivo a la tienda (KDS) y a los repartidores, sin esperar al sondeo.
     emitOrdenCreada(ordenServicio);
+    emitirEventoRealtime({ room: `tienda-ordenes:${rec.tiendaId}`, event: 'tienda:orden:nueva', data: orden });
   }
 
   await db.pedidoRecurrente.update({
     where: { id: rec.id },
     data: {
       ultimaEjecucion: new Date(),
+      pendienteAvisoEn: null,
+      pendientePara: null,
       proximaEjecucion: calcularProximaEjecucion(parsearDias(rec.diasSemana), rec.hora),
     },
   });

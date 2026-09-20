@@ -14,6 +14,9 @@ interface Recurrente {
   activo: boolean;
   proximaEjecucion: string;
   ultimaEjecucion: string | null;
+  /** El cron ya avisó: esta ejecución espera CONFIRMAR o CANCELAR del cliente. */
+  esperandoConfirmacion?: boolean;
+  pendientePara?: string | null;
 }
 
 const DIAS = [
@@ -38,6 +41,7 @@ export function ClientRecurrentes() {
   const [abierto, setAbierto] = useState(false);
   const [dias, setDias] = useState<number[]>([1, 2, 3, 4, 5]);
   const [hora, setHora] = useState('10:00');
+  const [respondiendo, setRespondiendo] = useState<string | null>(null);
   const [direccion, setDireccion] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [cargando, setCargando] = useState(true);
@@ -117,6 +121,34 @@ export function ClientRecurrentes() {
     }
     notify.success('Compra programada cancelada');
     await cargar();
+  };
+
+  /**
+   * Responde a un aviso del cron: confirmar crea el pedido YA; cancelar salta esta
+   * vez sin desactivar la programación. El pedido nunca se crea sin esta respuesta.
+   */
+  const responderEjecucion = async (id: string, accion: 'confirmar' | 'cancelar') => {
+    setRespondiendo(id);
+    try {
+      const res = await fetch('/api/cliente/pedidos-recurrentes/confirmar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, accion }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        notify.error(data.error || 'No se pudo procesar');
+        return;
+      }
+      notify.success(
+        accion === 'confirmar'
+          ? 'Pedido generado. Ya está en la tienda.'
+          : 'Se saltó esta vez. Tu programación sigue activa.'
+      );
+      await cargar();
+    } finally {
+      setRespondiendo(null);
+    }
   };
 
   const campo: React.CSSProperties = {
@@ -242,35 +274,61 @@ export function ClientRecurrentes() {
             return (
               <div
                 key={r.id}
-                className="flex flex-wrap items-center gap-3"
-                style={{ padding: '10px 12px', borderRadius: 12, background: 'var(--bg-alt)', border: '1px solid var(--border)' }}
+                style={{ padding: '10px 12px', borderRadius: 12, background: 'var(--bg-alt)', border: r.esperandoConfirmacion ? '1px solid #F59E0B' : '1px solid var(--border)' }}
               >
-                <div style={{ minWidth: 0, flex: '1 1 200px' }}>
-                  <div style={{ fontSize: 13, fontWeight: 700 }}>
-                    {r.tiendaNombre} · {etiquetaDias || 'cada semana'} {r.hora}
+                <div className="flex flex-wrap items-center gap-3">
+                  <div style={{ minWidth: 0, flex: '1 1 200px' }}>
+                    <div style={{ fontSize: 13, fontWeight: 700 }}>
+                      {r.tiendaNombre} · {etiquetaDias || 'cada semana'} {r.hora}
+                    </div>
+                    <div style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>
+                      {r.direccionEntrega} · {r.esperandoConfirmacion ? 'esperando tu confirmación' : 'próxima'}:{' '}
+                      {new Date(r.esperandoConfirmacion && r.pendientePara ? r.pendientePara : r.proximaEjecucion).toLocaleString('es-NI')}
+                    </div>
                   </div>
-                  <div style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>
-                    {r.direccionEntrega} · próxima: {new Date(r.proximaEjecucion).toLocaleString('es-NI')}
-                  </div>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: r.esperandoConfirmacion ? '#F59E0B' : r.activo ? '#22C55E' : '#F59E0B' }}>
+                    {r.esperandoConfirmacion ? 'POR CONFIRMAR' : r.activo ? 'ACTIVA' : 'EN PAUSA'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => alternarActivo(r)}
+                    style={{ height: 44, padding: '0 14px', borderRadius: 10, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text)', fontWeight: 700, fontSize: 12.5, cursor: 'pointer' }}
+                  >
+                    {r.activo ? 'Pausar' : 'Reanudar'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => cancelar(r.id)}
+                    aria-label="Cancelar compra programada"
+                    style={{ width: 44, height: 44, borderRadius: 10, border: '1px solid var(--border)', background: 'transparent', color: '#EF4444', cursor: 'pointer' }}
+                  >
+                    <Trash2 size={15} />
+                  </button>
                 </div>
-                <span style={{ fontSize: 11, fontWeight: 700, color: r.activo ? '#22C55E' : '#F59E0B' }}>
-                  {r.activo ? 'ACTIVA' : 'EN PAUSA'}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => alternarActivo(r)}
-                  style={{ height: 44, padding: '0 14px', borderRadius: 10, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text)', fontWeight: 700, fontSize: 12.5, cursor: 'pointer' }}
-                >
-                  {r.activo ? 'Pausar' : 'Reanudar'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => cancelar(r.id)}
-                  aria-label="Cancelar compra programada"
-                  style={{ width: 44, height: 44, borderRadius: 10, border: '1px solid var(--border)', background: 'transparent', color: '#EF4444', cursor: 'pointer' }}
-                >
-                  <Trash2 size={15} />
-                </button>
+
+                {r.esperandoConfirmacion && (
+                  <div className="flex flex-wrap items-center gap-2" style={{ marginTop: 10 }}>
+                    <span style={{ fontSize: 12, color: 'var(--text-muted)', flex: '1 1 160px' }}>
+                      Tu pedido programado está listo para generarse.
+                    </span>
+                    <button
+                      type="button"
+                      disabled={respondiendo === r.id}
+                      onClick={() => responderEjecucion(r.id, 'confirmar')}
+                      style={{ height: 44, padding: '0 16px', borderRadius: 10, border: 'none', background: '#22C55E', color: '#06240F', fontWeight: 800, fontSize: 12.5, cursor: 'pointer' }}
+                    >
+                      {respondiendo === r.id ? '…' : 'Confirmar pedido'}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={respondiendo === r.id}
+                      onClick={() => responderEjecucion(r.id, 'cancelar')}
+                      style={{ height: 44, padding: '0 16px', borderRadius: 10, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', fontWeight: 700, fontSize: 12.5, cursor: 'pointer' }}
+                    >
+                      Saltar esta vez
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })
