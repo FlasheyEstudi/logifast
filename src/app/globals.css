@@ -16508,3 +16508,293 @@ body {
   50% { transform: translateY(120px); }
 }
 
+/* ══════════════════════════════════════════════════════════════════════
+   EXPERIENCIA MÓVIL DEL CLIENTE
+   ──────────────────────────────────────────────────────────────────────
+   Estas reglas NO introducen identidad nueva: usan los tokens que ya
+   existían (--primario, --surface, --lf-card-radius, --lf-glass-*, safe
+   areas) y los aplican de forma consistente en móvil. El objetivo es que
+   el cliente sienta una app nativa, no una web comprimida.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── Carrusel táctil con imán (scroll-snap) ──
+   Reemplaza el desplazamiento con flechas/botones por el gesto natural del dedo.
+   `scroll-padding` alinea la primera tarjeta con el margen de la pantalla. */
+.lf-rail {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  scroll-padding-left: var(--lf-gutter);
+  padding-inline: var(--lf-gutter);
+  padding-block: 2px;
+}
+.lf-rail::-webkit-scrollbar { display: none; }
+.lf-rail > * { scroll-snap-align: start; flex: 0 0 auto; }
+
+/* Tarjeta ancha del carrusel principal (casi todo el ancho, con la siguiente asomando) */
+.lf-rail-card { width: min(86vw, 420px); }
+/* Tarjeta de tienda / categoría */
+.lf-rail-tile { width: min(64vw, 240px); }
+/* Tarjeta compacta de producto */
+.lf-rail-prod { width: min(44vw, 176px); }
+
+/* ── Área táctil mínima (Apple HIG 44pt / Material 48dp) ──
+   Todo control interactivo debe poder tocarse sin zoom ni precisión. */
+.lf-touch {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* El dedo no debe seleccionar texto al deslizar un carrusel o pulsar seguido. */
+.lf-rail, .lf-no-select { -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+
+/* ── Espaciado lateral único de la app cliente ──
+   Antes cada pantalla elegía su padding (16, 18, 20, 24) y el contenido no
+   quedaba alineado al cambiar de pestaña. */
+:root, .light, html.light, .dark, html.dark {
+  --lf-gutter: 16px;
+}
+@media (min-width: 420px) { :root, .light, html.light, .dark, html.dark { --lf-gutter: 18px; } }
+@media (min-width: 768px) { :root, .light, html.light, .dark, html.dark { --lf-gutter: 24px; } }
+
+.lf-page {
+  width: 100%;
+  max-width: 640px;
+  margin-inline: auto;
+  padding-inline: var(--lf-gutter);
+}
+/* En tablet el contenido no se estira: se centra a un ancho legible. */
+@media (min-width: 768px) { .lf-page { max-width: 720px; } }
+
+/* ── Hoja inferior (bottom sheet) reutilizable ──
+   El patrón más "app nativa" para carrito, cupón y confirmaciones. */
+.lf-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+@media (min-width: 640px) { .lf-sheet-backdrop { align-items: center; } }
+
+.lf-sheet {
+  width: 100%;
+  max-width: 520px;
+  max-height: 92dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--lf-sheet-radius, 20px) var(--lf-sheet-radius, 20px) 0 0;
+  box-shadow: var(--lf-shadow-sheet, 0 -12px 48px rgba(0,0,0,0.18));
+  padding-bottom: calc(16px + var(--lf-safe-bottom, 0px));
+  animation: lf-sheet-up 0.26s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+@media (min-width: 640px) {
+  .lf-sheet { border-radius: var(--lf-sheet-radius, 20px); margin: 16px; }
+}
+
+/* Agarradera visual de la hoja (indica que se puede arrastrar) */
+.lf-sheet-handle {
+  width: 40px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--border);
+  margin: 10px auto 14px;
+}
+
+/* ── Barra inferior de navegación ──
+   Respeta la safe area del gesto de Android/notch y nunca deja el contenido
+   escondido debajo. */
+.lf-tabbar {
+  padding-bottom: var(--lf-safe-bottom, 0px);
+  backdrop-filter: saturate(180%) blur(var(--lf-glass-blur, 24px));
+  -webkit-backdrop-filter: saturate(180%) blur(var(--lf-glass-blur, 24px));
+}
+
+/* Espacio de respiro al final de cada pantalla para que la tab bar no tape nada */
+.lf-page-bottom {
+  padding-bottom: calc(var(--lf-bottom-nav-height, 72px) + var(--lf-safe-bottom, 0px) + 24px);
+}
+
+/* ── Scroll horizontal cómodo para filtros y chips ── */
+.lf-chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-inline: var(--lf-gutter);
+  padding-block: 4px;
+}
+.lf-chips::-webkit-scrollbar { display: none; }
+.lf-chips > * { flex: 0 0 auto; }
+
+/* ── Esqueleto de carga ──
+   Evita pantallas en blanco mientras llegan los datos. */
+@keyframes lf-shimmer {
+  0% { background-position: -180% 0; }
+  100% { background-position: 180% 0; }
+}
+.lf-skeleton {
+  border-radius: var(--lf-card-radius, 14px);
+  background: linear-gradient(90deg, var(--bg-alt) 25%, var(--surface) 50%, var(--bg-alt) 75%);
+  background-size: 260% 100%;
+  animation: lf-shimmer 1.3s ease-in-out infinite;
+}
+
+/* ── Microinteracciones discretas ──
+   Rápidas (< 220 ms) y sutiles: feedback, no espectáculo. */
+@keyframes lf-pop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.14); }
+  100% { transform: scale(1); }
+}
+.lf-pop { animation: lf-pop 0.22s ease-out; }
+
+@keyframes lf-nudge-up {
+  from { transform: translateY(8px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.lf-nudge-up { animation: lf-nudge-up 0.2s ease-out both; }
+
+/* Realce al pulsar: confirma que el toque se registró, sin retrasar la acción. */
+.lf-press { transition: transform 0.12s ease, opacity 0.12s ease; }
+.lf-press:active { transform: scale(0.97); opacity: 0.9; }
+
+/* ── Listas largas (tiendas, productos, pedidos) ──
+   Delega el pintado al GPU en scroll: se siente fluido en teléfonos modestos. */
+.lf-optim { contain: layout paint style; }
+
+/* ── Tipografía móvil ──
+   Tamaños fluidos: sin saltos bruscos entre un teléfono de 360 px y uno de 430 px. */
+.lf-h1 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: clamp(21px, 5.6vw, 26px); line-height: 1.18; letter-spacing: -0.02em; }
+.lf-h2 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: clamp(17px, 4.4vw, 20px); line-height: 1.22; letter-spacing: -0.015em; }
+.lf-section-title {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.lf-body { font-size: 14px; line-height: 1.45; }
+.lf-caption { font-size: 12px; line-height: 1.35; color: var(--text-muted); }
+.lf-money { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; font-weight: 700; }
+
+/* Nunca dejar que un texto largo rompa la tarjeta en un teléfono estrecho. */
+.lf-clamp-1, .lf-clamp-2 { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
+.lf-clamp-1 { -webkit-line-clamp: 1; }
+.lf-clamp-2 { -webkit-line-clamp: 2; }
+
+/* ── Estado vacío ── */
+.lf-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 10px;
+  padding: 40px 24px;
+  border-radius: var(--lf-card-radius, 16px);
+  background: var(--surface);
+  border: 1px dashed var(--border);
+}
+.lf-empty-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primario-soft);
+  color: var(--primario);
+}
+
+/* ── Aviso de tienda cerrada / producto agotado ── */
+.lf-badge-closed {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  background: rgba(255, 59, 48, 0.12);
+  color: var(--peligro);
+  border: 1px solid rgba(255, 59, 48, 0.25);
+}
+.lf-badge-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  background: rgba(52, 199, 89, 0.14);
+  color: var(--exito);
+  border: 1px solid rgba(52, 199, 89, 0.3);
+}
+
+/* ── Punto de notificación sobre el icono de la tab bar ── */
+.lf-dot-badge {
+  position: absolute;
+  top: 6px;
+  right: 50%;
+  transform: translateX(14px);
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--peligro);
+  color: #FFFFFF;
+  font-size: 10px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--surface);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lf-pop, .lf-nudge-up, .lf-skeleton { animation: none; }
+  .lf-rail { scroll-behavior: auto; }
+  .lf-press:active { transform: none; }
+}
+
+/* ── Lectores de códigos del POS (escaner.html + CamaraEscaneo) ──
+   Hoja de cantidad y marco de escaneo. Se declaran aquí porque estas dos vistas
+   montan con el CSS de la app compilado (mobile:sync copia el HTML de /escaner). */
+@keyframes lf-sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.lf-sheet-up { animation: lf-sheet-up 0.24s ease-out both; }
+
+@keyframes lf-scanframe {
+  0%, 100% { transform: translateY(-96px); opacity: 0.55; }
+  50% { transform: translateY(96px); opacity: 1; }
+}
+
+.lf-scanframe { animation: lf-scanframe 2.4s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lf-sheet-up { animation: none; }
+  .lf-scanframe { animation: none; }
+}
+

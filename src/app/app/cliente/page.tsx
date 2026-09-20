@@ -9,6 +9,8 @@ import { realtime } from '@/services/realtime';
 import { RoleLoader } from '@/components/ui/loaders';
 import AuthRedesign, { SLIDES, AppleSlideWidget } from '@/components/auth/AuthRedesign';
 import { useConfigStore, aplicarTema } from '@/store/configStore';
+import { useStore } from '@/lib/store';
+import { useMarketplaceStore } from '@/lib/marketplace-store';
 import { toggleThemeWithTransition } from '@/lib/theme-transition';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 
@@ -53,9 +55,40 @@ export default function ClienteAppPage() {
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
 
   useEffect(() => {
+    // El botón atrás de Android debe CERRAR la capa abierta antes de salir de la app.
+    // Antes respondía `false` siempre: teniendo el carrito o el tracking abiertos, un
+    // toque atrás no hacía nada y el siguiente salía de la aplicación.
+    const cerrarCapaSuperior = (): boolean => {
+      const m = useMarketplaceStore.getState();
+      if (m.carritoOpen) {
+        m.setCarritoOpen(false);
+        return true;
+      }
+      if (m.tiendaSeleccionada) {
+        m.setTiendaSeleccionada(null);
+        return true;
+      }
+      if (m.productoDetalleId) {
+        m.setProductoDetalleId(null);
+        return true;
+      }
+      const s = useStore.getState();
+      if (s.trackingOrderId) {
+        s.setTrackingOrder(null);
+        return true;
+      }
+      return false;
+    };
+
     initCapacitorAndroid({
-      hasOpenModal: () => false,
-      closeActiveModal: () => {},
+      hasOpenModal: () => {
+        const m = useMarketplaceStore.getState();
+        const s = useStore.getState();
+        return !!(m.carritoOpen || m.tiendaSeleccionada || m.productoDetalleId || s.trackingOrderId);
+      },
+      closeActiveModal: () => {
+        cerrarCapaSuperior();
+      },
     });
     inicializarNotificacionesNativas().catch(() => null);
 

@@ -740,6 +740,28 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
       useRepartidorStore.getState().syncFromBackend();
     });
 
+    // El cliente canceló un pedido que ya estaba en la ruta: se saca del mapa al
+    // instante en vez de dejarlo visible hasta el siguiente sondeo de 10 s.
+    const cleanupCancelada = onRealtimeEvent('repartidor:orden:cancelada', (data: { ordenId?: string; motivo?: string }) => {
+      const ordenId = data?.ordenId;
+      if (!ordenId) return;
+      const state = useRepartidorStore.getState();
+      const esActiva = (state.ordenesActivas || []).some((o) => o.id === ordenId) || state.ordenActiva?.id === ordenId;
+      if (!esActiva) return;
+
+      const restantes = (state.ordenesActivas || []).filter((o) => o.id !== ordenId);
+      useRepartidorStore.setState({
+        ordenesActivas: restantes,
+        ordenActiva: restantes[0] ?? null,
+        estado: restantes.length > 0 ? state.estado : 'EN_LINEA',
+        enServicio: restantes.length > 0,
+      });
+      showSnackbar({ message: data?.motivo || 'El cliente canceló el pedido. Se retiró de tu ruta.' });
+      reproducirSonido('error', 90);
+      HAPTIC_PATTERNS.heavy?.();
+      state.syncFromBackend();
+    });
+
     return () => {
       cleanupChat();
       cleanupOrder();
@@ -748,9 +770,9 @@ export default function RepartidorShell({ isDark, toggleTheme, onLogout, userNam
       cleanupMotoMantenimiento();
       cleanupMotoCompletado();
       cleanupMotoUpdate();
+      cleanupCancelada();
     };
   }, [conectado, showSnackbar]);
-
   /* ─── Avisos dirigidos de administración (campañas, promociones, difusiones) ───
      No depende de `conectado`: si la app está abierta, el aviso debe sonar y
      quedar en la bandeja de Android aunque el repartidor esté desconectado. */

@@ -253,6 +253,12 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
   /* ─── Handlers ─── */
   const handleAddToCart = (producto: Producto) => {
     if (!tienda) return;
+    // La tienda cerrada SÍ deja ver y llenar el carrito (así el cliente encuentra lo
+    // que quiere y lo confirma al abrir). Solo se avisa, no se bloquea: el bloqueo
+    // real está en el backend al confirmar.
+    if (!storeOpenInfo.open) {
+      notify.warning(`${tienda.nombre} está cerrada. Puedes armar tu carrito; el pedido se confirma cuando abra.`);
+    }
     const added = addToCart(producto, tienda);
     if (added === false) return;
     setAddedProductIds((prev) => new Set(prev).add(producto.id));
@@ -395,7 +401,19 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
     );
   }
 
-  const storeOpenInfo = isStoreOpen(tienda.horario);
+  // La apertura la decide el SERVIDOR (`abierta` + `aperturaTexto`): el reloj del
+  // celular no es de fiar y antes esto mostraba un horario inventado por fallback.
+  // Si el backend no manda el dato (respuesta vieja en caché), se cae al cálculo
+  // local con el horario ya normalizado.
+  const storeOpenInfo = (() => {
+    const abiertaServidor = (tienda as { abierta?: boolean }).abierta;
+    const texto = (tienda as { aperturaTexto?: string }).aperturaTexto;
+    if (typeof abiertaServidor === 'boolean') {
+      return { open: abiertaServidor, text: texto || (abiertaServidor ? 'Abierto' : 'Cerrado') };
+    }
+    const local = isStoreOpen(tienda.horario);
+    return { open: local.open, text: local.text };
+  })();
   const parsedHorario = parseHorarioSeguro(tienda.horario);
 
   return (
@@ -884,6 +902,7 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
+              className="lf-touch"
               style={{
                 flex: 1,
                 padding: '14px 0 12px 0',
@@ -922,7 +941,7 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
       {/* ════════════════════════════════════════════
           5. CONTENIDO DE TABS
           ════════════════════════════════════════════ */}
-      <div style={{ padding: '0 20px 140px 20px' }}>
+      <div className="lf-page-bottom" style={{ padding: '0 var(--lf-gutter) 20px var(--lf-gutter)' }}>
         <AnimatePresence mode="wait">
           {/* ─── TAB MENÚ & PRODUCTOS ─── */}
           {activeTab === 'menu' && (

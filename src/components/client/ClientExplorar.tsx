@@ -14,6 +14,7 @@ import {
   X,
 } from '@/components/icons';
 import { useMarketplaceStore, CATEGORIAS } from '@/lib/marketplace-store';
+import StoreCard from './StoreCard';
 
 interface ClientExplorarProps {
   isDark?: boolean;
@@ -298,202 +299,52 @@ export default function ClientExplorar({ onNavigate }: ClientExplorarProps) {
           </button>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14 }}>
+        <div
+          style={{
+            display: 'grid',
+            // 2 columnas en teléfono (a partir de 340px), 3 en pantallas mayores.
+            gridTemplateColumns: 'repeat(auto-fill, minmax(min(46vw, 200px), 1fr))',
+            gap: 12,
+          }}
+        >
           {filteredTiendas.map((tienda) => {
             const isFav = favoritosTiendas.some((f: any) => (f.tiendaId || f) === tienda.id);
             return (
-              <motion.div
-                key={tienda.id}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setTiendaSeleccionada(tienda.id)}
-                style={{
-                  ...sectionCard,
-                  padding: 0,
-                  overflow: 'hidden',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  flexDirection: 'column',
-                }}
-              >
-                {/* Banner de Tienda */}
-                <div
+              <div key={tienda.id} style={{ position: 'relative' }}>
+                <StoreCard tienda={tienda as any} onAbrir={() => setTiendaSeleccionada(tienda.id)} variante="grid" />
+                {/* Favorito: antes la estrella quedaba a 34px (bajo el mínimo táctil). */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleFavoritoTienda(tienda.id);
+                  }}
+                  aria-label={isFav ? `Quitar ${tienda.nombre} de favoritos` : `Guardar ${tienda.nombre} en favoritos`}
                   style={{
-                    height: 105,
-                    background: tienda.bannerUrl
-                      ? `linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.7)), url(${tienda.bannerUrl}) center/cover no-repeat`
-                      : (tienda.logoColor || 'linear-gradient(135deg, var(--primario), #D84315)'),
-                    padding: 14,
+                    position: 'absolute',
+                    top: 6,
+                    left: 6,
+                    width: 44,
+                    height: 44,
+                    borderRadius: '50%',
+                    background: 'rgba(0,0,0,0.42)',
+                    backdropFilter: 'blur(8px)',
+                    WebkitBackdropFilter: 'blur(8px)',
+                    border: 'none',
+                    color: '#FFFFFF',
                     display: 'flex',
-                    alignItems: 'flex-end',
-                    justifyContent: 'space-between',
-                    position: 'relative',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, zIndex: 2 }}>
-                    <div
-                      style={{
-                        width: 44,
-                        height: 44,
-                        borderRadius: 14,
-                        overflow: 'hidden',
-                        background: 'var(--surface)',
-                        color: 'var(--primario)',
-                        fontFamily: "'Syne', sans-serif",
-                        fontWeight: 800,
-                        fontSize: 16,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        boxShadow: 'var(--lf-shadow-card)',
-                        border: '1px solid var(--border)',
-                      }}
-                    >
-                      {tienda.imagenUrl ? (
-                        <img
-                          src={tienda.imagenUrl}
-                          alt={tienda.nombre}
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        />
-                      ) : (
-                        tienda.nombre.substring(0, 2).toUpperCase()
-                      )}
-                    </div>
-                    <div>
-                      <h3
-                        style={{
-                          fontSize: 15,
-                          fontWeight: 700,
-                          fontFamily: "'Syne', sans-serif",
-                          color: '#FFFFFF',
-                          margin: 0,
-                          textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-                        }}
-                      >
-                        {tienda.nombre}
-                      </h3>
-                      <p
-                        style={{
-                          fontSize: 11,
-                          color: 'rgba(255, 255, 255, 0.85)',
-                          margin: 0,
-                          textTransform: 'capitalize',
-                        }}
-                      >
-                        {tienda.categoria}
-                      </p>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleFavoritoTienda(tienda.id);
-                    }}
-                    style={{
-                      zIndex: 2,
-                      width: 34,
-                      height: 34,
-                      borderRadius: '50%',
-                      background: 'rgba(0, 0, 0, 0.4)',
-                      backdropFilter: 'blur(8px)',
-                      border: 'none',
-                      color: '#FFFFFF',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <Heart size={16} fill={isFav ? '#FF3B30' : 'none'} color={isFav ? '#FF3B30' : '#FFFFFF'} />
-                  </button>
-                </div>
-
-                {/* Contenido Info */}
-                <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <p
-                    style={{
-                      fontSize: 12,
-                      color: 'var(--text-muted)',
-                      margin: 0,
-                      lineHeight: 1.4,
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
-                    }}
-                  >
-                    {tienda.descripcion}
-                  </p>
-
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      borderTop: '1px solid var(--border)',
-                      paddingTop: 10,
-                      fontSize: 12,
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 3,
-                          color: '#FF9500',
-                          fontWeight: 700,
-                          fontFamily: "'JetBrains Mono', monospace",
-                        }}
-                      >
-                        <Star size={12} fill="currentColor" /> {(tienda.calificacion || 4.8).toFixed(1)}
-                      </span>
-                      <span style={{ color: 'var(--border)' }}>•</span>
-                      <span style={{ color: 'var(--text-muted)', fontFamily: "'DM Sans', sans-serif" }}>
-                        <Clock size={12} style={{ display: 'inline', marginRight: 4 }} />
-                        {(tienda as any).tiempoEntrega || tienda.tiempoEstimado || '20 min'}
-                      </span>
-                    </div>
-
-                    <span
-                      style={{
-                        fontWeight: 700,
-                        color: 'var(--text)',
-                        fontFamily: "'JetBrains Mono', monospace",
-                      }}
-                    >
-                      C$ {tienda.costoEnvio} envío
-                    </span>
-                  </div>
-
-                  {/* Badges */}
-                  {tienda.badges && tienda.badges.length > 0 && (
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      {tienda.badges.map((b) => (
-                        <span
-                          key={b}
-                          style={{
-                            padding: '2px 8px',
-                            borderRadius: 6,
-                            background: 'var(--primario-soft)',
-                            color: 'var(--primario)',
-                            fontSize: 10,
-                            fontWeight: 700,
-                            textTransform: 'uppercase',
-                            fontFamily: "'DM Sans', sans-serif",
-                          }}
-                        >
-                          {b}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </motion.div>
+                  <Heart size={17} fill={isFav ? '#FF3B30' : 'none'} color={isFav ? '#FF3B30' : '#FFFFFF'} />
+                </button>
+              </div>
             );
           })}
         </div>
       )}
+
     </div>
   );
 }

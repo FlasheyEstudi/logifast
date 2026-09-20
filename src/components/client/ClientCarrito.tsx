@@ -185,6 +185,10 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
   /* ─── Envío real y pedido mínimo de la tienda (fuente única: GET /api/tiendas/[id]) ─── */
   const [envioTienda, setEnvioTienda] = useState<{ nombre: string; costoEnvio: number; pedidoMinimo: number } | null>(null);
   const [cargandoEnvio, setCargandoEnvio] = useState(false);
+  // Apertura de la tienda del carrito, tal como la reporta el servidor. `null` = aún
+  // no se sabe (no se bloquea nada por duda).
+  const [tiendaAbierta, setTiendaAbierta] = useState<boolean | null>(null);
+  const [aperturaTexto, setAperturaTexto] = useState('');
 
   const tiendasEnCarrito = useMemo(
     () => Array.from(new Set(cartItems.map((i) => i.tiendaId).filter(Boolean))),
@@ -205,6 +209,11 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error('Tienda no disponible'))))
       .then((t) => {
         if (cancelado) return;
+        // Apertura reportada por el servidor: si viene, manda; si no, no se bloquea.
+        if (typeof t?.abierta === 'boolean') {
+          setTiendaAbierta(t.abierta);
+          setAperturaTexto(String(t?.aperturaTexto ?? ''));
+        }
         // Solo se confía en un costoEnvio numérico real: si el payload no lo trae,
         // el envío queda "por confirmar" en lugar de asumir envío gratis.
         if (typeof t?.costoEnvio !== 'number' || !Number.isFinite(t.costoEnvio)) {
@@ -347,6 +356,15 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
       return;
     }
 
+    // Tienda cerrada: se conserva el carrito y se avisa. El backend vuelve a
+    // comprobarlo de todos modos; esto solo evita el viaje en balde.
+    if (modoEntrega === 'reparto' && tiendaAbierta === false) {
+      notify.error(
+        `${envioTienda?.nombre || 'La tienda'} está cerrada. ${aperturaTexto ? aperturaTexto + '.' : ''} Tu carrito se conserva; puedes programar la compra para cuando abra.`
+      );
+      return;
+    }
+
     // Revalidar el cupón con el subtotal actual antes de cobrar: el importe final
     // siempre lo decide el servidor.
     if (cartCodigoPromo) {
@@ -357,6 +375,8 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
       }
     }
 
+    // Anti-doble-clic: `isProcessing` pinta el botón, pero el guard real es este.
+    if (isProcessing) return;
     setIsProcessing(true);
 
     try {
@@ -386,6 +406,20 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
 
       const data = await res.json();
       if (!res.ok) {
+        // 409 con código TIENDA_CERRADA: el servidor rechazó por horario.
+        if (data?.codigo === 'TIENDA_CERRADA') {
+          setTiendaAbierta(false);
+          if (data?.aperturaTexto || data?.error) setAperturaTexto(String(data.error));
+          throw new Error(data.error || 'La tienda está cerrada.');
+        }
+        // 200 con `duplicado`: el pedido ya se había registrado (doble toque/reintento).
+        if (data?.duplicado) {
+          notify.warning('Ese pedido ya estaba registrado. Te llevamos a tus pedidos.');
+          setIsProcessing(false);
+          clearCart();
+          if (onSuccessCheckout) onSuccessCheckout();
+          return;
+        }
         throw new Error(data?.error || 'No se pudo procesar la compra.');
       }
 
@@ -639,8 +673,9 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
                 </div>
                 <button
                   onClick={onClose}
+                  className="lf-press lf-touch"
                   style={{
-                    padding: '12px 24px',
+                    padding: '14px 26px',
                     borderRadius: 100,
                     background: '#007AFF',
                     color: '#FFFFFF',
@@ -1178,6 +1213,11 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
                       Tu carrito tiene productos de más de una tienda. El envío se cotiza por tienda: realiza un pedido por tienda para poder pagar.
                     </div>
                   )}
+                  {!multiTienda && modoEntrega === 'reparto' && tiendaAbierta === false && (
+                    <div style={{ padding: '10px 12px', borderRadius: 12, background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.35)', color: '#EF4444', fontSize: 11.5, fontWeight: 700, lineHeight: 1.45 }}>
+                      {envioTienda?.nombre || 'Esta tienda'} está cerrada{aperturaTexto ? ` · ${aperturaTexto}` : ''}. Tu carrito se conserva: podrás confirmar cuando abra.
+                    </div>
+                  )}
                   {!multiTienda && faltaParaMinimo > 0 && (
                     <div style={{ padding: '8px 12px', borderRadius: 12, background: 'rgba(245, 158, 11, 0.12)', border: '1px solid rgba(245, 158, 11, 0.35)', color: '#F59E0B', fontSize: 11, fontWeight: 600, lineHeight: 1.45 }}>
                       El pedido mínimo de {envioTienda?.nombre || 'esta tienda'} es C$ {pedidoMinimo.toFixed(2)}. Te faltan C$ {faltaParaMinimo.toFixed(2)} para poder pagar.
@@ -1207,14 +1247,28 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
 
           {/* Checkout Button */}
           {cartItems.length > 0 && (
-            <div style={{ padding: 16, background: 'rgba(15, 23, 42, 0.95)', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+            <div
+              style={{
+                padding: 16,
+                paddingBottom: 'calc(16px + var(--lf-safe-bottom, 0px))',
+                background: 'rgba(15, 23, 42, 0.95)',
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)',
+                borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                position: 'sticky',
+                bottom: 0,
+                zIndex: 5,
+              }}
+            >
               <button
                 onClick={handlePagar}
                 disabled={isProcessing || envioEstado === 'cargando' || !!motivoBloqueo}
+                className="lf-press"
                 style={{
                   width: '100%',
+                  minHeight: 56,
                   padding: 16,
-                  borderRadius: 16,
+                  borderRadius: 'var(--lf-button-radius, 16px)',
                   background: 'linear-gradient(135deg, #007AFF 0%, #0056B3 100%)',
                   color: '#FFFFFF',
                   fontWeight: 800,

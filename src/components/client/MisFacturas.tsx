@@ -12,11 +12,21 @@ interface FacturaCliente {
   metodoPago: string;
   estado: string;
   facturaUrlPdf: string;
+  /** "envio" | "compra" · "retiro" — de dónde viene la factura */
+  tipo?: string;
+  numeroComprobante?: string | null;
+  descripcion?: string | null;
 }
 
 const dinero = (n: number) => `C$ ${n.toLocaleString('es-NI', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-/** Sección "Mis Facturas" del perfil del cliente: compras con preview térmico y descarga PDF. */
+const TITULO_TIPO: Record<string, string> = {
+  envio: 'FACTURA DE SERVICIO',
+  compra: 'FACTURA DE COMPRA',
+  retiro: 'FACTURA DE COMPRA (RETIRO)',
+};
+
+/** Sección "Mis Facturas" del perfil del cliente: envíos, compras y retiros con preview y PDF. */
 export default function MisFacturas() {
   const [abierto, setAbierto] = useState(false);
   const [facturas, setFacturas] = useState<FacturaCliente[]>([]);
@@ -108,6 +118,7 @@ export default function MisFacturas() {
                     </div>
                     <div className="text-[11px] text-[var(--text-muted)] mt-0.5">
                       {new Date(f.createdAt).toLocaleDateString('es-NI', { dateStyle: 'medium' })} · {f.metodoPago}
+                      {f.numeroComprobante ? ` · ${f.numeroComprobante}` : ''}
                     </div>
                   </div>
                   <span className="text-xs font-mono font-bold text-[var(--text)]">{dinero(f.monto)}</span>
@@ -139,7 +150,8 @@ export default function MisFacturas() {
           >
             <div className="text-center font-bold text-xs">LOGIFAST</div>
             <div className="border-t border-dashed border-slate-300 my-1" />
-            <div className="text-center font-bold">FACTURA DE SERVICIO</div>
+            <div className="text-center font-bold">{TITULO_TIPO[preview.tipo ?? 'envio'] ?? 'FACTURA'}</div>
+            {preview.numeroComprobante && <div className="text-center text-slate-500">{preview.numeroComprobante}</div>}
             <div className="text-center">{new Date(preview.createdAt).toLocaleString('es-NI', { dateStyle: 'medium', timeStyle: 'short' })}</div>
             <div className="border-t border-dashed border-slate-300 my-1" />
             <div className="font-bold">Recogida:</div>

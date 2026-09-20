@@ -77,7 +77,9 @@ export interface OrdenCompra {
   tiendaNombre: string;
   tiendaLogo: string;
   tiendaColor: string;
-  estado: 'recibido' | 'preparando' | 'listo' | 'en_camino' | 'entregado';
+  estado: 'recibido' | 'preparando' | 'listo' | 'en_camino' | 'entregado' | 'cancelado';
+  /** "reparto" | "retiro": el retiro se recoge en el local con el PIN. */
+  modoEntrega?: string;
   direccionEntrega: string;
   metodoPago: 'efectivo' | 'transferencia';
   items: { nombreProducto: string; cantidad: number; precioUnitario: number }[];
@@ -91,6 +93,9 @@ export interface OrdenCompra {
   repartidorInitials: string;
   fecha: string;
   hora: string;
+  /** Factura de la compra (se emite al entregar o al retirar en el local). */
+  facturaUrlPdf?: string | null;
+  numeroComprobante?: string | null;
   calificacion?: number;
 }
 

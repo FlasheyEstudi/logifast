@@ -38,6 +38,7 @@ import {
   notificarPedidoListoParaRetiro,
   notificarProgresoEnvio,
 } from '@/services/native-notifications';
+import { iniciarPush } from '@/services/push';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import { HAPTIC_PATTERNS } from '@/services/haptics';
 import SlidingPillTabBar from '@/components/ui/SlidingPillTabBar';
@@ -315,6 +316,12 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName, i
         }
       })
       .catch(() => null);
+
+    // Push REAL: registra el dispositivo para recibir avisos con la app cerrada.
+    // Es independiente del permiso de notificaciones locales de arriba: aquel
+    // controla los avisos internos, este obtiene el token que usa el backend.
+    // Sin credencial de Firebase no hace nada y no rompe ningún flujo.
+    void iniciarPush().catch(() => null);
 
     return () => {
       cancelado = true;
@@ -700,9 +707,14 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName, i
   /* ─── SPLASH STATE (solo una vez por sesión para fluidez total) ─── */
   const [showSplash, setShowSplash] = useState(false);
 
-  /* ─── Permiso de notificaciones al arrancar (antes solo se pedía ubicación) ─── */
+  /* ─── Permiso de notificaciones: SOLO se pide con interacción del usuario ───
+     Antes se llamaba a `solicitarPermisoNotificacionesManual()` al montar, que es
+     exactamente lo que la pantalla de pre-permiso existe para evitar: en Android 13+
+     eso dispara el diálogo del sistema antes de que la app explique nada y el usuario
+     lo rechaza por reflejo. Ahora solo se VERIFICA; el permiso se pide cuando el
+     usuario toca "Activar" en el aviso (ver el efecto de pre-permiso más abajo). */
   useEffect(() => {
-    solicitarPermisoNotificacionesManual().catch(() => null);
+    inicializarNotificacionesNativas().catch(() => null);
   }, []);
   const [splashFading, setSplashFading] = useState(false);
 

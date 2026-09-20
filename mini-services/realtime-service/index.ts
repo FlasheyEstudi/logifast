@@ -119,12 +119,14 @@ const EVENTOS_HTTP_PERMITIDOS = new Set<string>([
   'repartidor:moto:mantenimiento_completado',
   'repartidor:moto:mantenimiento_iniciado',
   'repartidor:moto:update',
+  'repartidor:orden:cancelada',
   'repartidor:orden:disponible',
   'repartidor:orden:nueva',
   'repartidor:orden:tomada',
   'repartidor:posicion:update',
   'repartidor:recarga:actualizada',
   'tienda:orden:nueva',
+  'tienda:orden:actualizada',
 ]);
 
 // In-memory state (no DB needed for realtime)
@@ -142,6 +144,14 @@ const ESCANER_TTL_MS = 30 * 60 * 1000; // la sala muere sola si nadie la usa
 const ESCANER_MAX_SALAS = 500;         // cota de memoria del proceso
 const ESCANER_MAX_INTENTOS = 8;        // intentos de PIN por socket (anti fuerza bruta)
 const ESCANER_MIN_MS_CODIGO = 60;      // anti flood de códigos
+const ESCANER_MAX_CANTIDAD = 999;      // cota de la cantidad que fija el lector
+
+/** Cantidad que fija la hoja del lector. Ausente o inválida vale 1: nunca 0 ni NaN. */
+function normalizarCantidad(v: unknown): number {
+  const n = Math.round(Number(v));
+  if (!Number.isFinite(n) || n < 1) return 1;
+  return Math.min(ESCANER_MAX_CANTIDAD, n);
+}
 
 type SalaEscaner = {
   pin: string;
@@ -235,6 +245,18 @@ io.on('connection', (socket) => {
     console.log(`[realtime] usuario ${data.userId} (${data.rol || 'n/a'}) unido a su sala personal`);
   });
 
+  /* ─── TIENDA / KDS: la tablet del comercio se une a la sala de SUS pedidos ───
+     `tiendaId` lo resuelve el servidor Next desde la sesión y viaja en el evento de
+     conexión; aquí no se valida la pertenencia, así que la sala se usa solo para
+     avisos de pedidos (nunca para datos sensibles: el KDS los pide por HTTP). */
+  socket.on('tienda:conectar', (data: { tiendaId?: string }) => {
+    const tiendaId = String(data?.tiendaId ?? '').trim();
+    if (!tiendaId) return;
+    socket.data.tiendaId = tiendaId;
+    socket.join(`tienda-ordenes:${tiendaId}`);
+    console.log(`[realtime] tienda ${tiendaId} suscrita a tienda-ordenes:${tiendaId}`);
+  });
+
   // ─── CHAT: enviar mensaje ───
   socket.on('chat:mensaje', (data: { ordenId: string; emisor: 'repartidor' | 'cliente'; contenido: string; enviadoEn: string }) => {
     const mensaje = { id: `msg-${Date.now()}`, ...data };
@@ -304,8 +326,10 @@ io.on('connection', (socket) => {
     console.log(`[realtime] escáner pin=${pin} emparejado con lector ${socket.id}`);
   });
 
-  /* ─── ESCÁNER: el celular transmite un código leído ─── */
-  socket.on('escaner:codigo', (data: { pin?: string; codigo?: string }) => {
+  /* ─── ESCÁNER: el celular transmite un código leído ───
+     `cantidad` la elige el cajero en la hoja del lector (+1 +2 +3): así un solo evento
+     agrega N unidades en vez de esperar N repeticiones del mismo código. */
+  socket.on('escaner:codigo', (data: { pin?: string; codigo?: string; cantidad?: number }) => {
     const pin = String(data?.pin ?? '').trim();
     const sala = salasEscaner.get(pin);
     if (!sala) {
@@ -318,6 +342,7 @@ io.on('connection', (socket) => {
     }
     const codigo = String(data?.codigo ?? '').trim().slice(0, 64);
     if (codigo.length < 3) return;
+    const cantidad = normalizarCantidad(data?.cantidad);
 
     const ahora = Date.now();
     if (ahora - sala.ultimoCodigoEn < ESCANER_MIN_MS_CODIGO) return;
@@ -325,22 +350,31 @@ io.on('connection', (socket) => {
     sala.ultimoUso = ahora;
 
     // Al POS (y a cualquier otro observador de la sala). `to(room)` excluye al emisor.
-    socket.to(roomEscaner(pin)).emit('escaner:codigo:recibido', { pin, codigo, recibidoEn: ahora });
-    socket.emit('escaner:codigo:ack', { pin, codigo });
+    socket.to(roomEscaner(pin)).emit('escaner:codigo:recibido', { pin, codigo, cantidad, recibidoEn: ahora });
+    socket.emit('escaner:codigo:ack', { pin, codigo, cantidad });
   });
 
   /* ─── ESCÁNER: el POS devuelve si el código resolvió a un producto ─── */
   // Sin esto el celular solo sabría que emitió un código, no si la venta lo aceptó:
   // el operador recibiría el mismo zumbido para "agregado" y para "no existe".
-  socket.on('escaner:resultado', (data: { pin?: string; codigo?: string; encontrado?: boolean; nombre?: string }) => {
+  // El evento viaja SIN `pin` desde el cliente a propósito: el POS puede tener varias
+  // pestañas y solo el socket dueño de la sala está autorizado a informar resultados,
+  // así que la sala se resuelve por socket y no por el PIN que mande el navegador.
+  socket.on('escaner:resultado', (data: { pin?: string; codigo?: string; encontrado?: boolean; nombre?: string; precio?: number | null; stock?: number | null; imagenUrl?: string | null }) => {
     const pin = String(data?.pin ?? '').trim();
-    const sala = salasEscaner.get(pin);
-    if (!sala || sala.posSocketId !== socket.id) return; // solo el POS dueño informa resultados
-    socket.to(roomEscaner(pin)).emit('escaner:resultado', {
-      pin,
+    let sala = salasEscaner.get(pin);
+    if (!sala || sala.posSocketId !== socket.id) {
+      sala = [...salasEscaner.values()].find((s) => s.posSocketId === socket.id && s.lectorSocketId);
+    }
+    if (!sala) return;
+    socket.to(roomEscaner(sala.pin)).emit('escaner:resultado', {
+      pin: sala.pin,
       codigo: String(data?.codigo ?? '').slice(0, 64),
       encontrado: !!data?.encontrado,
       nombre: typeof data?.nombre === 'string' ? data.nombre.slice(0, 80) : null,
+      precio: typeof data?.precio === 'number' && Number.isFinite(data.precio) ? data.precio : null,
+      stock: typeof data?.stock === 'number' && Number.isFinite(data.stock) ? data.stock : null,
+      imagenUrl: typeof data?.imagenUrl === 'string' ? data.imagenUrl.slice(0, 400) : null,
     });
   });
 
