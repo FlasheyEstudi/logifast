@@ -16537,7 +16537,7 @@ body {
 .lf-rail > * { scroll-snap-align: start; flex: 0 0 auto; }
 
 /* Tarjeta ancha del carrusel principal (casi todo el ancho, con la siguiente asomando) */
-.lf-rail-card { width: min(86vw, 420px); }
+.lf-rail-card { width: min(92vw, 460px); }
 /* Tarjeta de tienda / categoría */
 .lf-rail-tile { width: min(64vw, 240px); }
 /* Tarjeta compacta de producto */
@@ -16567,12 +16567,13 @@ body {
 
 .lf-page {
   width: 100%;
-  max-width: 640px;
+  max-width: 100%;
   margin-inline: auto;
   padding-inline: var(--lf-gutter);
 }
-/* En tablet el contenido no se estira: se centra a un ancho legible. */
-@media (min-width: 768px) { .lf-page { max-width: 720px; } }
+/* En tablet se limita para que las líneas no queden larguísimas, pero en teléfono
+   el contenido usa TODO el ancho: antes topaba en 640px y dejaba franjas vacías. */
+@media (min-width: 900px) { .lf-page { max-width: 760px; } }
 
 /* ── Hoja inferior (bottom sheet) reutilizable ──
    El patrón más "app nativa" para carrito, cupón y confirmaciones. */
@@ -16768,6 +16769,111 @@ body {
   justify-content: center;
   border: 2px solid var(--surface);
   font-family: 'JetBrains Mono', monospace;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   FORMAS ORGÁNICAS — curvas en vez de cuadros rectos
+   ──────────────────────────────────────────────────────────────────────
+   Las tarjetas usaban radios parejos (un rectángulo con esquinas redondeadas),
+   que es lo que se veía plano. Estos radios asimétricos y las olas dan el aire
+   de app de consumo sin cambiar ninguna identidad: se aplican sobre los mismos
+   tokens de color y sombra.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* Tarjeta con una esquina "levantada": se siente esculpida, no impresa. */
+.lf-organic {
+  border-radius: 26px 26px 26px 8px;
+}
+.lf-organic-alt {
+  border-radius: 26px 26px 8px 26px;
+}
+.lf-organic-soft {
+  border-radius: 22px 22px 22px 10px;
+}
+
+/* Contenedor de sección con ola inferior: el bloque cierra en curva en vez de
+   en línea recta. Se dibuja con el color de fondo para recortar el contenido. */
+.lf-wave {
+  position: relative;
+}
+.lf-wave::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 26px;
+  background: var(--bg);
+  /* La curva se genera con un radial: sin SVG ni imágenes que descargar. */
+  border-radius: 100% 100% 0 0 / 100% 100% 0 0;
+  pointer-events: none;
+}
+
+/* Media luna suave arriba, para separar un bloque destacado del anterior. */
+.lf-wave-top {
+  position: relative;
+}
+.lf-wave-top::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -1px;
+  height: 22px;
+  background: var(--bg);
+  border-radius: 0 0 100% 100% / 0 0 100% 100%;
+  pointer-events: none;
+}
+
+/* Tarjeta con brillo interior: da volumen sin sombras duras. */
+.lf-sheen {
+  position: relative;
+  overflow: hidden;
+}
+.lf-sheen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0) 42%);
+  pointer-events: none;
+}
+
+/* Borde degradado: sustituye el borde plano de 1px en tarjetas destacadas. */
+.lf-edge-glow {
+  position: relative;
+}
+.lf-edge-glow::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(140deg, var(--primario), transparent 55%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0.45;
+}
+
+/* Chips y píldoras: completamente redondeadas (ya existía el token, faltaba uso). */
+.lf-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 700;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  white-space: nowrap;
+}
+.lf-chip[data-activo='true'] {
+  background: var(--primario);
+  border-color: var(--primario);
+  color: #FFFFFF;
 }
 
 @media (prefers-reduced-motion: reduce) {

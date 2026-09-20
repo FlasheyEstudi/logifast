@@ -82,18 +82,28 @@ export default function StoreCard({ tienda, onAbrir, variante = 'rail', distanci
 
   const esRail = variante === 'rail';
 
+  // La mayoria de las tiendas NO tienen banner subido: solo un color. Un color plano
+  // se veia como un cuadro vacio. Con el mismo color se arma un degradado con
+  // profundidad, y si hay banner o logo real, se usan como imagen de fondo.
+  const colorBase = tienda.portadaColor || tienda.logoColor || '#1B1B2F';
+  const fondoPortada = imagen
+    ? undefined
+    : `radial-gradient(circle at 78% 18%, ${colorBase} 0%, transparent 62%), linear-gradient(135deg, ${colorBase} 0%, ${colorBase}CC 58%, ${colorBase}99 100%)`;
+
+  // El halo y el aro del logo toman el acento de la tienda si lo tiene.
+  const acento = tienda.logoColor || 'var(--primario)';
+
   return (
     <button
       type="button"
       onClick={onAbrir}
-      className={`lf-press lf-optim ${esRail ? 'lf-rail-tile' : ''}`}
+      className={`lf-press lf-optim lf-organic ${esRail ? 'lf-rail-tile' : ''}`}
       aria-label={`Abrir ${tienda.nombre}${cerrada ? ' (cerrada)' : ''}`}
       style={{
         width: esRail ? undefined : '100%',
         textAlign: 'left',
         padding: 0,
         border: '1px solid var(--border)',
-        borderRadius: 'var(--lf-card-radius, 16px)',
         background: 'var(--surface)',
         boxShadow: 'var(--lf-shadow-card)',
         overflow: 'hidden',
@@ -104,12 +114,13 @@ export default function StoreCard({ tienda, onAbrir, variante = 'rail', distanci
         fontFamily: "'DM Sans', sans-serif",
       }}
     >
-      {/* Portada: banner si existe; si no, el color de marca de la tienda. */}
+      {/* Portada: banner/imagen si existe; si no, el color de marca convertido en
+          degradado con un halo, para que no se vea como un bloque plano. */}
       <div
         style={{
           position: 'relative',
-          height: esRail ? 78 : 92,
-          background: tienda.portadaColor || tienda.logoColor || 'var(--primario-soft)',
+          height: esRail ? 92 : 104,
+          background: fondoPortada || colorBase,
           overflow: 'hidden',
         }}
       >
@@ -123,11 +134,26 @@ export default function StoreCard({ tienda, onAbrir, variante = 'rail', distanci
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
           />
         )}
+        {/* Velo sutil para que el texto y la etiqueta se lean sobre cualquier foto. */}
         <div
           style={{
             position: 'absolute',
             inset: 0,
-            background: 'linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.35) 100%)',
+            background: 'linear-gradient(180deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.16) 58%, rgba(0,0,0,0.5) 100%)',
+          }}
+        />
+        {/* Halo de luz sobre el color de la tienda: da volumen sin sombras duras. */}
+        <div
+          style={{
+            position: 'absolute',
+            top: -34,
+            right: -24,
+            width: 130,
+            height: 130,
+            borderRadius: '50%',
+            background: `radial-gradient(circle, ${acento}66 0%, transparent 70%)`,
+            filter: 'blur(6px)',
+            pointerEvents: 'none',
           }}
         />
         {/* Estado de apertura: dato del servidor, visible de un vistazo. */}
@@ -162,20 +188,21 @@ export default function StoreCard({ tienda, onAbrir, variante = 'rail', distanci
         <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
           <span
             style={{
-              width: 34,
-              height: 34,
-              borderRadius: 10,
+              width: 38,
+              height: 38,
+              /* Círculo con una esquina suelta: acompaña la forma orgánica de la tarjeta. */
+              borderRadius: '50% 50% 50% 14px',
               flexShrink: 0,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              background: tienda.logoColor || 'var(--primario-soft)',
+              background: acento,
               color: '#FFFFFF',
               fontFamily: "'Syne', sans-serif",
               fontWeight: 800,
-              fontSize: 12.5,
+              fontSize: 13,
               border: '2px solid var(--surface)',
-              marginTop: -22,
+              marginTop: -26,
               boxShadow: 'var(--lf-shadow-card)',
               overflow: 'hidden',
             }}

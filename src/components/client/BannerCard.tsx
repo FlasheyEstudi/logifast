@@ -104,12 +104,13 @@ export default function BannerCard({
 
   return (
     <div
-      className="lf-press"
+      className="lf-press lf-sheen"
       style={{
         position: 'relative',
         width: '100%',
-        minHeight: 172,
-        borderRadius: 22,
+        minHeight: 178,
+        /* Forma orgánica: una esquina "levantada" en vez de un rectángulo parejo. */
+        borderRadius: '28px 28px 28px 10px',
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',

@@ -821,23 +821,39 @@ export default function ClientInicio({
             </span>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%' }}>
+          {/* Carrusel horizontal: antes era una columna, así que solo se veía la
+              primera publicación y el resto quedaba fuera de pantalla. */}
+          <div className="lf-rail" style={{ marginInline: 'calc(var(--lf-gutter) * -1)' }}>
             {feedItems.map((item) => {
               const itemStatus = getCuponStatus(item.codigoPromo);
+
+              // Acento por tipo de publicación: la tarjeta deja de ser un blanco plano
+              // y se distingue de un vistazo. Se reutilizan los colores del sistema.
+              const acentoFeed =
+                item.tipo === 'promocion'
+                  ? '#FF5722'
+                  : item.tipo === 'novedad'
+                  ? '#34C759'
+                  : item.tipo === 'recordatorio'
+                  ? '#FF9500'
+                  : '#3B82F6';
 
               return (
                 <div
                   key={item.id}
+                  className="lf-press lf-organic-soft lf-rail-card lf-sheen"
                   style={{
-                    width: '100%',
-                    padding: '16px 18px',
-                    borderRadius: 20,
-                    background: 'var(--surface)',
-                    border: '1px solid var(--border)',
+                    padding: '14px 16px',
+                    position: 'relative',
+                    /* Velo de color del tipo arriba: rompe el blanco plano. */
+                    background: `linear-gradient(160deg, ${acentoFeed}1F 0%, transparent 46%), var(--surface)`,
+                    border: `1px solid ${acentoFeed}33`,
                     boxShadow: 'var(--lf-shadow-card)',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: 10,
+                    overflow: 'hidden',
+                    boxSizing: 'border-box',
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
@@ -845,19 +861,9 @@ export default function ClientInicio({
                       <span
                         style={{
                           padding: '4px 10px',
-                          borderRadius: 8,
-                          background:
-                            item.tipo === 'promocion'
-                              ? 'rgba(255, 87, 34, 0.12)'
-                              : item.tipo === 'novedad'
-                              ? 'rgba(52, 199, 89, 0.12)'
-                              : 'rgba(59, 130, 246, 0.12)',
-                          color:
-                            item.tipo === 'promocion'
-                              ? 'var(--primario)'
-                              : item.tipo === 'novedad'
-                              ? 'var(--exito)'
-                              : 'var(--info)',
+                          borderRadius: 999,
+                          background: `${acentoFeed}22`,
+                          color: acentoFeed,
                           fontSize: 10,
                           fontWeight: 800,
                           textTransform: 'uppercase',
@@ -990,7 +996,6 @@ export default function ClientInicio({
           </div>
         </div>
       )}
-
       {/* ── TIENDAS DESTACADAS ── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
