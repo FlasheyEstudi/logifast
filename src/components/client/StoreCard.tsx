@@ -149,23 +149,62 @@ export default function StoreCard({ tienda, onAbrir, variante = 'rail', distanci
             }}
           />
         </div>
-        {/* Ola entre la portada y el cuerpo. Para que se VEA (y no quede como un
-            borde recto) la curva la dibuja la PORTADA invadiendo el cuerpo: el mismo
-            color de la portada se extiende 20px hacia abajo con radio eliptico. Una
-            ola del color de la superficie sobre la superficie no se percibe. */}
-        <div
+
+        {/* Olas ambientales de fondo sobre el color de la tienda */}
+        <svg
+          viewBox="0 0 360 100"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100%',
+            height: '75%',
+            pointerEvents: 'none',
+            zIndex: 1,
+            opacity: imagen ? 0.35 : 0.6,
+          }}
+        >
+          <path
+            d="M 0,45 C 90,15 180,65 270,30 C 310,18 340,25 360,32 L 360,100 L 0,100 Z"
+            fill="rgba(255, 255, 255, 0.08)"
+          />
+          <path
+            d="M 0,65 C 100,35 190,75 290,45 C 325,36 345,42 360,50 L 360,100 L 0,100 Z"
+            fill="rgba(255, 255, 255, 0.12)"
+          />
+        </svg>
+
+        {/* Ola orgánica fluida en SVG entre la portada y el cuerpo */}
+        <svg
+          viewBox="0 0 360 36"
+          preserveAspectRatio="none"
+          aria-hidden="true"
           style={{
             position: 'absolute',
             left: 0,
             right: 0,
             top: '100%',
+            width: '100%',
             height: 20,
-            background: colorBase,
-            borderRadius: '0 0 50% 50% / 0 0 100% 100%',
             pointerEvents: 'none',
             zIndex: 2,
+            marginTop: -1,
           }}
-        />
+        >
+          <path
+            d="M 0,0 L 360,0 L 360,12 Q 260,34 170,16 T 0,24 Z"
+            fill={colorBase}
+            opacity={0.3}
+          />
+          <path
+            d="M 0,0 L 360,0 L 360,8 Q 250,30 160,12 T 0,20 Z"
+            fill={colorBase}
+          />
+        </svg>
+
         {/* Halo de luz sobre el color de la tienda: da volumen sin sombras duras. */}
         <div
           style={{

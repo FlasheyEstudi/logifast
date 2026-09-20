@@ -103,33 +103,72 @@ export default function ClientExplorar({ onNavigate }: ClientExplorarProps) {
         fontFamily: "'DM Sans', sans-serif",
       }}
     >
-      {/* ── ENCABEZADO Y BÚSQUEDA ── */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 2 }}>
-        <h1
+      {/* ── ENCABEZADO Y BÚSQUEDA ORGÁNICA CON OLA ── */}
+      <div
+        className="lf-sheen"
+        style={{
+          position: 'relative',
+          borderRadius: '28px 28px 28px 12px',
+          overflow: 'hidden',
+          background: 'linear-gradient(135deg, var(--surface) 0%, var(--bg-alt) 100%)',
+          border: '1px solid var(--border)',
+          padding: '20px 18px 22px',
+          boxShadow: 'var(--lf-shadow-card)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 12,
+        }}
+      >
+        {/* Ola suave de fondo */}
+        <svg
+          viewBox="0 0 500 120"
+          preserveAspectRatio="none"
+          aria-hidden="true"
           style={{
-            fontSize: 24,
-            fontWeight: 700,
-            fontFamily: "'Syne', sans-serif",
-            color: 'var(--text)',
-            margin: 0,
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100%',
+            height: 52,
+            pointerEvents: 'none',
+            opacity: 0.12,
           }}
         >
-          Explorar Tiendas
-        </h1>
-        <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
-          Descubre restaurantes, mercados y comercios locales en Managua.
-        </p>
+          <path
+            d="M 0,55 Q 130,15 250,65 T 500,42 L 500,120 L 0,120 Z"
+            fill="var(--primario)"
+          />
+        </svg>
 
-        {/* Campo de búsqueda */}
-        <div style={{ position: 'relative', width: '100%' }}>
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <h1
+            style={{
+              fontSize: 22,
+              fontWeight: 800,
+              fontFamily: "'Syne', sans-serif",
+              color: 'var(--text)',
+              margin: '0 0 4px 0',
+              letterSpacing: '-0.01em',
+            }}
+          >
+            Explorar Tiendas
+          </h1>
+          <p style={{ fontSize: 12.5, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.35 }}>
+            Descubre restaurantes, mercados y comercios locales con entregas rápidas.
+          </p>
+        </div>
+
+        {/* Campo de búsqueda en cápsula ergonómica */}
+        <div style={{ position: 'relative', width: '100%', zIndex: 1 }}>
           <Search
             size={18}
             style={{
               position: 'absolute',
-              left: 14,
+              left: 16,
               top: '50%',
               transform: 'translateY(-50%)',
-              color: 'var(--text-muted)',
+              color: 'var(--primario)',
             }}
           />
           <input
@@ -142,9 +181,12 @@ export default function ClientExplorar({ onNavigate }: ClientExplorarProps) {
             }}
             style={{
               ...inputStyle,
-              paddingLeft: 42,
+              borderRadius: 999,
+              background: 'var(--surface)',
+              paddingLeft: 44,
               paddingRight: searchQuery ? 42 : 16,
-              boxShadow: 'var(--lf-shadow-card)',
+              boxShadow: '0 4px 14px rgba(0,0,0,0.05)',
+              border: '1px solid var(--border)',
             }}
           />
           {searchQuery && (
@@ -217,17 +259,18 @@ export default function ClientExplorar({ onNavigate }: ClientExplorarProps) {
         })}
       </div>
 
-      {/* ── CHIPS DE FILTRO RÁPIDO ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 4, borderBottom: '1px solid var(--border)' }}>
+      {/* ── CHIPS DE FILTRO RÁPIDO EN CÁPSULAS ── */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 6, borderBottom: '1px solid var(--border)' }}>
         <button
           onClick={() => setActiveFilter('todos')}
+          className="lf-press"
           style={{
-            padding: '6px 12px',
-            borderRadius: 10,
+            padding: '7px 14px',
+            borderRadius: 999,
             background: activeFilter === 'todos' ? 'var(--text)' : 'var(--bg-alt)',
             color: activeFilter === 'todos' ? 'var(--bg)' : 'var(--text-muted)',
             fontWeight: 700,
-            fontSize: 11,
+            fontSize: 11.5,
             border: 'none',
             cursor: 'pointer',
           }}
@@ -237,18 +280,19 @@ export default function ClientExplorar({ onNavigate }: ClientExplorarProps) {
 
         <button
           onClick={() => setActiveFilter(activeFilter === 'promo' ? 'todos' : 'promo')}
+          className="lf-press"
           style={{
-            padding: '6px 12px',
-            borderRadius: 10,
+            padding: '7px 14px',
+            borderRadius: 999,
             background: activeFilter === 'promo' ? '#FF9500' : 'rgba(255, 149, 0, 0.12)',
             color: activeFilter === 'promo' ? '#FFFFFF' : '#FF9500',
             fontWeight: 700,
-            fontSize: 11,
+            fontSize: 11.5,
             border: 'none',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: 4,
+            gap: 5,
           }}
         >
           <Tag size={12} /> Promociones
@@ -256,18 +300,19 @@ export default function ClientExplorar({ onNavigate }: ClientExplorarProps) {
 
         <button
           onClick={() => setActiveFilter(activeFilter === 'favoritos' ? 'todos' : 'favoritos')}
+          className="lf-press"
           style={{
-            padding: '6px 12px',
-            borderRadius: 10,
+            padding: '7px 14px',
+            borderRadius: 999,
             background: activeFilter === 'favoritos' ? '#FF3B30' : 'rgba(255, 59, 48, 0.12)',
             color: activeFilter === 'favoritos' ? '#FFFFFF' : '#FF3B30',
             fontWeight: 700,
-            fontSize: 11,
+            fontSize: 11.5,
             border: 'none',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: 4,
+            gap: 5,
           }}
         >
           <Heart size={12} fill={activeFilter === 'favoritos' ? 'currentColor' : 'none'} /> Favoritos

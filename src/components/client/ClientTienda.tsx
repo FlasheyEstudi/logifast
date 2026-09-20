@@ -594,23 +594,51 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
             {storeOpenInfo.text}
           </span>
         </div>
+
+        {/* Ola fluida orgánica en la transición entre la portada y el perfil */}
+        <svg
+          viewBox="0 0 500 50"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: -1,
+            width: '100%',
+            height: 38,
+            pointerEvents: 'none',
+            zIndex: 4,
+          }}
+        >
+          <path
+            d="M 0,18 Q 140,4 260,30 T 500,16 L 500,50 L 0,50 Z"
+            fill="var(--bg)"
+            opacity={0.4}
+          />
+          <path
+            d="M 0,26 Q 130,10 250,36 T 500,22 L 500,50 L 0,50 Z"
+            fill="var(--bg)"
+          />
+        </svg>
       </div>
 
       {/* ════════════════════════════════════════════
           2. LOGO + INFORMACIÓN COMERCIAL
           ════════════════════════════════════════════ */}
       <div style={{ padding: '0 20px', position: 'relative' }}>
-        {/* Logo Flotante */}
+        {/* Logo Flotante con forma orgánica esculpida */}
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: 'spring', stiffness: 350, damping: 22 }}
           style={{
             position: 'relative',
-            top: -40,
-            width: 80,
-            height: 80,
-            borderRadius: 22,
+            top: -44,
+            width: 84,
+            height: 84,
+            /* Forma orgánica esculpida: acompaña la ola */
+            borderRadius: '26px 26px 26px 10px',
             overflow: 'hidden',
             background: 'var(--surface)',
             color: 'var(--primario)',
@@ -619,10 +647,11 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
             justifyContent: 'center',
             fontFamily: "'Syne', sans-serif",
             fontWeight: 800,
-            fontSize: 24,
-            boxShadow: '0 10px 25px rgba(0,0,0,0.25)',
+            fontSize: 26,
+            boxShadow: '0 12px 28px rgba(0,0,0,0.22)',
             border: '4px solid var(--surface)',
-            marginBottom: -30,
+            marginBottom: -32,
+            zIndex: 10,
           }}
         >
           {tienda.imagenUrl ? (
@@ -750,9 +779,10 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
         >
           <button
             onClick={() => setActiveTab('menu')}
+            className="lf-press"
             style={{
-              padding: '8px 16px',
-              borderRadius: 12,
+              padding: '8px 18px',
+              borderRadius: 999,
               background: activeTab === 'menu' ? 'var(--primario)' : 'var(--surface)',
               color: activeTab === 'menu' ? '#fff' : 'var(--text)',
               border: activeTab === 'menu' ? 'none' : '1px solid var(--border)',
@@ -764,6 +794,7 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
               alignItems: 'center',
               gap: 6,
               whiteSpace: 'nowrap',
+              boxShadow: 'var(--lf-shadow-card)',
             }}
           >
             <ShoppingBag size={14} /> Menú
@@ -771,9 +802,10 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
 
           <button
             onClick={() => setModalContactOpen(true)}
+            className="lf-press"
             style={{
-              padding: '8px 14px',
-              borderRadius: 12,
+              padding: '8px 16px',
+              borderRadius: 999,
               background: 'var(--surface)',
               color: 'var(--text)',
               border: '1px solid var(--border)',
@@ -785,6 +817,7 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
               alignItems: 'center',
               gap: 6,
               whiteSpace: 'nowrap',
+              boxShadow: 'var(--lf-shadow-card)',
             }}
           >
             <Phone size={14} style={{ color: 'var(--exito)' }} /> Llamar / Contacto
@@ -792,9 +825,10 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
 
           <button
             onClick={() => handleOpenGPS('google')}
+            className="lf-press"
             style={{
-              padding: '8px 14px',
-              borderRadius: 12,
+              padding: '8px 16px',
+              borderRadius: 999,
               background: 'var(--surface)',
               color: 'var(--text)',
               border: '1px solid var(--border)',
@@ -1188,16 +1222,17 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
                           <div
                             key={producto.id}
                             onClick={() => setSelectedProductPreview(producto)}
+                            className="lf-press"
                             style={{
                               display: 'flex',
                               gap: 14,
                               padding: 14,
-                              borderRadius: 16,
+                              borderRadius: '22px 22px 22px 10px',
                               background: 'var(--surface)',
                               border: '1px solid var(--border)',
                               alignItems: 'center',
                               cursor: 'pointer',
-                              boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+                              boxShadow: 'var(--lf-shadow-card)',
                             }}
                           >
                             <div style={{ flex: 1, minWidth: 0 }}>
@@ -1244,8 +1279,8 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
                                   style={{
                                     fontSize: 10,
                                     fontWeight: 700,
-                                    padding: '2px 6px',
-                                    borderRadius: 4,
+                                    padding: '2px 8px',
+                                    borderRadius: 999,
                                     background: producto.stock !== null && producto.stock <= 0 ? 'rgba(255, 59, 48, 0.12)' : 'rgba(52, 199, 89, 0.12)',
                                     color: producto.stock !== null && producto.stock <= 0 ? '#FF3B30' : '#34C759',
                                   }}
@@ -1256,7 +1291,7 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
                             </div>
 
                             {/* Foto / Thumbnail & Botón + */}
-                            <div style={{ position: 'relative', width: 76, height: 76, flexShrink: 0, borderRadius: 14, overflow: 'hidden', background: producto.imagenColor || 'var(--bg-alt)' }}>
+                            <div style={{ position: 'relative', width: 76, height: 76, flexShrink: 0, borderRadius: '18px 18px 18px 8px', overflow: 'hidden', background: producto.imagenColor || 'var(--bg-alt)' }}>
                               {producto.imagenUrl ? (
                                 <img
                                   src={producto.imagenUrl}
