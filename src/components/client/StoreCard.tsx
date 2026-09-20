@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Star, Clock, MapPin, Truck } from '@/components/icons';
 
 /**
@@ -78,15 +78,21 @@ export default function StoreCard({ tienda, onAbrir, variante = 'rail', distanci
   const iniciales = (tienda.logoIniciales || tienda.nombre || '??').slice(0, 2).toUpperCase();
   const calificacion = Number(tienda.calificacion) || 0;
   const tiempo = tienda.tiempoEstimado || null;
-  const imagen = tienda.imagenUrl || tienda.bannerUrl || null;
+
+  // Manejo de recursos visuales reales (banner y logo separados)
+  const [bannerError, setBannerError] = useState(false);
+  const [logoError, setLogoError] = useState(false);
+
+  const banner = tienda.bannerUrl || null;
+  const logo = tienda.imagenUrl || null;
+  const tieneBannerValido = Boolean(banner && !bannerError);
+  const tieneLogoValido = Boolean(logo && !logoError);
 
   const esRail = variante === 'rail';
 
-  // La mayoria de las tiendas NO tienen banner subido: solo un color. Un color plano
-  // se veia como un cuadro vacio. Con el mismo color se arma un degradado con
-  // profundidad, y si hay banner o logo real, se usan como imagen de fondo.
+  // Si no hay banner subido, se genera un fondo orgánico con el color de marca
   const colorBase = tienda.portadaColor || tienda.logoColor || '#1B1B2F';
-  const fondoPortada = imagen
+  const fondoPortada = tieneBannerValido
     ? undefined
     : `radial-gradient(circle at 78% 18%, ${colorBase} 0%, transparent 62%), linear-gradient(135deg, ${colorBase} 0%, ${colorBase}CC 58%, ${colorBase}99 100%)`;
 
@@ -103,9 +109,10 @@ export default function StoreCard({ tienda, onAbrir, variante = 'rail', distanci
         width: esRail ? undefined : '100%',
         textAlign: 'left',
         padding: 0,
-        border: '1px solid var(--border)',
+        borderRadius: '26px 26px 26px 14px',
+        border: '1px solid color-mix(in srgb, var(--border) 80%, rgba(255,255,255,0.12))',
         background: 'var(--surface)',
-        boxShadow: 'var(--lf-shadow-card)',
+        boxShadow: '0 4px 20px -2px rgba(0, 0, 0, 0.06), 0 2px 6px -1px rgba(0, 0, 0, 0.04)',
         overflow: 'hidden',
         cursor: 'pointer',
         display: 'flex',
@@ -114,38 +121,37 @@ export default function StoreCard({ tienda, onAbrir, variante = 'rail', distanci
         fontFamily: "'DM Sans', sans-serif",
       }}
     >
-      {/* Portada: banner/imagen si existe; si no, el color de marca convertido en
-          degradado con un halo, para que no se vea como un bloque plano. */}
+      {/* Portada: banner real si existe; si no, degradado orgánico de marca con halo */}
       <div
         style={{
           position: 'relative',
           height: esRail ? 92 : 104,
           background: fondoPortada || colorBase,
-          /* Sin overflow hidden: la ola debe poder salir por debajo de la portada
-             para invadir el cuerpo blanco. La tarjeta ya recorta lo que sobra. */
+          /* Sin overflow hidden: la ola debe poder salir por debajo de la portada */
           borderTopLeftRadius: 26,
           borderTopRightRadius: 26,
           borderBottomLeftRadius: 26,
         }}
       >
-        {/* Capa recortada: la imagen y el velo sí deben quedar dentro de la portada. */}
+        {/* Capa recortada: la imagen de portada y el velo sí deben quedar dentro */}
         <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', borderTopLeftRadius: 26, borderTopRightRadius: 26, borderBottomLeftRadius: 26, borderBottomRightRadius: 0 }}>
-          {imagen && (
+          {tieneBannerValido && (
             <img
-              src={imagen}
-              alt=""
+              src={banner!}
+              alt={`Portada de ${tienda.nombre}`}
               aria-hidden="true"
               crossOrigin="anonymous"
               referrerPolicy="no-referrer"
+              onError={() => setBannerError(true)}
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
           )}
-          {/* Velo sutil para que el texto y la etiqueta se lean sobre cualquier foto. */}
+          {/* Velo sutil para que el texto y la etiqueta se lean sobre cualquier foto */}
           <div
             style={{
               position: 'absolute',
               inset: 0,
-              background: 'linear-gradient(180deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.16) 58%, rgba(0,0,0,0.5) 100%)',
+              background: 'linear-gradient(180deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.18) 58%, rgba(0,0,0,0.52) 100%)',
             }}
           />
         </div>
@@ -164,7 +170,7 @@ export default function StoreCard({ tienda, onAbrir, variante = 'rail', distanci
             height: '75%',
             pointerEvents: 'none',
             zIndex: 1,
-            opacity: imagen ? 0.35 : 0.6,
+            opacity: tieneBannerValido ? 0.35 : 0.6,
           }}
         >
           <path
@@ -219,7 +225,7 @@ export default function StoreCard({ tienda, onAbrir, variante = 'rail', distanci
             pointerEvents: 'none',
           }}
         />
-        {/* Estado de apertura: dato del servidor, visible de un vistazo. */}
+        {/* Estado de apertura: dato del servidor, visible en cápsula orgánica */}
         {abierta !== null && (
           <span
             className={cerrada ? 'lf-badge-closed' : 'lf-badge-open'}
@@ -227,10 +233,20 @@ export default function StoreCard({ tienda, onAbrir, variante = 'rail', distanci
               position: 'absolute',
               top: 8,
               right: 8,
-              background: cerrada ? 'rgba(255,59,48,0.94)' : 'rgba(52,199,89,0.94)',
+              background: cerrada ? 'rgba(255,59,48,0.92)' : 'rgba(52,199,89,0.92)',
               color: '#FFFFFF',
-              border: 'none',
-              backdropFilter: 'blur(6px)',
+              border: '1px solid rgba(255,255,255,0.28)',
+              borderRadius: 9999,
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+              padding: '4px 9px',
+              fontSize: 11,
+              fontWeight: 700,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
+              zIndex: 3,
             }}
           >
             <span
@@ -240,6 +256,7 @@ export default function StoreCard({ tienda, onAbrir, variante = 'rail', distanci
                 borderRadius: '50%',
                 background: '#FFFFFF',
                 display: 'inline-block',
+                boxShadow: '0 0 6px rgba(255,255,255,0.8)',
               }}
             />
             {cerrada ? 'Cerrada' : 'Abierta'}
@@ -251,26 +268,39 @@ export default function StoreCard({ tienda, onAbrir, variante = 'rail', distanci
         <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
           <span
             style={{
-              width: 38,
-              height: 38,
-              /* Círculo con una esquina suelta: acompaña la forma orgánica de la tarjeta. */
-              borderRadius: '50% 50% 50% 14px',
+              width: 40,
+              height: 40,
+              /* Forma de guijarro orgánico: asimétrico y suave */
+              borderRadius: '16px 20px 14px 22px',
               flexShrink: 0,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              background: acento,
+              background: tieneLogoValido ? 'var(--surface)' : acento,
               color: '#FFFFFF',
               fontFamily: "'Syne', sans-serif",
               fontWeight: 800,
               fontSize: 13,
-              border: '2px solid var(--surface)',
+              border: '2.5px solid var(--surface)',
               marginTop: -26,
-              boxShadow: 'var(--lf-shadow-card)',
+              boxShadow: '0 4px 14px rgba(0,0,0,0.18)',
               overflow: 'hidden',
+              position: 'relative',
+              zIndex: 3,
             }}
           >
-            {iniciales}
+            {tieneLogoValido ? (
+              <img
+                src={logo!}
+                alt={`Logo de ${tienda.nombre}`}
+                crossOrigin="anonymous"
+                referrerPolicy="no-referrer"
+                onError={() => setLogoError(true)}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            ) : (
+              iniciales
+            )}
           </span>
           <div style={{ minWidth: 0, flex: 1 }}>
             <div
@@ -285,25 +315,25 @@ export default function StoreCard({ tienda, onAbrir, variante = 'rail', distanci
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: 11 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', fontSize: 11 }}>
           {/* Solo se muestra la valoración si hay reseñas reales. */}
           {calificacion > 0 && (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: '#FF9500', fontWeight: 800, fontFamily: "'JetBrains Mono', monospace" }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: '#FF9500', fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", background: 'rgba(255,149,0,0.1)', padding: '2px 8px', borderRadius: 9999, border: '1px solid rgba(255,149,0,0.2)' }}>
               <Star size={11} fill="currentColor" /> {calificacion.toFixed(1)}
             </span>
           )}
           {typeof distanciaKm === 'number' && distanciaKm > 0 && (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: 'var(--text-muted)' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: 'var(--text-muted)', background: 'var(--bg-alt)', padding: '2px 8px', borderRadius: 9999, border: '1px solid var(--border)' }}>
               <MapPin size={11} /> {distanciaKm.toFixed(1)} km
             </span>
           )}
           {tiempo && (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: 'var(--text-muted)' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: 'var(--text-muted)', background: 'var(--bg-alt)', padding: '2px 8px', borderRadius: 9999, border: '1px solid var(--border)' }}>
               <Clock size={11} /> {tiempo}
             </span>
           )}
           {typeof tienda.costoEnvio === 'number' && (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: 'var(--text-muted)' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: 'var(--text-muted)', background: 'var(--bg-alt)', padding: '2px 8px', borderRadius: 9999, border: '1px solid var(--border)' }}>
               <Truck size={11} /> C${tienda.costoEnvio}
             </span>
           )}

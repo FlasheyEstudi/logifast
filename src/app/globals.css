@@ -16827,6 +16827,23 @@ body {
   border-radius: 22px 22px 22px 10px;
 }
 
+/* Geometría orgánica de guijarro (pebble) y squircle asimétrico */
+.lf-pebble {
+  border-radius: 18px 22px 16px 24px;
+}
+.lf-pebble-alt {
+  border-radius: 22px 16px 24px 18px;
+}
+.lf-squircle {
+  border-radius: 28px 28px 28px 14px;
+}
+.lf-glass-subtle {
+  background: color-mix(in srgb, var(--surface) 86%, transparent);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid color-mix(in srgb, var(--border) 80%, rgba(255, 255, 255, 0.15));
+}
+
 /* Contenedor de sección con ola inferior: el bloque cierra en curva en vez de
    en línea recta. Se dibuja con el color de fondo para recortar el contenido. */
 .lf-wave {

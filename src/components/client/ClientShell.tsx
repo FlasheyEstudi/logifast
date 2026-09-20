@@ -23,6 +23,7 @@ import {
   ShoppingCart,
   Wallet,
   X,
+  Zap,
 } from '@/components/icons';
 import { useStore, type ClientModuleKey } from '@/lib/store';
 import type { ClientNotificacion } from '@/lib/store';
@@ -1242,10 +1243,35 @@ export default function ClientShell({ isDark, toggleTheme, onLogout, userName, i
               transition: 'all 0.3s ease',
             }}
           >
-            {/* Left: título del módulo */}
-            <span style={{ fontSize: 14, fontWeight: 800, color: isDark ? '#FFFFFF' : '#1C1C1E', fontFamily: "'Syne', sans-serif", letterSpacing: '-0.02em' }}>
-              {iosTitle}
-            </span>
+            {/* Left: Brand Identity orgánica (evita duplicar el título del módulo en pantalla) */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7, userSelect: 'none' }}>
+              <div
+                style={{
+                  width: 26,
+                  height: 26,
+                  borderRadius: '9px 13px 10px 14px',
+                  background: 'linear-gradient(135deg, var(--primario) 0%, #00C2FF 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 2px 10px rgba(0, 102, 255, 0.35)',
+                  flexShrink: 0,
+                }}
+              >
+                <Zap size={14} color="#FFFFFF" strokeWidth={2.6} />
+              </div>
+              <span
+                style={{
+                  fontSize: 15,
+                  fontWeight: 900,
+                  fontFamily: "'Syne', sans-serif",
+                  letterSpacing: '-0.03em',
+                  color: isDark ? '#FFFFFF' : '#0F172A',
+                }}
+              >
+                Logi<span style={{ color: 'var(--primario)' }}>Fast</span>
+              </span>
+            </div>
 
             {/* Right: acciones en cápsula compacta */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', borderRadius: 100, padding: '4px', border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.05)' }}>

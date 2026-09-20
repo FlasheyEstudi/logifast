@@ -173,9 +173,9 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
    ═══════════════════════════════════════════════ */
 const sectionCard: React.CSSProperties = {
   background: 'var(--surface)',
-  borderRadius: 'var(--lf-card-radius, 22px)',
-  border: '1px solid var(--border)',
-  boxShadow: 'var(--lf-shadow-card)',
+  borderRadius: '26px 26px 26px 14px',
+  border: '1px solid color-mix(in srgb, var(--border) 80%, rgba(255, 255, 255, 0.12))',
+  boxShadow: '0 6px 24px -2px rgba(0, 102, 255, 0.06), 0 2px 6px -1px rgba(0, 0, 0, 0.04)',
   padding: 24,
 };
 
@@ -807,23 +807,23 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
           <div
             onClick={() => fileInputRef.current?.click()}
             style={{
-              width: 92,
-              height: 92,
-              borderRadius: '50%',
-              background: 'var(--primario-soft)',
+              width: 96,
+              height: 96,
+              borderRadius: '28px 34px 26px 36px',
+              background: 'linear-gradient(135deg, var(--primario-soft) 0%, rgba(0, 194, 255, 0.12) 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               color: 'var(--primario)',
               fontFamily: "'Syne', sans-serif",
-              fontWeight: 700,
-              fontSize: 28,
+              fontWeight: 800,
+              fontSize: 30,
               flexShrink: 0,
-              border: '3px solid var(--primario)',
+              border: '3px solid color-mix(in srgb, var(--primario) 80%, white)',
               overflow: 'hidden',
               position: 'relative',
               cursor: 'pointer',
-              boxShadow: '0 8px 24px rgba(255,87,34,0.25)',
+              boxShadow: '0 10px 28px rgba(0, 102, 255, 0.22)',
             }}
           >
             {fotoUrl ? (
@@ -843,19 +843,19 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
             onClick={() => fileInputRef.current?.click()}
             style={{
               position: 'absolute',
-              bottom: 0,
-              right: 0,
+              bottom: -2,
+              right: -2,
               width: 36,
               height: 36,
-              borderRadius: '50%',
-              border: '3px solid var(--bg)',
+              borderRadius: '12px 14px 10px 16px',
+              border: '2.5px solid var(--bg)',
               background: 'var(--primario)',
               color: 'white',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 4px 14px rgba(255,87,34,0.45)',
+              boxShadow: '0 4px 14px rgba(0, 102, 255, 0.4)',
               transition: 'transform 0.2s',
             }}
             title="Cambiar foto de perfil"

@@ -108,12 +108,12 @@ export default function ClientExplorar({ onNavigate }: ClientExplorarProps) {
         className="lf-sheen"
         style={{
           position: 'relative',
-          borderRadius: '28px 28px 28px 12px',
+          borderRadius: '28px 28px 28px 14px',
           overflow: 'hidden',
           background: 'linear-gradient(135deg, var(--surface) 0%, var(--bg-alt) 100%)',
-          border: '1px solid var(--border)',
+          border: '1px solid color-mix(in srgb, var(--border) 80%, rgba(255,255,255,0.12))',
           padding: '20px 18px 22px',
-          boxShadow: 'var(--lf-shadow-card)',
+          boxShadow: '0 8px 30px -4px rgba(0, 102, 255, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.04)',
           display: 'flex',
           flexDirection: 'column',
           gap: 12,
@@ -185,8 +185,8 @@ export default function ClientExplorar({ onNavigate }: ClientExplorarProps) {
               background: 'var(--surface)',
               paddingLeft: 44,
               paddingRight: searchQuery ? 42 : 16,
-              boxShadow: '0 4px 14px rgba(0,0,0,0.05)',
-              border: '1px solid var(--border)',
+              boxShadow: '0 4px 16px rgba(0, 102, 255, 0.04)',
+              border: '1px solid color-mix(in srgb, var(--border) 75%, rgba(0, 102, 255, 0.15))',
             }}
           />
           {searchQuery && (

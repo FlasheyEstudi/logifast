@@ -63,9 +63,10 @@ const inputStyle: React.CSSProperties = {
 };
 
 const btnPrimary: React.CSSProperties = {
-  padding: '10px 20px', borderRadius: 100, border: 'none', background: 'var(--primario)',
-  color: '#fff', fontWeight: 600, fontSize: 13, fontFamily: "'DM Sans', sans-serif",
+  padding: '10px 20px', borderRadius: 100, border: 'none', background: 'linear-gradient(135deg, var(--primario) 0%, #00B4D8 100%)',
+  color: '#fff', fontWeight: 700, fontSize: 13, fontFamily: "'DM Sans', sans-serif",
   cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+  boxShadow: '0 4px 14px rgba(0, 102, 255, 0.25)',
 };
 
 const btnGhost: React.CSSProperties = {
@@ -153,9 +154,9 @@ export default function ClientEnvios({ onNavigate, onOpenTracking, onOpenChat }:
       {clientEnvioTab === 'activos' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {activeOrders.length === 0 ? (
-            <div style={{ background: 'var(--surface)', borderRadius: 24, border: '1px solid var(--border)', padding: '40px 24px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 60, height: 60, borderRadius: '50%', background: 'var(--primario-soft)', color: 'var(--primario)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Bike size={30} />
+            <div style={{ background: 'var(--surface)', borderRadius: '28px 28px 28px 14px', border: '1px solid var(--border)', padding: '40px 24px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, boxShadow: 'var(--lf-shadow-card)' }}>
+              <div style={{ width: 64, height: 64, borderRadius: '22px 26px 18px 24px', background: 'var(--primario-soft)', color: 'var(--primario)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Bike size={32} />
               </div>
               <div>
                 <h3 style={{ fontSize: 16, fontWeight: 700, fontFamily: "'Syne', sans-serif", color: 'var(--text)', margin: '0 0 4px 0' }}>No tienes envíos activos</h3>
@@ -168,7 +169,13 @@ export default function ClientEnvios({ onNavigate, onOpenTracking, onOpenChat }:
               const badge = STATUS_BADGE[order.estado] || STATUS_BADGE['pendiente'];
               return (
                 <motion.div key={order.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-                  style={{ borderRadius: 24, overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--surface)', boxShadow: 'var(--lf-shadow-card)' }}>
+                  style={{
+                    borderRadius: '26px 26px 26px 14px',
+                    overflow: 'hidden',
+                    border: '1px solid color-mix(in srgb, var(--border) 80%, rgba(255,255,255,0.12))',
+                    background: 'var(--surface)',
+                    boxShadow: '0 8px 26px -4px rgba(0, 102, 255, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04)',
+                  }}>
                   {/* MAPA LIMPIO */}
                   <div style={{ position: 'relative', width: '100%', height: 240 }}>
                     <RepartidorMap
@@ -209,9 +216,9 @@ export default function ClientEnvios({ onNavigate, onOpenTracking, onOpenChat }:
                       (() => {
                         const repName = typeof order.repartidor === 'string' ? order.repartidor : ((order.repartidor as any)?.user?.name || (order.repartidor as any)?.nombre || 'Repartidor LogiFast');
                         return (
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', borderRadius: 14, background: 'var(--bg-alt)' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: '16px 22px 14px 20px', background: 'var(--bg-alt)', border: '1px solid var(--border)' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                              <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--primario)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800 }}>
+                              <div style={{ width: 36, height: 36, borderRadius: '12px 16px 10px 18px', background: 'var(--primario)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800 }}>
                                 {repName.slice(0, 2).toUpperCase()}
                               </div>
                               <div>
@@ -270,9 +277,9 @@ export default function ClientEnvios({ onNavigate, onOpenTracking, onOpenChat }:
           ) : filteredHistory.map(order => {
             const badge = STATUS_BADGE[order.estado] || STATUS_BADGE['entregado'];
             return (
-              <motion.div key={order.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} style={{ background: 'var(--surface)', borderRadius: 20, border: '1px solid var(--border)', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <motion.div key={order.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} style={{ background: 'var(--surface)', borderRadius: '24px 24px 24px 12px', border: '1px solid color-mix(in srgb, var(--border) 80%, rgba(255,255,255,0.12))', padding: '15px 16px', display: 'flex', flexDirection: 'column', gap: 10, boxShadow: '0 4px 18px -2px rgba(0, 0, 0, 0.04)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 12, overflow: 'hidden', background: 'var(--bg-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: '14px 16px 12px 18px', overflow: 'hidden', background: 'var(--bg-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     {order.paqueteFotoUrl ? (
                       <img src={order.paqueteFotoUrl} alt="Paquete" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : (
