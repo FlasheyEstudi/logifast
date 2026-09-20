@@ -378,3 +378,305 @@ export function SocialNetworkIllustration({ size = 200, className = '' }: Illust
     </svg>
   );
 }
+
+/* ═════════════════════════════════════════════════════════════════════════
+   HIGH-TIER PROFESSIONAL VECTOR ART (PASO 1, 2, 3 - CÓMO FUNCIONA)
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/** Paso 1: Solicita - Interfaz isométrica premium, catálogo en vivo y orden instantánea */
+export function HighTierSolicitaIllustration({ size = 180, className = '' }: IllustrationProps) {
+  const uniqueId = 'ht-solicita';
+  return (
+    <svg width={size * 1.25} height={size} viewBox="0 0 250 200" fill="none" className={className} style={{ overflow: 'visible' }}>
+      <defs>
+        <linearGradient id={`${uniqueId}-phone-body`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#2A2E3D" />
+          <stop offset="100%" stopColor="#12141C" />
+        </linearGradient>
+        <linearGradient id={`${uniqueId}-screen`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#1A2035" />
+          <stop offset="100%" stopColor="#0B0D17" />
+        </linearGradient>
+        <linearGradient id={`${uniqueId}-accent`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#007AFF" />
+          <stop offset="100%" stopColor="#00E5FF" />
+        </linearGradient>
+        <linearGradient id={`${uniqueId}-orange`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#FF6B00" />
+          <stop offset="100%" stopColor="#FF9E00" />
+        </linearGradient>
+        <filter id={`${uniqueId}-glow`} x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="8" result="blur" />
+          <feComposite in="SourceGraphic" in2="blur" operator="over" />
+        </filter>
+        <filter id={`${uniqueId}-card-shadow`} x="-15%" y="-15%" width="130%" height="130%">
+          <feDropShadow dx="0" dy="8" stdDeviation="6" floodColor="#000000" floodOpacity="0.4" />
+        </filter>
+      </defs>
+
+      {/* Sombra ambiental inferior */}
+      <ellipse cx="125" cy="184" rx="88" ry="12" fill="rgba(0,0,0,0.35)" />
+      <ellipse cx="125" cy="184" rx="55" ry="7" fill="rgba(0,122,255,0.25)" filter="url(#glow)" />
+
+      {/* Teléfono Isométrico / Tablet Glass */}
+      <g transform="translate(18, 14)">
+        {/* Chasis exterior con bisel specular */}
+        <rect x="36" y="10" width="138" height="154" rx="26" fill="url(#ht-solicita-phone-body)" stroke="rgba(255,255,255,0.18)" strokeWidth="1.5" filter="url(#ht-solicita-card-shadow)" />
+        {/* Pantalla OLED */}
+        <rect x="42" y="16" width="126" height="142" rx="20" fill="url(#ht-solicita-screen)" />
+
+        {/* Dynamic Island / Header */}
+        <rect x="88" y="22" width="34" height="6" rx="3" fill="#05060A" />
+        <circle cx="114" cy="25" r="1.5" fill="#00E5FF" />
+
+        {/* Barra superior de app */}
+        <g transform="translate(50, 36)">
+          <rect x="0" y="0" width="110" height="20" rx="8" fill="rgba(255,255,255,0.06)" />
+          <circle cx="10" cy="10" r="4" fill="#00E5FF" />
+          <rect x="20" y="7" width="46" height="6" rx="3" fill="rgba(255,255,255,0.7)" />
+          <rect x="90" y="6" width="12" height="8" rx="4" fill="url(#ht-solicita-orange)" />
+        </g>
+
+        {/* Tarjeta de Producto 1 (Hamburguesa / Restaurante) */}
+        <g transform="translate(50, 62)">
+          <rect x="0" y="0" width="110" height="34" rx="10" fill="rgba(255,255,255,0.07)" stroke="rgba(0,122,255,0.35)" strokeWidth="1" />
+          {/* Mini icono */}
+          <rect x="8" y="6" width="22" height="22" rx="6" fill="url(#ht-solicita-orange)" />
+          <circle cx="19" cy="17" r="5" fill="#FFF" opacity="0.9" />
+          {/* Text lines */}
+          <rect x="36" y="9" width="48" height="5" rx="2.5" fill="#FFFFFF" />
+          <rect x="36" y="18" width="28" height="4" rx="2" fill="rgba(255,255,255,0.4)" />
+          {/* Price badge */}
+          <rect x="76" y="17" width="26" height="11" rx="5" fill="rgba(0,229,255,0.15)" stroke="rgba(0,229,255,0.4)" strokeWidth="0.8" />
+          <rect x="80" y="21" width="18" height="3" rx="1.5" fill="#00E5FF" />
+        </g>
+
+        {/* Tarjeta de Producto 2 (Farmacia / Paquete Express) */}
+        <g transform="translate(50, 102)">
+          <rect x="0" y="0" width="110" height="34" rx="10" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
+          <rect x="8" y="6" width="22" height="22" rx="6" fill="url(#ht-solicita-accent)" />
+          <rect x="36" y="9" width="42" height="5" rx="2.5" fill="rgba(255,255,255,0.85)" />
+          <rect x="36" y="18" width="22" height="4" rx="2" fill="rgba(255,255,255,0.4)" />
+          <rect x="76" y="17" width="26" height="11" rx="5" fill="rgba(0,200,83,0.15)" stroke="rgba(0,200,83,0.4)" strokeWidth="0.8" />
+          <rect x="80" y="21" width="18" height="3" rx="1.5" fill="#00C853" />
+        </g>
+      </g>
+
+      {/* Botón flotante interactivo de "SOLICITAR AHORA" en perspectiva 3D */}
+      <g transform="translate(142, 108)" filter="url(#ht-solicita-card-shadow)">
+        <rect x="0" y="0" width="86" height="32" rx="16" fill="url(#ht-solicita-accent)" stroke="rgba(255,255,255,0.6)" strokeWidth="1.2" />
+        {/* Pulsing beacon */}
+        <circle cx="16" cy="16" r="6" fill="#FFFFFF" />
+        <circle cx="16" cy="16" r="10" fill="none" stroke="#FFFFFF" strokeWidth="1.5" opacity="0.6">
+          <animate attributeName="r" values="6;13;6" dur="1.8s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.8;0;0.8" dur="1.8s" repeatCount="indefinite" />
+        </circle>
+        {/* Texto estilizado */}
+        <rect x="30" y="13" width="42" height="6" rx="3" fill="#FFFFFF" />
+      </g>
+
+      {/* Partículas de destello */}
+      <circle cx="34" cy="40" r="2.5" fill="#00E5FF" opacity="0.8" />
+      <circle cx="218" cy="70" r="3" fill="#FF9E00" opacity="0.8" />
+      <circle cx="230" cy="154" r="2" fill="#007AFF" opacity="0.7" />
+    </svg>
+  );
+}
+
+/** Paso 2: Rastrea - Holograma satelital, compás isométrico, ruta viva y motorizado en camino */
+export function HighTierRastreaIllustration({ size = 180, className = '' }: IllustrationProps) {
+  const uniqueId = 'ht-rastrea';
+  return (
+    <svg width={size * 1.25} height={size} viewBox="0 0 250 200" fill="none" className={className} style={{ overflow: 'visible' }}>
+      <defs>
+        <radialGradient id={`${uniqueId}-grid-glow`} cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#007AFF" stopOpacity="0.32" />
+          <stop offset="70%" stopColor="#007AFF" stopOpacity="0.06" />
+          <stop offset="100%" stopColor="#007AFF" stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id={`${uniqueId}-route`} x1="0" y1="1" x2="1" y2="0">
+          <stop offset="0%" stopColor="#007AFF" />
+          <stop offset="50%" stopColor="#00E5FF" />
+          <stop offset="100%" stopColor="#00C853" />
+        </linearGradient>
+        <linearGradient id={`${uniqueId}-hud-card`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="rgba(24, 30, 48, 0.92)" />
+          <stop offset="100%" stopColor="rgba(10, 12, 22, 0.95)" />
+        </linearGradient>
+        <filter id={`${uniqueId}-shadow`} x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="10" stdDeviation="8" floodColor="#000000" floodOpacity="0.5" />
+        </filter>
+      </defs>
+
+      {/* Sombra de la plataforma */}
+      <ellipse cx="125" cy="178" rx="92" ry="16" fill="rgba(0,0,0,0.38)" />
+
+      {/* Plataforma Isométrica Satelital */}
+      <g transform="translate(15, 20)">
+        {/* Disco holográfico */}
+        <ellipse cx="110" cy="130" rx="96" ry="42" fill="url(#ht-rastrea-grid-glow)" stroke="rgba(0,122,255,0.35)" strokeWidth="1.5" />
+        <ellipse cx="110" cy="130" rx="68" ry="28" fill="none" stroke="rgba(0,229,255,0.25)" strokeWidth="1" strokeDasharray="5 5" />
+        <ellipse cx="110" cy="130" rx="36" ry="15" fill="none" stroke="rgba(0,229,255,0.4)" strokeWidth="1.2" />
+
+        {/* Red vial urbana proyectada en perspectiva */}
+        <path d="M26 130 C60 115, 100 145, 150 120 C175 108, 195 116, 205 125" stroke="rgba(255,255,255,0.12)" strokeWidth="5" strokeLinecap="round" fill="none" />
+        <path d="M60 148 C90 128, 130 134, 168 140" stroke="rgba(255,255,255,0.08)" strokeWidth="4" strokeLinecap="round" fill="none" />
+        <path d="M110 95 L110 165" stroke="rgba(255,255,255,0.06)" strokeWidth="3" strokeDasharray="4 4" fill="none" />
+
+        {/* RUTA ACTIVA EN NEÓN (Pulsante y animada) */}
+        <path
+          d="M40 140 Q75 105, 110 125 T180 110"
+          stroke="url(#ht-rastrea-route)"
+          strokeWidth="4"
+          strokeLinecap="round"
+          strokeDasharray="8 6"
+          fill="none"
+        >
+          <animate attributeName="stroke-dashoffset" from="0" to="-28" dur="1.2s" repeatCount="indefinite" />
+        </path>
+
+        {/* Punto A (Comercio / Salida) */}
+        <g transform="translate(40, 140)">
+          <circle cx="0" cy="0" r="8" fill="rgba(0,122,255,0.25)" />
+          <circle cx="0" cy="0" r="4" fill="#007AFF" />
+        </g>
+
+        {/* Motorizado en ruta con cono de luz LED */}
+        <g transform="translate(110, 125)">
+          {/* Cono de iluminación delantero */}
+          <polygon points="0,0 24,-10 24,10" fill="rgba(0,229,255,0.2)" opacity="0.7" />
+          {/* Moto cápsula */}
+          <circle cx="0" cy="0" r="9" fill="#00E5FF" stroke="#FFFFFF" strokeWidth="2" filter="url(#ht-rastrea-shadow)" />
+          <circle cx="0" cy="0" r="3.5" fill="#0B0D17" />
+          {/* Pulso radar satelital */}
+          <circle cx="0" cy="0" r="14" fill="none" stroke="#00E5FF" strokeWidth="1.2" opacity="0.6">
+            <animate attributeName="r" values="9;22;9" dur="1.6s" repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0.8;0;0.8" dur="1.6s" repeatCount="indefinite" />
+          </circle>
+        </g>
+
+        {/* Punto B (Destino Pin con Ondas) */}
+        <g transform="translate(180, 110)">
+          <ellipse cx="0" cy="2" rx="9" ry="4" fill="rgba(0,200,83,0.3)" />
+          {/* Pin 3D */}
+          <path d="M0 -22 C-7 -22 -11 -16 -11 -10 C-11 -3 0 2 0 2 C0 2 11 -3 11 -10 C11 -16 7 -22 0 -22 Z" fill="#00C853" stroke="#FFFFFF" strokeWidth="1.5" filter="url(#ht-rastrea-shadow)" />
+          <circle cx="0" cy="-12" r="3.5" fill="#FFFFFF" />
+        </g>
+
+        {/* HUD Telemetry Card Flotante (ETA 12 MIN / GPS REAL) */}
+        <g transform="translate(118, 12)" filter="url(#ht-rastrea-shadow)">
+          <rect x="0" y="0" width="98" height="42" rx="12" fill="url(#ht-rastrea-hud-card)" stroke="rgba(0,229,255,0.35)" strokeWidth="1.2" />
+          {/* Header pill */}
+          <circle cx="12" cy="14" r="3.5" fill="#00C853" />
+          <text x="20" y="17" fill="#00E5FF" fontSize="8.5" fontWeight="800" fontFamily="sans-serif" letterSpacing="0.06em">EN CAMINO</text>
+          {/* ETA */}
+          <text x="12" y="32" fill="#FFFFFF" fontSize="12" fontWeight="800" fontFamily="monospace">ETA: 12 MIN</text>
+        </g>
+      </g>
+    </svg>
+  );
+}
+
+/** Paso 3: Recibe - Paquete blindado 3D, escudo holográfico de verificación y 5 estrellas */
+export function HighTierRecibeIllustration({ size = 180, className = '' }: IllustrationProps) {
+  const uniqueId = 'ht-recibe';
+  return (
+    <svg width={size * 1.25} height={size} viewBox="0 0 250 200" fill="none" className={className} style={{ overflow: 'visible' }}>
+      <defs>
+        <linearGradient id={`${uniqueId}-box-top`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#FFA000" />
+          <stop offset="100%" stopColor="#FF6F00" />
+        </linearGradient>
+        <linearGradient id={`${uniqueId}-box-left`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#E65100" />
+          <stop offset="100%" stopColor="#BF360C" />
+        </linearGradient>
+        <linearGradient id={`${uniqueId}-box-right`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#FF8F00" />
+          <stop offset="100%" stopColor="#E65100" />
+        </linearGradient>
+        <linearGradient id={`${uniqueId}-shield`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#00E676" />
+          <stop offset="100%" stopColor="#00A844" />
+        </linearGradient>
+        <linearGradient id={`${uniqueId}-laser`} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="transparent" />
+          <stop offset="50%" stopColor="#00E5FF" />
+          <stop offset="100%" stopColor="transparent" />
+        </linearGradient>
+        <filter id={`${uniqueId}-glow`} x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="6" result="blur" />
+          <feComposite in="SourceGraphic" in2="blur" operator="over" />
+        </filter>
+        <filter id={`${uniqueId}-shadow`} x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="12" stdDeviation="10" floodColor="#000000" floodOpacity="0.45" />
+        </filter>
+      </defs>
+
+      {/* Sombra profunda inferior */}
+      <ellipse cx="125" cy="180" rx="82" ry="14" fill="rgba(0,0,0,0.38)" />
+      <ellipse cx="125" cy="180" rx="46" ry="8" fill="rgba(0,230,118,0.25)" filter="url(#glow)" />
+
+      {/* Paquete Isométrico Ultra-Detallado */}
+      <g transform="translate(125, 126)" filter="url(#ht-recibe-shadow)">
+        {/* Cara Superior (Rombo isométrico) */}
+        <polygon points="0,-48 56,-20 0,8 -56,-20" fill="url(#ht-recibe-box-top)" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
+        {/* Cara Izquierda */}
+        <polygon points="-56,-20 0,8 0,60 -56,32" fill="url(#ht-recibe-box-left)" />
+        {/* Cara Derecha */}
+        <polygon points="0,8 56,-20 56,32 0,60" fill="url(#ht-recibe-box-right)" />
+
+        {/* Cinta de Precinto de Seguridad Holográfica */}
+        <polygon points="-14,-41 0,-34 14,-41 0,-48" fill="#007AFF" opacity="0.9" />
+        <polygon points="-14,-41 0,-34 0,8 -14,1" fill="#0066FF" opacity="0.9" />
+        <polygon points="0,-34 14,-41 14,1 0,8" fill="#1A8CFF" opacity="0.9" />
+
+        {/* Etiqueta Térmica con Código de Barras */}
+        <polygon points="12,18 42,3 42,26 12,41" fill="#FFFFFF" opacity="0.95" />
+        <line x1="16" y1="23" x2="38" y2="12" stroke="#12141C" strokeWidth="1.5" />
+        <line x1="16" y1="27" x2="38" y2="16" stroke="#12141C" strokeWidth="2.5" />
+        <line x1="16" y1="31" x2="32" y2="23" stroke="#12141C" strokeWidth="1.2" />
+
+        {/* Escáner Láser que barre la caja verticalmente */}
+        <line x1="-50" y1="2" x2="50" y2="2" stroke="url(#ht-recibe-laser)" strokeWidth="3">
+          <animateTransform attributeName="transform" type="translate" values="0 -18; 0 34; 0 -18" dur="2.4s" repeatCount="indefinite" />
+        </line>
+      </g>
+
+      {/* Escudo Flotante de Garantía y Entrega Verificada */}
+      <g transform="translate(125, 46)" filter="url(#ht-recibe-shadow)">
+        <path
+          d="M0 -28 L24 -16 L24 10 C24 24 12 36 0 42 C-12 36 -24 24 -24 10 L-24 -16 Z"
+          fill="url(#ht-recibe-shield)"
+          stroke="#FFFFFF"
+          strokeWidth="2"
+        />
+        {/* Checkmark interior brillante */}
+        <path
+          d="M-8 6 L-2 12 L10 -2"
+          fill="none"
+          stroke="#FFFFFF"
+          strokeWidth="3.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </g>
+
+      {/* Floating Rating Badge con 5 Estrellas Doradas */}
+      <g transform="translate(125, 102)" filter="url(#ht-recibe-shadow)">
+        <rect x="-55" y="-12" width="110" height="24" rx="12" fill="rgba(18, 20, 32, 0.94)" stroke="rgba(255, 215, 0, 0.5)" strokeWidth="1" />
+        <g transform="translate(-42, -5)" fill="#FFD700">
+          {[0, 18, 36, 54, 72].map((x, i) => (
+            <polygon key={i} points={`${x+5},0 ${x+6.5},3.5 ${x+10},3.8 ${x+7.5},6.2 ${x+8.2},10 ${x+5},8 ${x+1.8},10 ${x+2.5},6.2 ${x},3.8 ${x+3.5},3.5`} />
+          ))}
+        </g>
+      </g>
+
+      {/* Destellos de éxito */}
+      <circle cx="55" cy="50" r="2.5" fill="#00E676" opacity="0.8" />
+      <circle cx="198" cy="62" r="3" fill="#FFD700" opacity="0.85" />
+      <circle cx="214" cy="130" r="2" fill="#00E5FF" opacity="0.8" />
+    </svg>
+  );
+}
+

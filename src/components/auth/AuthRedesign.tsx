@@ -7,10 +7,12 @@ import { useConfigStore } from '@/store/configStore';
 import { MiniSpinner } from '@/components/ui/loaders';
 import { ImageUploader } from '@/components/ui/ImageUploader';
 import {
-  ReceivePackageIllustration,
-  MapIllustration,
-  SecurePackageIllustration,
+  HighTierSolicitaIllustration,
+  HighTierRastreaIllustration,
+  HighTierRecibeIllustration,
 } from '@/components/illustrations';
+import ShootingStars from '@/components/ui/ShootingStars';
+import ManaguaRealMap from '@/components/ui/ManaguaRealMap';
 
 type View = 'landing' | 'login' | 'register';
 
@@ -323,20 +325,80 @@ export function AppleSlideWidget({ type, isDark }: { type: string; isDark: boole
   }
 
   return (
-    <div style={{ width: '100%', background: cardBg, backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border, borderRadius: '24px 26px 22px 20px', padding: 18, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, boxShadow: innerShadow }}>
-      <div style={{ display: 'flex', gap: 4, color: '#FFB300' }}>
-        {[...Array(5)].map((_, i) => <Icon.Star key={i} size={18} fill="#FFB300" />)}
+    <div style={{
+      width: '100%',
+      background: cardBg,
+      backdropFilter: 'blur(28px)',
+      WebkitBackdropFilter: 'blur(28px)',
+      border,
+      borderRadius: '22px 24px 20px 18px',
+      padding: '14px 16px',
+      textAlign: 'left',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 10,
+      boxShadow: innerShadow,
+    }}>
+      {/* Top Header: Badge de Entrega Verificada + Rating Pill */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 10, fontWeight: 800, color: '#00C853', background: 'rgba(0, 200, 83, 0.12)', border: '1px solid rgba(0,200,83,0.25)', padding: '3px 9px', borderRadius: 100 }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#00C853', boxShadow: '0 0 8px #00C853' }} />
+          <span>ENTREGA VERIFICADA • 14 MIN</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(255, 179, 0, 0.12)', border: '1px solid rgba(255, 179, 0, 0.3)', padding: '2px 8px', borderRadius: 100 }}>
+          <div style={{ display: 'flex', gap: 2, color: '#FFB300' }}>
+            {[...Array(5)].map((_, i) => <Icon.Star key={i} size={12} fill="#FFB300" />)}
+          </div>
+          <span style={{ fontSize: 11, fontWeight: 800, color: '#FFB300' }}>10/10</span>
+        </div>
       </div>
-      <div style={{ fontSize: 15, fontWeight: 800, color: textColor }}>5.0 Excelente Servicio</div>
-      <div style={{ fontSize: 12, color: subColor, fontStyle: 'italic', lineHeight: 1.5 }}>
-        "El servicio llegó súper rápido a Los Robles y el empaque impecable. ¡10/10!"
+
+      {/* Cita Textual de María L. */}
+      <div style={{
+        background: isDark ? 'rgba(0, 0, 0, 0.28)' : 'rgba(255, 255, 255, 0.75)',
+        borderRadius: 14,
+        padding: '10px 12px',
+        border: isDark ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(0,0,0,0.05)',
+      }}>
+        <p style={{ fontSize: 12.5, color: textColor, fontStyle: 'italic', margin: 0, lineHeight: 1.45, fontWeight: 500 }}>
+          "El servicio llegó súper rápido a Los Robles y el empaque impecable. ¡10/10!"
+        </p>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: textColor, marginTop: 4 }}>
-        <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#0066FF', color: 'white', fontSize: 10, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,102,255,0.4)' }}>ML</div>
-        <span style={{ fontWeight: 600 }}>María L. • Cliente Verificado</span>
+
+      {/* Footer con Avatar Verificado */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 2 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{
+            width: 26,
+            height: 26,
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #007AFF 0%, #00C853 100%)',
+            color: 'white',
+            fontSize: 10,
+            fontWeight: 800,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(0,122,255,0.35)',
+          }}>
+            ML
+          </div>
+          <div>
+            <div style={{ fontSize: 11.5, fontWeight: 800, color: textColor, display: 'flex', alignItems: 'center', gap: 5 }}>
+              <span>María L.</span>
+              <span style={{ fontSize: 10, color: '#00C853', display: 'inline-flex', alignItems: 'center' }}>✓</span>
+            </div>
+            <div style={{ fontSize: 9.5, color: subColor, fontWeight: 600 }}>Cliente Verificado • Los Robles</div>
+          </div>
+        </div>
+
+        <span style={{ fontSize: 9.5, fontFamily: 'monospace', color: subColor, background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)', padding: '2px 6px', borderRadius: 4 }}>
+          Auditado ★★★★★
+        </span>
       </div>
     </div>
   );
+
 }
 
 const PARTNERS = [
@@ -566,7 +628,10 @@ function LandingView({
   };
 
   return (
-    <div>
+    <div style={{ position: 'relative', minHeight: '100vh', overflowX: 'hidden' }}>
+      {/* ─── LLUVIA DE ESTRELLAS FUGACES EN MODO NOCHE (IMPREDECIBLE) ─── */}
+      <ShootingStars isDark={isDark} />
+
       {/* ─── ISLA FLOTANTE DE CRISTAL LÍQUIDO (CAPSULA COMPLETA) ─── */}
       <header style={{
         position: 'fixed',
@@ -605,27 +670,32 @@ function LandingView({
             <span style={{ fontWeight: 800, fontSize: 16, letterSpacing: '-0.03em', color: textColor }}>LOGIFAST</span>
           </div>
 
-          {/* Opciones en línea (Iniciar sesión y Menú Lateral) */}
+          {/* Opciones en línea (Explorar Demo y Menú Lateral) */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
 
-            {/* 2. Botón Iniciar */}
+            {/* 2. Botón Explorar Demo */}
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={onLogin}
               style={{
-                background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
-                border: specularBorder,
-                color: textColor,
+                background: isDark ? 'rgba(0, 102, 255, 0.15)' : 'rgba(0, 102, 255, 0.08)',
+                border: isDark ? '1px solid rgba(0, 122, 255, 0.4)' : '1px solid rgba(0, 102, 255, 0.25)',
+                color: '#007AFF',
                 fontSize: 13,
                 fontWeight: 700,
                 cursor: 'pointer',
                 padding: '6px 14px',
                 borderRadius: 100,
                 flexShrink: 0,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
               }}
             >
-              Iniciar sesión
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#00C853', boxShadow: '0 0 6px #00C853' }} />
+              <span>Explorar Demo</span>
             </motion.button>
+
 
             {/* 3. Botón Mini Pantalla / Menú Lateral Derecho */}
             <motion.button
@@ -791,9 +861,9 @@ function LandingView({
                       width: '100%',
                       height: 48,
                       borderRadius: 100,
-                      background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
-                      border: specularBorder,
-                      color: textColor,
+                      background: isDark ? 'rgba(0, 102, 255, 0.14)' : 'rgba(0, 102, 255, 0.08)',
+                      border: isDark ? '1px solid rgba(0, 122, 255, 0.4)' : '1px solid rgba(0, 102, 255, 0.25)',
+                      color: '#007AFF',
                       fontSize: 14,
                       fontWeight: 700,
                       cursor: 'pointer',
@@ -803,10 +873,11 @@ function LandingView({
                       gap: 8,
                     }}
                   >
-                    <Icon.User />
-                    <span>Iniciar Sesión</span>
+                    <Icon.Sparkles />
+                    <span>Explorar Demo en Vivo</span>
                   </motion.button>
                 </div>
+
 
                 {/* Enlaces de Secciones */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 320, overflowY: 'auto' }}>
@@ -1003,28 +1074,43 @@ function LandingView({
               </motion.button>
             </motion.div>
 
-            {/* Quick Stats Grid */}
+            {/* Cápsula Orgánica de Telemetría en Vivo (Operación Real en Managua) */}
             <motion.div
               variants={{
-                hidden: { opacity: 0, scale: 0.94 },
-                visible: { opacity: 1, scale: 1, transition: { duration: 0.55, ease: 'easeOut' } },
+                hidden: { opacity: 0, y: 14 },
+                visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: 'easeOut' } },
               }}
-              style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginTop: 8, paddingTop: 18, borderTop: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)' }}
+              style={{
+                marginTop: 8,
+                padding: '14px 16px',
+                borderRadius: '20px 22px 18px 16px',
+                background: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(255, 255, 255, 0.75)',
+                border: specularBorder,
+                backdropFilter: 'blur(20px)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 9,
+                boxShadow: isDark ? 'inset 0 1px 1px rgba(255,255,255,0.08)' : '0 8px 24px rgba(0,102,255,0.04)',
+              }}
             >
-              <div style={{ background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.5)', padding: '10px 10px', borderRadius: 14, border: specularBorder, backdropFilter: 'blur(16px)' }}>
-                <div style={{ fontSize: 20, fontWeight: 800, color: textColor, letterSpacing: '-0.02em' }}>2.5k+</div>
-                <div style={{ fontSize: 10, color: subColor, fontWeight: 600, marginTop: 2 }}>Envíos</div>
-              </div>
-              <div style={{ background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.5)', padding: '10px 10px', borderRadius: 14, border: specularBorder, backdropFilter: 'blur(16px)' }}>
-                <div style={{ fontSize: 20, fontWeight: 800, color: textColor, letterSpacing: '-0.02em' }}>15 min</div>
-                <div style={{ fontSize: 10, color: subColor, fontWeight: 600, marginTop: 2 }}>Promedio</div>
-              </div>
-              <div style={{ background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.5)', padding: '10px 10px', borderRadius: 14, border: specularBorder, backdropFilter: 'blur(16px)' }}>
-                <div style={{ fontSize: 20, fontWeight: 800, color: textColor, display: 'flex', alignItems: 'center', gap: 4, letterSpacing: '-0.02em' }}>
-                  <span>4.9</span>
-                  <Icon.Star size={14} fill="#FFB300" />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 11, fontWeight: 800, color: '#00C853' }}>
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#00C853', boxShadow: '0 0 10px #00C853' }} />
+                  <span>RED LOGÍSTICA ACTIVA • MANAGUA</span>
                 </div>
-                <div style={{ fontSize: 10, color: subColor, fontWeight: 600, marginTop: 2 }}>Calificación</div>
+                <span style={{ fontSize: 10.5, color: subColor, fontWeight: 600 }}>Zona: Los Robles • Bolonia • Altamira</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12, color: textColor, borderTop: isDark ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(0,0,0,0.05)', paddingTop: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ color: '#007AFF', fontWeight: 800 }}>⚡</span>
+                  <span style={{ fontWeight: 600 }}>Despacho en ruta: <strong style={{ color: '#007AFF' }}>~15 min promedio</strong></span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(255, 179, 0, 0.1)', padding: '2px 8px', borderRadius: 100, border: '1px solid rgba(255, 179, 0, 0.25)' }}>
+                  <div style={{ display: 'flex', gap: 2, color: '#FFB300' }}>
+                    {[...Array(5)].map((_, i) => <Icon.Star key={i} size={11} fill="#FFB300" />)}
+                  </div>
+                  <span style={{ fontWeight: 800, fontSize: 11, color: '#FFB300' }}>4.9/5</span>
+                </div>
               </div>
             </motion.div>
           </motion.div>
@@ -1145,7 +1231,7 @@ function LandingView({
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 18, height: 140, alignItems: 'center' }}>
-                <ReceivePackageIllustration size={130} />
+                <HighTierSolicitaIllustration size={150} />
               </div>
               <h3 style={{ fontSize: 19, fontWeight: 800, color: textColor, margin: '0 0 8px', letterSpacing: '-0.02em' }}>1. Solicita</h3>
               <p style={{ fontSize: 13, color: subColor, margin: 0, lineHeight: 1.6 }}>Pide un envío o compra productos del marketplace en segundos.</p>
@@ -1173,7 +1259,7 @@ function LandingView({
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 18, height: 140, alignItems: 'center' }}>
-                <MapIllustration size={130} />
+                <HighTierRastreaIllustration size={150} />
               </div>
               <h3 style={{ fontSize: 19, fontWeight: 800, color: textColor, margin: '0 0 8px', letterSpacing: '-0.02em' }}>2. Rastrea</h3>
               <p style={{ fontSize: 13, color: subColor, margin: 0, lineHeight: 1.6 }}>Sigue al repartidor en tiempo real, chatea y recibe notificaciones.</p>
@@ -1201,7 +1287,7 @@ function LandingView({
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 18, height: 140, alignItems: 'center' }}>
-                <SecurePackageIllustration size={130} />
+                <HighTierRecibeIllustration size={150} />
               </div>
               <h3 style={{ fontSize: 19, fontWeight: 800, color: textColor, margin: '0 0 8px', letterSpacing: '-0.02em' }}>3. Recibe</h3>
               <p style={{ fontSize: 13, color: subColor, margin: 0, lineHeight: 1.6 }}>Tu paquete llega seguro. Califica al repartidor y repite.</p>
@@ -1242,62 +1328,18 @@ function LandingView({
           </p>
         </motion.div>
 
-        {/* Radar Mockup Frame */}
+        {/* Radar Satelital con Mapa Real de Managua (Calles, Lago Xolotlán, Tiscapa, Rotondas) */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 24 }}
+          initial={{ opacity: 0, scale: 0.96, y: 24 }}
           whileInView={{ opacity: 1, scale: 1, y: 0 }}
           viewport={{ once: false, amount: 0.2 }}
           transition={{ duration: 0.55 }}
           style={{
-            background: isDark ? 'rgba(10, 10, 16, 0.9)' : 'rgba(255, 255, 255, 0.85)',
-            backdropFilter: 'blur(36px)',
-            WebkitBackdropFilter: 'blur(36px)',
-            border: specularBorder,
-            borderRadius: '32px 34px 28px 24px',
-            padding: 24,
-            boxShadow: glassShadow,
-            maxWidth: 900,
+            maxWidth: 960,
             margin: '0 auto',
-            overflow: 'hidden',
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)', paddingBottom: 14 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#00C853', boxShadow: '0 0 10px #00C853' }} />
-              <span style={{ fontSize: 13, fontWeight: 800, color: textColor, letterSpacing: '0.04em' }}>RADAR ACTIVO • 12 MOTORIZADOS</span>
-            </div>
-            <span style={{ fontSize: 12, fontFamily: 'monospace', color: subColor }}>12.1364° N, 86.2514° W</span>
-          </div>
-
-          <div style={{
-            height: 200,
-            margin: '18px 0',
-            position: 'relative',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,102,255,0.1)',
-            borderRadius: '20px 22px 18px 16px',
-            overflow: 'hidden',
-            background: isDark ? '#06060C' : '#F0F4FF',
-          }}>
-            <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at center, rgba(0,102,255,0.2) 0%, transparent 70%)' }} />
-            
-            {/* Blips Satelitales */}
-            <div style={{ position: 'absolute', top: 32, left: '22%', display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(0,102,255,0.18)', border: '1px solid rgba(0,102,255,0.45)', padding: '3px 10px', borderRadius: 100 }}>
-              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#0066FF' }} />
-              <span style={{ fontSize: 11, fontFamily: 'monospace', fontWeight: 700, color: '#007AFF' }}>MOTO-04</span>
-            </div>
-
-            <div style={{ position: 'absolute', bottom: 38, right: '24%', display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(0,200,83,0.18)', border: '1px solid rgba(0,200,83,0.45)', padding: '3px 10px', borderRadius: 100 }}>
-              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#00C853' }} />
-              <span style={{ fontSize: 11, fontFamily: 'monospace', fontWeight: 700, color: '#00C853' }}>MOTO-09 (En Ruta)</span>
-            </div>
-
-            <span style={{ position: 'absolute', bottom: 12, fontSize: 10, color: subColor, fontFamily: 'monospace', letterSpacing: '0.16em' }}>
-              ZONA METROPOLITANA MANAGUA
-            </span>
-          </div>
+          <ManaguaRealMap isDark={isDark} />
         </motion.div>
       </section>
 
@@ -3133,8 +3175,8 @@ function RegisterView({
         )}
 
         <p style={{ textAlign: 'center', fontSize: 13, color: subColor, marginTop: 22 }}>
-          ¿Ya tienes cuenta?{' '}
-          <button type="button" onClick={onSwitchToLogin} style={{ background: 'none', border: 'none', color: '#007AFF', fontWeight: 800, cursor: 'pointer' }}>Inicia sesión</button>
+          ¿Deseas probar la plataforma sin registrarte?{' '}
+          <button type="button" onClick={onSwitchToLogin} style={{ background: 'none', border: 'none', color: '#007AFF', fontWeight: 800, cursor: 'pointer' }}>Explorar Demo en Vivo</button>
         </p>
       </motion.div>
     </div>
