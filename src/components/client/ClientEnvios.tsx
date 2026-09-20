@@ -193,8 +193,14 @@ export default function ClientEnvios({ onNavigate, onOpenTracking, onOpenChat }:
                     {/* ID + precio - cápsula derecha */}
                     <div style={{ position: 'absolute', top: 12, right: 12, padding: '6px 12px', borderRadius: 100, background: 'color-mix(in srgb, var(--surface) 92%, transparent)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.15)', boxShadow: '0 4px 14px rgba(0,0,0,0.25)', display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span style={{ fontSize: 10, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-muted)' }}>#{order.id.substring(0,6)}</span>
-                      <span style={{ width: 1, height: 10, background: 'var(--border)' }} />
                       <span style={{ fontSize: 12, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: 'var(--primario)' }}>C$ {(order.monto||0).toFixed(0)}</span>
+                    </div>
+
+                    {/* Wave divider into surface */}
+                    <div style={{ position: 'absolute', bottom: -1, left: 0, right: 0, height: 16, pointerEvents: 'none', zIndex: 10 }}>
+                      <svg viewBox="0 0 500 24" preserveAspectRatio="none" style={{ width: '100%', height: '100%', display: 'block' }}>
+                        <path d="M0,14 C120,24 220,4 340,16 C420,24 470,12 500,16 L500,24 L0,24 Z" fill="var(--surface)" />
+                      </svg>
                     </div>
                   </div>
 
@@ -319,12 +325,21 @@ export default function ClientEnvios({ onNavigate, onOpenTracking, onOpenChat }:
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-              style={{ width: '100%', maxWidth: 400, borderRadius: 28, background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: '0 24px 60px rgba(0,0,0,0.4)', padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: 12 }}>
-                <h3 style={{ fontSize: 16, fontWeight: 700, fontFamily: "'Syne', sans-serif", color: 'var(--text)', margin: 0 }}>Reportar Problema</h3>
-                <button onClick={() => setReportModal({ open: false, orderId: '', reason: 'retraso', description: '' })} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={20} /></button>
+              style={{ width: '100%', maxWidth: 400, borderRadius: '28px 28px 26px 14px', background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: '0 24px 60px rgba(0,0,0,0.4)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+              {/* Header with crimson wave */}
+              <div style={{ position: 'relative', height: 60, background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 18px', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', bottom: -1, left: 0, right: 0, height: 16, pointerEvents: 'none' }}>
+                  <svg viewBox="0 0 500 24" preserveAspectRatio="none" style={{ width: '100%', height: '100%', display: 'block' }}>
+                    <path d="M0,12 C140,24 260,2 380,18 C440,24 480,14 500,16 L500,24 L0,24 Z" fill="var(--surface)" />
+                  </svg>
+                </div>
+                <div style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <AlertTriangle size={18} color="#fff" />
+                  <h3 style={{ fontSize: 16, fontWeight: 700, fontFamily: "'Syne', sans-serif", color: '#fff', margin: 0 }}>Reportar Problema</h3>
+                </div>
+                <button onClick={() => setReportModal({ open: false, orderId: '', reason: 'retraso', description: '' })} style={{ position: 'relative', zIndex: 2, background: 'rgba(0,0,0,0.2)', border: 'none', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', cursor: 'pointer' }}><X size={16} /></button>
               </div>
-              <form onSubmit={handleReportSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <form onSubmit={handleReportSubmit} style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>Motivo</label>
                   <select value={reportModal.reason} onChange={e => setReportModal({ ...reportModal, reason: e.target.value })} style={inputStyle}>

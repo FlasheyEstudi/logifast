@@ -127,13 +127,16 @@ function Modal({ children, onClose }: { children: React.ReactNode; onClose: () =
       onClick={onClose}
     >
       <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
+        initial={{ scale: 0.92, opacity: 0, y: 8 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.92, opacity: 0, y: 8 }}
         onClick={(e) => e.stopPropagation()}
         className="lf-modal open"
         style={{
           background: 'var(--surface)',
+          borderRadius: '28px 28px 26px 14px',
+          border: '1px solid var(--border)',
+          boxShadow: '0 24px 60px rgba(0,0,0,0.3)',
           padding: 24, maxWidth: 400, width: '100%',
         }}
       >
@@ -802,8 +805,29 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
       {/* ═══════════════════════════════════════════
           HEADER: Avatar (con foto subible) + Name + Email
           ═══════════════════════════════════════════ */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, paddingTop: 8 }}>
-        <div style={{ position: 'relative' }}>
+      <div
+        style={{
+          position: 'relative',
+          overflow: 'hidden',
+          borderRadius: '32px 32px 28px 16px',
+          background: 'linear-gradient(135deg, rgba(0, 102, 255, 0.08) 0%, rgba(255, 102, 0, 0.05) 50%, var(--surface) 100%)',
+          border: '1px solid var(--border)',
+          padding: '26px 20px 22px',
+          boxShadow: '0 8px 30px rgba(0,0,0,0.04)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 12,
+        }}
+      >
+        {/* Ambient wave accent in background */}
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 75, opacity: 0.22, pointerEvents: 'none', overflow: 'hidden' }}>
+          <svg viewBox="0 0 500 75" preserveAspectRatio="none" style={{ width: '100%', height: '100%', display: 'block' }}>
+            <path d="M0,28 C150,60 350,8 500,38 L500,0 L0,0 Z" fill="var(--primario)" />
+          </svg>
+        </div>
+
+        <div style={{ position: 'relative', zIndex: 2 }}>
           <div
             onClick={() => fileInputRef.current?.click()}
             style={{
@@ -1098,21 +1122,30 @@ export default function ClientPerfil({ userName, onNavigate, onLogout }: ClientP
             }}
           >
             <motion.div
-              initial={{ scale: 0.9, y: 20 }}
+              initial={{ scale: 0.92, y: 15 }}
               animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
+              exit={{ scale: 0.92, y: 15 }}
               style={{
                 width: '100%', maxWidth: 440, background: 'var(--surface)',
-                border: '1px solid var(--border)', borderRadius: 24, padding: 24,
-                boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+                border: '1px solid var(--border)', borderRadius: '28px 28px 26px 14px',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.3)', overflow: 'hidden',
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', margin: 0 }}>Afiliar Nuevo Negocio / Tienda</h3>
-                <button onClick={() => setShowStoreModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={18} /></button>
+              {/* Header with wave */}
+              <div style={{ position: 'relative', height: 60, background: 'linear-gradient(135deg, var(--primario) 0%, #00B4D8 100%)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 18px', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', bottom: -1, left: 0, right: 0, height: 16, pointerEvents: 'none' }}>
+                  <svg viewBox="0 0 500 24" preserveAspectRatio="none" style={{ width: '100%', height: '100%', display: 'block' }}>
+                    <path d="M0,12 C140,24 260,2 380,18 C440,24 480,14 500,16 L500,24 L0,24 Z" fill="var(--surface)" />
+                  </svg>
+                </div>
+                <div style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Building size={18} color="#fff" />
+                  <h3 style={{ fontSize: 16, fontWeight: 700, fontFamily: "'Syne', sans-serif", color: '#fff', margin: 0 }}>Afiliar Nuevo Negocio</h3>
+                </div>
+                <button onClick={() => setShowStoreModal(false)} style={{ position: 'relative', zIndex: 2, background: 'rgba(0,0,0,0.2)', border: 'none', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', cursor: 'pointer' }}><X size={16} /></button>
               </div>
 
-              <form onSubmit={handleCreateStore} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <form onSubmit={handleCreateStore} style={{ padding: 22, display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div>
                   <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Nombre de la Tienda / Negocio *</label>
                   <input

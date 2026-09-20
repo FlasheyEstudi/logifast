@@ -1792,7 +1792,7 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
               style={{
                 width: '100%',
                 maxWidth: 440,
-                borderRadius: 24,
+                borderRadius: '28px 28px 26px 14px',
                 background: 'var(--surface)',
                 border: '1px solid var(--border)',
                 overflow: 'hidden',
@@ -1801,8 +1801,8 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
                 flexDirection: 'column',
               }}
             >
-              {/* Cover Image */}
-              <div style={{ height: 200, position: 'relative', background: selectedProductPreview.imagenColor || 'var(--bg-alt)' }}>
+              {/* Cover Image con Ola Orgánica Fluida */}
+              <div style={{ height: 210, position: 'relative', background: selectedProductPreview.imagenColor || 'var(--bg-alt)', overflow: 'hidden' }}>
                 {selectedProductPreview.imagenUrl ? (
                   <img
                     src={selectedProductPreview.imagenUrl}
@@ -1815,22 +1815,56 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
                     <ShoppingBag size={40} />
                   </div>
                 )}
+
+                {/* Velo sutil */}
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.2) 60%, rgba(0,0,0,0.5) 100%)' }} />
+
+                {/* Ola orgánica esculpida recortando la foto contra los detalles del producto */}
+                <svg
+                  viewBox="0 0 500 40"
+                  preserveAspectRatio="none"
+                  aria-hidden="true"
+                  style={{
+                    position: 'absolute',
+                    left: 0,
+                    right: 0,
+                    bottom: -1,
+                    width: '100%',
+                    height: 28,
+                    pointerEvents: 'none',
+                    zIndex: 3,
+                  }}
+                >
+                  <path
+                    d="M 0,14 Q 130,2 250,24 T 500,12 L 500,40 L 0,40 Z"
+                    fill="var(--surface)"
+                    opacity={0.35}
+                  />
+                  <path
+                    d="M 0,20 Q 120,8 245,28 T 500,16 L 500,40 L 0,40 Z"
+                    fill="var(--surface)"
+                  />
+                </svg>
+
                 <button
                   onClick={() => setSelectedProductPreview(null)}
                   style={{
                     position: 'absolute',
                     top: 12,
                     right: 12,
-                    width: 32,
-                    height: 32,
+                    width: 34,
+                    height: 34,
                     borderRadius: '50%',
                     background: 'rgba(0,0,0,0.5)',
+                    backdropFilter: 'blur(8px)',
+                    WebkitBackdropFilter: 'blur(8px)',
                     color: '#FFFFFF',
-                    border: 'none',
+                    border: '1px solid rgba(255,255,255,0.25)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     cursor: 'pointer',
+                    zIndex: 5,
                   }}
                 >
                   <X size={18} />
@@ -1986,29 +2020,113 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
               style={{
                 width: '100%',
                 maxWidth: 420,
-                borderRadius: 22,
+                borderRadius: '28px 28px 26px 14px',
                 background: 'var(--surface)',
                 border: '1px solid var(--border)',
-                padding: 24,
+                overflow: 'hidden',
                 boxShadow: '0 20px 50px rgba(0,0,0,0.4)',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 16,
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <h3 style={{ fontSize: 17, fontWeight: 800, fontFamily: "'Syne', sans-serif", color: 'var(--text)', margin: 0 }}>
-                  Calificar a {tienda.nombre}
-                </h3>
-                <button
-                  onClick={() => setModalResenaOpen(false)}
-                  style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+              {/* Header Orgánico con Ola Fluida */}
+              <div
+                style={{
+                  position: 'relative',
+                  padding: '20px 20px 30px',
+                  background: `radial-gradient(circle at 85% 15%, rgba(255,255,255,0.22) 0%, transparent 55%), linear-gradient(135deg, ${tienda.portadaColor || tienda.logoColor || 'var(--primario)'} 0%, rgba(0,0,0,0.28) 100%)`,
+                  color: '#FFFFFF',
+                  overflow: 'hidden',
+                }}
+              >
+                {/* Olas ambientales sutiles */}
+                <svg
+                  viewBox="0 0 400 60"
+                  preserveAspectRatio="none"
+                  aria-hidden="true"
+                  style={{
+                    position: 'absolute',
+                    left: 0,
+                    right: 0,
+                    bottom: 6,
+                    width: '100%',
+                    height: 38,
+                    pointerEvents: 'none',
+                    opacity: 0.25,
+                  }}
                 >
-                  <X size={20} />
-                </button>
+                  <path d="M 0,20 C 100,5 200,35 300,15 C 350,5 380,12 400,18 L 400,60 L 0,60 Z" fill="rgba(255,255,255,0.8)" />
+                </svg>
+
+                {/* Ola orgánica que esculpe la base del header contra la superficie */}
+                <svg
+                  viewBox="0 0 500 36"
+                  preserveAspectRatio="none"
+                  aria-hidden="true"
+                  style={{
+                    position: 'absolute',
+                    left: 0,
+                    right: 0,
+                    bottom: -1,
+                    width: '100%',
+                    height: 24,
+                    pointerEvents: 'none',
+                    zIndex: 2,
+                  }}
+                >
+                  <path d="M 0,14 Q 130,2 250,22 T 500,10 L 500,36 L 0,36 Z" fill="var(--surface)" opacity={0.35} />
+                  <path d="M 0,20 Q 120,8 245,26 T 500,14 L 500,36 L 0,36 Z" fill="var(--surface)" />
+                </svg>
+
+                <div style={{ position: 'relative', zIndex: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div
+                      style={{
+                        width: 38,
+                        height: 38,
+                        borderRadius: '14px 18px 12px 16px',
+                        background: 'rgba(255,255,255,0.2)',
+                        backdropFilter: 'blur(8px)',
+                        WebkitBackdropFilter: 'blur(8px)',
+                        border: '1.5px solid rgba(255,255,255,0.35)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#FFD700',
+                      }}
+                    >
+                      <Star size={20} fill="currentColor" />
+                    </div>
+                    <div>
+                      <h3 style={{ fontSize: 17, fontWeight: 800, fontFamily: "'Syne', sans-serif", color: '#FFFFFF', margin: 0 }}>
+                        Calificar Tienda
+                      </h3>
+                      <div style={{ fontSize: 12, opacity: 0.9, color: '#FFFFFF' }}>{tienda.nombre}</div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setModalResenaOpen(false)}
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: '50%',
+                      background: 'rgba(0,0,0,0.25)',
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      color: '#FFFFFF',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
               </div>
 
-              <form onSubmit={handleSubmitResena} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ padding: '16px 20px 22px' }}>
+                <form onSubmit={handleSubmitResena} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div style={{ textAlign: 'center', padding: '8px 0' }}>
                   <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 8 }}>
                     ¿Cómo calificarías tu experiencia?
@@ -2101,7 +2219,8 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
                   </button>
                 </div>
               </form>
-            </motion.div>
+            </div>
+          </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -2134,35 +2253,114 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
               style={{
                 width: '100%',
                 maxWidth: 440,
-                borderRadius: 24,
+                borderRadius: '28px 28px 26px 14px',
                 background: 'var(--surface)',
                 border: '1px solid var(--border)',
-                padding: 24,
+                overflow: 'hidden',
                 boxShadow: '0 25px 60px rgba(0,0,0,0.4)',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 16,
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ width: 34, height: 34, borderRadius: 10, background: 'var(--primario-soft)', color: 'var(--primario)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Share2 size={18} />
-                  </div>
-                  <h3 style={{ fontSize: 17, fontWeight: 800, fontFamily: "'Syne', sans-serif", color: 'var(--text)', margin: 0 }}>
-                    Compartir Tienda
-                  </h3>
-                </div>
-                <button
-                  onClick={() => setModalShareOpen(false)}
-                  style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 4 }}
+              {/* Header Orgánico con Ola */}
+              <div
+                style={{
+                  position: 'relative',
+                  padding: '20px 20px 30px',
+                  background: `radial-gradient(circle at 85% 15%, rgba(255,255,255,0.22) 0%, transparent 55%), linear-gradient(135deg, ${tienda.portadaColor || tienda.logoColor || 'var(--primario)'} 0%, rgba(0,0,0,0.28) 100%)`,
+                  color: '#FFFFFF',
+                  overflow: 'hidden',
+                }}
+              >
+                {/* Olas ambientales sutiles */}
+                <svg
+                  viewBox="0 0 400 60"
+                  preserveAspectRatio="none"
+                  aria-hidden="true"
+                  style={{
+                    position: 'absolute',
+                    left: 0,
+                    right: 0,
+                    bottom: 6,
+                    width: '100%',
+                    height: 38,
+                    pointerEvents: 'none',
+                    opacity: 0.25,
+                  }}
                 >
-                  <X size={20} />
-                </button>
+                  <path d="M 0,20 C 100,5 200,35 300,15 C 350,5 380,12 400,18 L 400,60 L 0,60 Z" fill="rgba(255,255,255,0.8)" />
+                </svg>
+
+                {/* Ola orgánica que esculpe la base del header contra la superficie */}
+                <svg
+                  viewBox="0 0 500 36"
+                  preserveAspectRatio="none"
+                  aria-hidden="true"
+                  style={{
+                    position: 'absolute',
+                    left: 0,
+                    right: 0,
+                    bottom: -1,
+                    width: '100%',
+                    height: 24,
+                    pointerEvents: 'none',
+                    zIndex: 2,
+                  }}
+                >
+                  <path d="M 0,14 Q 130,2 250,22 T 500,10 L 500,36 L 0,36 Z" fill="var(--surface)" opacity={0.35} />
+                  <path d="M 0,20 Q 120,8 245,26 T 500,14 L 500,36 L 0,36 Z" fill="var(--surface)" />
+                </svg>
+
+                <div style={{ position: 'relative', zIndex: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div
+                      style={{
+                        width: 38,
+                        height: 38,
+                        borderRadius: '14px 18px 12px 16px',
+                        background: 'rgba(255,255,255,0.2)',
+                        backdropFilter: 'blur(8px)',
+                        WebkitBackdropFilter: 'blur(8px)',
+                        border: '1.5px solid rgba(255,255,255,0.35)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#FFFFFF',
+                      }}
+                    >
+                      <Share2 size={18} />
+                    </div>
+                    <div>
+                      <h3 style={{ fontSize: 17, fontWeight: 800, fontFamily: "'Syne', sans-serif", color: '#FFFFFF', margin: 0 }}>
+                        Compartir Tienda
+                      </h3>
+                      <div style={{ fontSize: 12, opacity: 0.9, color: '#FFFFFF' }}>{tienda.nombre}</div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setModalShareOpen(false)}
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: '50%',
+                      background: 'rgba(0,0,0,0.25)',
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      color: '#FFFFFF',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
               </div>
 
-              {/* Vista previa de la Tienda */}
-              <div
+              <div style={{ padding: '16px 20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {/* Vista previa de la Tienda */}
+                <div
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -2308,8 +2506,9 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
                   </button>
                 )}
               </div>
-            </motion.div>
+            </div>
           </motion.div>
+        </motion.div>
         )}
       </AnimatePresence>
 
@@ -2341,36 +2540,113 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
               style={{
                 width: '100%',
                 maxWidth: 440,
-                borderRadius: 24,
+                borderRadius: '28px 28px 26px 14px',
                 background: 'var(--surface)',
                 border: '1px solid var(--border)',
-                padding: 24,
+                overflow: 'hidden',
                 boxShadow: '0 25px 60px rgba(0,0,0,0.4)',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 16,
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(52, 199, 89, 0.15)', color: '#34C759', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Phone size={18} />
-                  </div>
-                  <div>
-                    <h3 style={{ fontSize: 17, fontWeight: 800, fontFamily: "'Syne', sans-serif", color: 'var(--text)', margin: 0 }}>
-                      Contactar a {tienda.nombre}
-                    </h3>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setModalContactOpen(false)}
-                  style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 4 }}
+              {/* Header Orgánico con Ola */}
+              <div
+                style={{
+                  position: 'relative',
+                  padding: '20px 20px 30px',
+                  background: `radial-gradient(circle at 85% 15%, rgba(255,255,255,0.22) 0%, transparent 55%), linear-gradient(135deg, ${tienda.portadaColor || tienda.logoColor || 'var(--primario)'} 0%, rgba(0,0,0,0.28) 100%)`,
+                  color: '#FFFFFF',
+                  overflow: 'hidden',
+                }}
+              >
+                {/* Olas ambientales sutiles */}
+                <svg
+                  viewBox="0 0 400 60"
+                  preserveAspectRatio="none"
+                  aria-hidden="true"
+                  style={{
+                    position: 'absolute',
+                    left: 0,
+                    right: 0,
+                    bottom: 6,
+                    width: '100%',
+                    height: 38,
+                    pointerEvents: 'none',
+                    opacity: 0.25,
+                  }}
                 >
-                  <X size={20} />
-                </button>
+                  <path d="M 0,20 C 100,5 200,35 300,15 C 350,5 380,12 400,18 L 400,60 L 0,60 Z" fill="rgba(255,255,255,0.8)" />
+                </svg>
+
+                {/* Ola orgánica que esculpe la base del header contra la superficie */}
+                <svg
+                  viewBox="0 0 500 36"
+                  preserveAspectRatio="none"
+                  aria-hidden="true"
+                  style={{
+                    position: 'absolute',
+                    left: 0,
+                    right: 0,
+                    bottom: -1,
+                    width: '100%',
+                    height: 24,
+                    pointerEvents: 'none',
+                    zIndex: 2,
+                  }}
+                >
+                  <path d="M 0,14 Q 130,2 250,22 T 500,10 L 500,36 L 0,36 Z" fill="var(--surface)" opacity={0.35} />
+                  <path d="M 0,20 Q 120,8 245,26 T 500,14 L 500,36 L 0,36 Z" fill="var(--surface)" />
+                </svg>
+
+                <div style={{ position: 'relative', zIndex: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div
+                      style={{
+                        width: 38,
+                        height: 38,
+                        borderRadius: '14px 18px 12px 16px',
+                        background: 'rgba(255,255,255,0.2)',
+                        backdropFilter: 'blur(8px)',
+                        WebkitBackdropFilter: 'blur(8px)',
+                        border: '1.5px solid rgba(255,255,255,0.35)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#34C759',
+                      }}
+                    >
+                      <Phone size={18} />
+                    </div>
+                    <div>
+                      <h3 style={{ fontSize: 17, fontWeight: 800, fontFamily: "'Syne', sans-serif", color: '#FFFFFF', margin: 0 }}>
+                        Contactar Tienda
+                      </h3>
+                      <div style={{ fontSize: 12, opacity: 0.9, color: '#FFFFFF' }}>{tienda.nombre}</div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setModalContactOpen(false)}
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: '50%',
+                      background: 'rgba(0,0,0,0.25)',
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      color: '#FFFFFF',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
               </div>
 
-              <div style={{ fontSize: 12, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ padding: '16px 20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
                 <Clock size={13} />
                 <span>{storeOpenInfo.text}</span>
               </div>
@@ -2459,7 +2735,8 @@ export default function ClientTienda({ isDark, tiendaId, onBack, onOpenCart }: C
               <div style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'center', marginTop: 4 }}>
                 Para soporte con pedidos ya realizados, nuestro equipo de LogiFast está disponible 24/7.
               </div>
-            </motion.div>
+            </div>
+          </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

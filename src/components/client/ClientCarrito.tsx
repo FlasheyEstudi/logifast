@@ -583,17 +583,38 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
             />
           </div>
 
-          {/* Header */}
+          {/* Header con acento orgánico */}
           <header
             style={{
-              padding: '12px 20px 16px',
+              position: 'relative',
+              padding: '12px 20px 20px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+              background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%)',
+              overflow: 'hidden',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {/* Ola fluida orgánica dividiendo la cabecera */}
+            <svg
+              viewBox="0 0 500 24"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+              style={{
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                bottom: -1,
+                width: '100%',
+                height: 14,
+                pointerEvents: 'none',
+                opacity: 0.16,
+              }}
+            >
+              <path d="M 0,8 Q 125,0 250,14 T 500,6 L 500,24 L 0,24 Z" fill="#FFFFFF" />
+            </svg>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, position: 'relative', zIndex: 2 }}>
               <button
                 onClick={onClose}
                 style={{
@@ -628,14 +649,16 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
                   display: 'flex',
                   alignItems: 'center',
                   gap: 6,
+                  fontSize: 12,
+                  color: '#FF453A',
+                  background: 'rgba(255, 69, 58, 0.12)',
+                  border: 'none',
                   padding: '6px 12px',
                   borderRadius: 100,
-                  border: '1px solid rgba(255, 59, 48, 0.3)',
-                  background: 'rgba(255, 59, 48, 0.12)',
-                  color: '#FF3B30',
-                  fontSize: 12,
-                  fontWeight: 700,
                   cursor: 'pointer',
+                  fontWeight: 600,
+                  position: 'relative',
+                  zIndex: 2,
                 }}
               >
                 <Trash2 size={14} />
@@ -699,7 +722,7 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
                       background: 'rgba(30, 41, 59, 0.8)',
                       backdropFilter: 'blur(16px)',
                       border: '1px solid rgba(255, 255, 255, 0.12)',
-                      borderRadius: 20,
+                      borderRadius: '24px 24px 20px 14px',
                       padding: 16,
                     }}
                   >
@@ -708,7 +731,7 @@ export default function ClientCarrito({ isOpen = true, onClose, onSuccessCheckou
                         style={{
                           width: 34,
                           height: 34,
-                          borderRadius: 10,
+                          borderRadius: '12px 14px 10px 14px',
                           background: '#007AFF',
                           color: '#FFFFFF',
                           fontWeight: 800,

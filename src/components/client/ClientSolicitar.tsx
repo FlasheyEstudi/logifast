@@ -367,7 +367,7 @@ function SolicitarMapPreview({
         style={{
           position: 'relative',
           height: 270,
-          borderRadius: 16,
+          borderRadius: '24px 28px 22px 26px',
           border: '1.5px solid var(--border)',
           overflow: 'hidden',
           background: 'var(--bg-alt)',
@@ -1638,7 +1638,19 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
               ¿Dónde recogemos y entregamos?
             </h2>
 
-            <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div
+              style={{
+                position: 'relative',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 14,
+                padding: '16px 14px',
+                borderRadius: '28px 28px 24px 14px',
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                boxShadow: '0 8px 24px -4px rgba(0, 0, 0, 0.04)',
+              }}
+            >
               <AddressInput
                 label="Dirección de recogida"
                 value={solicitudEnvio.origen}
@@ -2661,11 +2673,34 @@ export default function ClientSolicitar({ isDark, userName, onNavigate }: Client
             <div
               style={{
                 background: 'var(--surface)',
-                borderRadius: 16,
+                borderRadius: '28px 28px 24px 14px',
                 border: '1.5px solid var(--border)',
                 overflow: 'hidden',
+                boxShadow: '0 8px 26px rgba(0,0,0,0.04)',
               }}
             >
+              {/* Organic header banner with waves */}
+              <div
+                style={{
+                  position: 'relative',
+                  height: 48,
+                  background: 'linear-gradient(135deg, var(--primario) 0%, #00B4D8 100%)',
+                  overflow: 'hidden',
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '0 20px',
+                }}
+              >
+                <div style={{ position: 'absolute', bottom: -1, left: 0, right: 0, height: 16, pointerEvents: 'none' }}>
+                  <svg viewBox="0 0 500 24" preserveAspectRatio="none" style={{ width: '100%', height: '100%', display: 'block' }}>
+                    <path d="M0,12 C140,24 260,2 380,18 C440,24 480,14 500,16 L500,24 L0,24 Z" fill="var(--surface)" />
+                  </svg>
+                </div>
+                <span style={{ position: 'relative', zIndex: 2, color: '#fff', fontSize: 13, fontWeight: 700, fontFamily: "'Syne', sans-serif", letterSpacing: 0.4 }}>
+                  Resumen del Servicio
+                </span>
+              </div>
+
               {/* Route section */}
               <div style={{ padding: 20, borderBottom: '1px solid var(--border)' }}>
                 <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12, fontFamily: "'DM Sans', sans-serif" }}>
