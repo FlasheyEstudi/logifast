@@ -852,50 +852,56 @@ export default function Home() {
           }
         }
 
-        /* High Tech Glow Background for Forms */
+        /* Organic Frosted Glass Fields for Forms */
         .obsidian-input {
-          background: transparent !important;
-          border: none !important;
-          border-bottom: 2px solid rgba(255,255,255,0.1) !important;
-          border-radius: 0px !important;
-          padding: 12px 12px 12px 36px !important;
+          background: rgba(255, 255, 255, 0.04) !important;
+          border: 1px solid rgba(255, 255, 255, 0.1) !important;
+          border-radius: 14px 16px 14px 12px !important;
+          padding: 13px 16px 13px 38px !important;
           color: #FFFFFF !important;
-          font-size: 16px !important; /* Prevents iOS auto-zoom */
-          transition: all 0.3s ease !important;
+          font-size: 15px !important; /* Prevents iOS auto-zoom */
+          backdrop-filter: blur(16px) !important;
+          -webkit-backdrop-filter: blur(16px) !important;
+          box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15) !important;
+          transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
         }
         .obsidian-input:focus {
-          border-bottom-color: #0066FF !important;
-          box-shadow: none !important;
+          background: rgba(255, 255, 255, 0.07) !important;
+          border-color: rgba(0, 102, 255, 0.55) !important;
+          box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.15), inset 0 1px 2px rgba(0, 0, 0, 0.1) !important;
           outline: none !important;
         }
         .obsidian-input::placeholder {
-          color: #555866 !important;
+          color: #717688 !important;
         }
 
-        /* Minimalist auth labels */
+        /* Minimalist organic auth labels */
         .obsidian-label {
-          font-size: 10px;
+          font-size: 11px;
           font-weight: 700;
-          letter-spacing: 0.1em;
-          text-transform: uppercase;
+          letter-spacing: 0.04em;
           color: var(--text-muted);
         }
 
-        /* Dynamic keypads demo */
+        /* Dynamic keypads demo with organic squircle */
         .keypad-demo-btn {
-          border: 1px solid rgba(255, 255, 255, 0.05);
-          background: rgba(255, 255, 255, 0.01);
-          border-radius: 16px;
-          padding: 12px;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          background: rgba(255, 255, 255, 0.02);
+          border-radius: 16px 18px 14px 18px;
+          padding: 12px 14px;
           text-align: left;
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
           transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
           display: flex;
           flex-direction: column;
           gap: 4px;
         }
         .keypad-demo-btn:hover {
-          background: rgba(255, 255, 255, 0.03);
+          background: rgba(255, 255, 255, 0.06);
+          border-color: rgba(255, 255, 255, 0.18);
           transform: translateY(-2px);
+          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
         }
 
         /* Theme variables fallback for landing page wrapper */
@@ -914,12 +920,10 @@ export default function Home() {
       {(currentView === 'login' || currentView === 'register') && (
         <div className="relative min-h-screen bg-[var(--bg)] text-[var(--text)] flex items-center justify-center p-4 sm:p-6 md:p-12 overflow-hidden w-full font-sans">
           
-          {/* Neon digital grid wireframe background */}
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#0E0F19_1px,transparent_1px),linear-gradient(to_bottom,#0E0F19_1px,transparent_1px)] bg-[size:3rem_3rem] opacity-[0.25] pointer-events-none" />
-          
-          {/* Animated color spot lights */}
-          <div className="absolute top-1/3 left-1/4 w-[600px] h-[600px] rounded-full bg-[#0066FF]/8 blur-[140px] pointer-events-none" />
-          <div className="absolute bottom-1/3 right-1/4 w-[500px] h-[500px] rounded-full bg-[#00C853]/4 blur-[130px] pointer-events-none" />
+          {/* Organic liquid ambient lights */}
+          <div className="absolute -top-24 left-1/4 w-[580px] h-[580px] rounded-full bg-[#0066FF]/10 blur-[130px] pointer-events-none" />
+          <div className="absolute -bottom-24 right-1/4 w-[500px] h-[500px] rounded-full bg-[#00C853]/6 blur-[120px] pointer-events-none" />
+          <div className="absolute top-1/2 left-2/3 w-[360px] h-[360px] rounded-full bg-[#FF5722]/5 blur-[110px] pointer-events-none" />
 
           {/* Centered Main Dashboard Board */}
           <div className="z-10 w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
@@ -943,7 +947,13 @@ export default function Home() {
               </div>
 
               {/* Dynamic Workspace HUD Display */}
-              <div className="hidden lg:flex flex-col gap-4 border border-white/10 rounded-2xl p-6 bg-white/[0.01] backdrop-blur-md relative overflow-hidden">
+              <div 
+                className="hidden lg:flex flex-col gap-4 border border-white/10 p-6 bg-white/[0.02] backdrop-blur-xl relative overflow-hidden"
+                style={{
+                  borderRadius: '24px 28px 22px 26px',
+                  boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.1), 0 12px 36px rgba(0, 0, 0, 0.35)',
+                }}
+              >
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,102,255,0.06),transparent_70%)] pointer-events-none" />
                 <div className="flex justify-between items-center text-[9px] font-mono text-gray-500 uppercase tracking-widest">
                   <span>TELEMETRY_LOG</span>
@@ -1012,8 +1022,14 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Right Column (Borderless Glass Form Panel) - 7 cols */}
-            <div className="lg:col-span-7 bg-[var(--surface)]/90 border border-[var(--border)] rounded-3xl p-6 sm:p-10 shadow-[var(--shadow-lg)] backdrop-blur-2xl">
+            {/* Right Column (Organic Frosted Glass Form Panel) - 7 cols */}
+            <div 
+              className="lg:col-span-7 bg-[var(--surface)]/90 border border-white/10 p-6 sm:p-10 backdrop-blur-3xl"
+              style={{
+                borderRadius: '32px 34px 28px 24px',
+                boxShadow: 'inset 0 1px 1.5px rgba(255, 255, 255, 0.12), 0 28px 70px rgba(0, 0, 0, 0.5)',
+              }}
+            >
               
               {/* Tab switching */}
               <div className="flex justify-between items-center border-b border-white/5 pb-5 mb-8">
@@ -1321,12 +1337,17 @@ export default function Home() {
                               <button
                                 key={roleOption.value}
                                 type="button"
-                                className={`group relative flex flex-col items-start gap-2 p-4 text-left border-2 rounded-2xl transition-all overflow-hidden ${
+                                className={`group relative flex flex-col items-start gap-2 p-4 text-left border-2 transition-all overflow-hidden ${
                                   isActive
                                     ? 'border-transparent text-white shadow-lg'
                                     : 'bg-transparent border-[var(--border)] text-[var(--text-secondary)] hover:border-white/20 hover:bg-white/5'
                                 }`}
-                                style={isActive ? { background: `linear-gradient(135deg, ${roleOption.color}, ${roleOption.color}cc)`, boxShadow: `0 8px 24px ${roleOption.color}40` } : {}}
+                                style={{
+                                  borderRadius: '20px 22px 18px 20px',
+                                  ...(isActive
+                                    ? { background: `linear-gradient(135deg, ${roleOption.color}, ${roleOption.color}cc)`, boxShadow: `0 8px 24px ${roleOption.color}40` }
+                                    : {})
+                                }}
                                 onClick={() => setRegRole(roleOption.value)}
                               >
                                 <span
@@ -1357,7 +1378,10 @@ export default function Home() {
 
                       {/* Vehicle info for repartidores */}
                       {regRole === 'repartidor' && (
-                        <div className="flex flex-col gap-3 border border-[var(--border)] rounded-2xl p-4">
+                        <div 
+                          className="flex flex-col gap-3 border border-[var(--border)] p-4"
+                          style={{ borderRadius: '20px 22px 18px 20px' }}
+                        >
                           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Tu vehículo</p>
                           {/* Tipo */}
                           <div className="grid grid-cols-3 gap-2">
@@ -1407,7 +1431,10 @@ export default function Home() {
                       )}
 
                       {/* Terms */}
-                      <div className="flex items-start gap-3 bg-transparent border border-[var(--border)] p-4 rounded-2xl">
+                      <div 
+                        className="flex items-start gap-3 bg-transparent border border-[var(--border)] p-4"
+                        style={{ borderRadius: '18px 20px 16px 18px' }}
+                      >
                         <input 
                           type="checkbox" 
                           id="regTerms"
@@ -1445,7 +1472,10 @@ export default function Home() {
       {currentView === 'register' && regSuccess && (
         <div className="relative flex flex-col justify-center items-center min-h-screen bg-[#030305] p-4 sm:p-6" style={{ minHeight: '100vh' }}>
           <div className="absolute top-1/4 left-1/4 w-80 h-80 rounded-full bg-[#00C853]/5 blur-[120px] pointer-events-none" />
-          <div className="z-10 w-full max-w-md bg-[#0B0C11]/95 border border-emerald-500/20 rounded-3xl p-8 text-center shadow-[0_24px_60px_rgba(0,0,0,0.55)] backdrop-blur-2xl">
+          <div 
+            className="z-10 w-full max-w-md bg-[#0B0C11]/95 border border-emerald-500/20 p-8 text-center shadow-[0_24px_60px_rgba(0,0,0,0.55)] backdrop-blur-2xl"
+            style={{ borderRadius: '28px 30px 26px 22px' }}
+          >
             <div className="bg-success/15 text-success w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-5 shadow-[0_0_15px_rgba(0,200,83,0.2)]">
               <IconCheckLg />
             </div>
@@ -1473,6 +1503,7 @@ export default function Home() {
               <li><a href="#features" className="apple-nav-link">Características</a></li>
               <li><a href="#calculator" className="apple-nav-link">Tarifador</a></li>
               <li><a href="#how-it-works" className="apple-nav-link">Proceso</a></li>
+              <li><a href="#planes" className="apple-nav-link">Planes</a></li>
               <li><a href="#allies" className="apple-nav-link">Aliados</a></li>
             </ul>
 
@@ -1520,6 +1551,7 @@ export default function Home() {
                   <li><a href="#features" className="apple-drawer-link" onClick={() => setMobileMenuOpen(false)}>Características</a></li>
                   <li><a href="#calculator" className="apple-drawer-link" onClick={() => setMobileMenuOpen(false)}>Tarifador</a></li>
                   <li><a href="#how-it-works" className="apple-drawer-link" onClick={() => setMobileMenuOpen(false)}>Proceso</a></li>
+                  <li><a href="#planes" className="apple-drawer-link" onClick={() => setMobileMenuOpen(false)}>Planes</a></li>
                   <li><a href="#allies" className="apple-drawer-link" onClick={() => setMobileMenuOpen(false)}>Aliados</a></li>
                 </ul>
               </div>
@@ -1840,6 +1872,185 @@ export default function Home() {
               </div>
             </div>
           </section>
+
+          {/* ─── WAVE TRANSITION ─── */}
+          <div style={{ position: 'relative', width: '100%', overflow: 'hidden', lineHeight: 0, bottom: -1 }}>
+            <svg viewBox="0 0 500 24" preserveAspectRatio="none" aria-hidden="true" style={{ width: '100%', height: 24, display: 'block' }}>
+              <path d="M0,0 C150,24 350,0 500,16 L500,24 L0,24 Z" fill="var(--surface)" />
+            </svg>
+          </div>
+
+          {/* ─── PRICING & PLANS SECTION (ORGANIC SQUIRCLES) ─── */}
+          <section className="apple-section border-t border-[var(--border)] bg-[var(--surface)]" id="planes">
+            <div className="text-center mb-12">
+              <span className="apple-section-tag" style={{ color: '#0066FF' }}>Ecosistema Comercial & Suscripciones</span>
+              <h2 className="apple-section-title font-syne text-[var(--text)]">Planes transparentes para tu negocio</h2>
+              <p className="text-gray-400 text-sm max-w-xl mx-auto mt-2">
+                Sin comisiones abusivas sobre tus ventas de mostrador. Digitaliza tu caja física, cocina y despachos con el plan adecuado a tu ritmo.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto px-4">
+              {/* Plan Inicial */}
+              <div 
+                className="border border-[var(--border)] bg-[var(--bg)] p-7 flex flex-col justify-between transition-all hover:border-[#0066FF]/40 shadow-sm"
+                style={{ borderRadius: '28px 28px 26px 14px' }}
+              >
+                <div>
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Plan Inicial</span>
+                    <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-gray-300">
+                      Emprendedores
+                    </span>
+                  </div>
+                  <div className="mb-4">
+                    <div className="text-3xl font-extrabold text-[var(--text)] font-mono">C$ 0 <span className="text-xs font-normal text-gray-400">/ mes</span></div>
+                    <div className="text-xs text-gray-400 mt-1">Comisión estándar en ventas de delivery app (12% – 15%).</div>
+                  </div>
+                  <ul className="space-y-3 text-xs text-[var(--text)] mb-8">
+                    <li className="flex items-center gap-2">
+                      <span className="text-[#00C853] font-bold">✓</span>
+                      <span>Catálogo digital en app móvil (hasta 30 productos)</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-[#00C853] font-bold">✓</span>
+                      <span>Recepción de pedidos a domicilio en vivo</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-[#00C853] font-bold">✓</span>
+                      <span>Red de repartidores LogiFast asignada</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-[#00C853] font-bold">✓</span>
+                      <span>1 usuario de gestión (propietario)</span>
+                    </li>
+                  </ul>
+                </div>
+                <button 
+                  className="apple-btn-border w-full py-3 text-xs font-bold text-[var(--text)] border-[var(--border)] hover:border-[#0066FF]"
+                  onClick={() => navigateTo('register')}
+                >
+                  Comenzar Gratis
+                </button>
+              </div>
+
+              {/* Plan PRO (Destacado) */}
+              <div 
+                className="relative border-2 border-[#0066FF] bg-[var(--bg)] p-7 flex flex-col justify-between shadow-2xl shadow-blue-500/10 transition-all scale-[1.02]"
+                style={{ borderRadius: '28px 28px 26px 14px' }}
+              >
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#0066FF] text-white text-[10px] font-extrabold px-3 py-0.5 rounded-full tracking-wider uppercase shadow-md">
+                  Más Popular • Recomendado
+                </div>
+                <div>
+                  <div className="flex justify-between items-center mb-4 mt-1">
+                    <span className="text-xs font-bold text-[#0066FF] uppercase tracking-wider">Plan PRO</span>
+                    <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-[#0066FF]/15 border border-[#0066FF]/30 text-[#0066FF]">
+                      0% Comisión en Local
+                    </span>
+                  </div>
+                  <div className="mb-4">
+                    <div className="text-3xl font-extrabold text-[var(--text)] font-mono">C$ 450 <span className="text-xs font-normal text-gray-400">/ mes</span></div>
+                    <div className="text-xs text-[#00C853] font-semibold mt-1">Ventas de mostrador físicas: ¡0% de comisión!</div>
+                  </div>
+                  <ul className="space-y-3 text-xs text-[var(--text)] mb-8">
+                    <li className="flex items-center gap-2">
+                      <span className="text-[#00C853] font-bold">✓</span>
+                      <span><strong>Punto de Venta (POS) Mostrador</strong> ilimitado</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-[#00C853] font-bold">✓</span>
+                      <span><strong>Pantalla de Cocina (KDS)</strong> en vivo con tiempos</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-[#00C853] font-bold">✓</span>
+                      <span>Control de <strong>Kardex, stock y mermas</strong></span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-[#00C853] font-bold">✓</span>
+                      <span>Facturación DGI con RUC, logo y serie fiscal</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-[#00C853] font-bold">✓</span>
+                      <span>Lector de código de barras por cámara y etiquetas</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-[#00C853] font-bold">✓</span>
+                      <span>Hasta 5 empleados con roles (caja, cocina, admin)</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-[#00C853] font-bold">✓</span>
+                      <span>Exportación de balances a Excel (.xlsx)</span>
+                    </li>
+                  </ul>
+                </div>
+                <button 
+                  className="apple-btn-filled w-full py-3.5 text-xs font-bold text-white bg-[#0066FF] hover:bg-[#0052CC] shadow-lg shadow-blue-500/25 justify-center"
+                  onClick={() => navigateTo('register')}
+                >
+                  Activar Plan PRO
+                </button>
+              </div>
+
+              {/* Plan Empresarial */}
+              <div 
+                className="border border-[var(--border)] bg-[var(--bg)] p-7 flex flex-col justify-between transition-all hover:border-[#0066FF]/40 shadow-sm"
+                style={{ borderRadius: '28px 28px 26px 14px' }}
+              >
+                <div>
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Empresarial</span>
+                    <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-gray-300">
+                      Multi-Sucursal
+                    </span>
+                  </div>
+                  <div className="mb-4">
+                    <div className="text-3xl font-extrabold text-[var(--text)] font-mono">C$ 1,400 <span className="text-xs font-normal text-gray-400">/ mes</span></div>
+                    <div className="text-xs text-gray-400 mt-1">Para cadenas, franquicias y bodegas centrales.</div>
+                  </div>
+                  <ul className="space-y-3 text-xs text-[var(--text)] mb-8">
+                    <li className="flex items-center gap-2">
+                      <span className="text-[#00C853] font-bold">✓</span>
+                      <span>Gestión centralizada de hasta 3 sucursales</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-[#00C853] font-bold">✓</span>
+                      <span>Traspaso de stock entre bodegas y tiendas</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-[#00C853] font-bold">✓</span>
+                      <span>Cajeros, estaciones KDS y usuarios ilimitados</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-[#00C853] font-bold">✓</span>
+                      <span>Espacios publicitarios de banner incluidos al mes</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-[#00C853] font-bold">✓</span>
+                      <span>Tarifas corporativas preferenciales en envíos B2B</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-[#00C853] font-bold">✓</span>
+                      <span>Soporte prioritario y atención personalizada VIP</span>
+                    </li>
+                  </ul>
+                </div>
+                <button 
+                  className="apple-btn-border w-full py-3 text-xs font-bold text-[var(--text)] border-[var(--border)] hover:border-[#0066FF]"
+                  onClick={() => navigateTo('register')}
+                >
+                  Contactar Asesor
+                </button>
+              </div>
+            </div>
+          </section>
+
+          {/* ─── WAVE TRANSITION INTO ALLIES ─── */}
+          <div style={{ position: 'relative', width: '100%', overflow: 'hidden', lineHeight: 0, bottom: -1 }}>
+            <svg viewBox="0 0 500 24" preserveAspectRatio="none" aria-hidden="true" style={{ width: '100%', height: 24, display: 'block' }}>
+              <path d="M0,16 C150,0 350,24 500,0 L500,24 L0,24 Z" fill="var(--bg)" />
+            </svg>
+          </div>
 
           {/* ─── ALLIES LOGO GRID ─── */}
           <section className="apple-section border-t border-[var(--border)]" id="allies">

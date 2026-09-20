@@ -289,7 +289,7 @@ export default function ClienteAppPage() {
             width: '100%',
             maxWidth: 400,
             padding: 22,
-            borderRadius: 30,
+            borderRadius: '32px 30px 28px 24px',
             background: glassCardBg,
             backdropFilter: 'blur(40px) saturate(190%)',
             WebkitBackdropFilter: 'blur(40px) saturate(190%)',

@@ -183,6 +183,11 @@ export const SLIDES = [
     subtitle: 'Tu opinión retroalimenta y eleva la calidad de nuestra red logística.',
     widgetType: 'rating_widget',
   },
+  {
+    title: 'Ecosistema de Tiendas PRO',
+    subtitle: 'Punto de venta físico, pantalla de cocina y facturación fiscal para comercios locales.',
+    widgetType: 'plans_widget',
+  },
 ];
 
 export function AppleSlideWidget({ type, isDark }: { type: string; isDark: boolean }) {
@@ -196,7 +201,7 @@ export function AppleSlideWidget({ type, isDark }: { type: string; isDark: boole
 
   if (type === 'order_widget') {
     return (
-      <div style={{ width: '100%', background: cardBg, backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border, borderRadius: 22, padding: 18, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 14, boxShadow: innerShadow }}>
+      <div style={{ width: '100%', background: cardBg, backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border, borderRadius: '24px 26px 22px 20px', padding: 18, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 14, boxShadow: innerShadow }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 11, fontWeight: 800, color: '#00C853' }}>
             <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#00C853', boxShadow: '0 0 12px #00C853' }} />
@@ -227,7 +232,7 @@ export function AppleSlideWidget({ type, isDark }: { type: string; isDark: boole
 
   if (type === 'map_widget') {
     return (
-      <div style={{ width: '100%', background: cardBg, backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border, borderRadius: 22, padding: 18, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 14, boxShadow: innerShadow }}>
+      <div style={{ width: '100%', background: cardBg, backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border, borderRadius: '24px 26px 22px 20px', padding: 18, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 14, boxShadow: innerShadow }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, fontWeight: 700, color: textColor }}>
             <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#0066FF', boxShadow: '0 0 10px #0066FF' }} />
@@ -258,7 +263,7 @@ export function AppleSlideWidget({ type, isDark }: { type: string; isDark: boole
 
   if (type === 'wallet_widget') {
     return (
-      <div style={{ width: '100%', background: isDark ? 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(0,102,255,0.18) 100%)' : 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(0,102,255,0.1) 100%)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border, borderRadius: 22, padding: 18, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 14, boxShadow: innerShadow }}>
+      <div style={{ width: '100%', background: isDark ? 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(0,102,255,0.18) 100%)' : 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(0,102,255,0.1) 100%)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border, borderRadius: '24px 26px 22px 20px', padding: 18, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 14, boxShadow: innerShadow }}>
         <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.14em', color: '#0066FF' }}>LOGIFAST PAY</div>
         <div style={{ fontFamily: 'monospace', fontSize: 17, fontWeight: 800, letterSpacing: 2, color: textColor, margin: '4px 0' }}>•••• •••• •••• 4920</div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
@@ -273,8 +278,42 @@ export function AppleSlideWidget({ type, isDark }: { type: string; isDark: boole
     );
   }
 
+  if (type === 'plans_widget') {
+    return (
+      <div style={{ width: '100%', background: cardBg, backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border, borderRadius: '24px 26px 22px 20px', padding: 18, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 12, boxShadow: innerShadow }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.12em', color: '#0066FF', background: 'rgba(0, 102, 255, 0.12)', border: '1px solid rgba(0,102,255,0.25)', padding: '3px 9px', borderRadius: 100 }}>
+            PLAN PRO COMERCIAL
+          </span>
+          <span style={{ fontFamily: 'monospace', fontSize: 15, fontWeight: 800, color: textColor }}>C$ 450 / mes</span>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 7, fontSize: 11, color: textColor }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+            <span style={{ color: '#00C853', fontWeight: 800 }}>✓</span>
+            <span style={{ fontWeight: 600 }}>Punto de Venta (POS) — 0% comisión en ventas físicas</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+            <span style={{ color: '#00C853', fontWeight: 800 }}>✓</span>
+            <span style={{ fontWeight: 600 }}>Pantalla de Cocina (KDS) en tiempo real con alertas</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+            <span style={{ color: '#00C853', fontWeight: 800 }}>✓</span>
+            <span style={{ fontWeight: 600 }}>Kardex contable, control de stock y facturación DGI</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+            <span style={{ color: '#00C853', fontWeight: 800 }}>✓</span>
+            <span style={{ fontWeight: 600 }}>Hasta 5 empleados con roles restringidos</span>
+          </div>
+        </div>
+        <div style={{ fontSize: 11, color: '#00C853', background: 'rgba(0, 200, 83, 0.1)', border: '1px solid rgba(0,200,83,0.2)', padding: '6px 10px', borderRadius: 12, fontWeight: 700, textAlign: 'center' }}>
+          ★ El software que digitaliza tu negocio físico y delivery
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div style={{ width: '100%', background: cardBg, backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border, borderRadius: 22, padding: 18, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, boxShadow: innerShadow }}>
+    <div style={{ width: '100%', background: cardBg, backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border, borderRadius: '24px 26px 22px 20px', padding: 18, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, boxShadow: innerShadow }}>
       <div style={{ display: 'flex', gap: 4, color: '#FFB300' }}>
         {[...Array(5)].map((_, i) => <Icon.Star key={i} size={18} fill="#FFB300" />)}
       </div>
@@ -939,7 +978,7 @@ function LandingView({
               width: '100%',
               maxWidth: 440,
               padding: 22,
-              borderRadius: 30,
+              borderRadius: '32px 30px 28px 24px',
               background: glassCardBg,
               backdropFilter: 'blur(40px) saturate(190%)',
               WebkitBackdropFilter: 'blur(40px) saturate(190%)',
@@ -1018,7 +1057,7 @@ function LandingView({
                   alignItems: 'center',
                   gap: 10,
                   padding: '10px 18px',
-                  borderRadius: 18,
+                  borderRadius: '18px 20px 16px 18px',
                   background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.85)',
                   backdropFilter: 'blur(20px)',
                   border: specularBorder,
@@ -1066,7 +1105,7 @@ function LandingView({
               backdropFilter: 'blur(36px) saturate(190%)',
               WebkitBackdropFilter: 'blur(36px) saturate(190%)',
               border: specularBorder,
-              borderRadius: 24,
+              borderRadius: '26px 28px 24px 22px',
               padding: 26,
               display: 'flex',
               flexDirection: 'column',
@@ -1101,7 +1140,7 @@ function LandingView({
               backdropFilter: 'blur(36px) saturate(190%)',
               WebkitBackdropFilter: 'blur(36px) saturate(190%)',
               border: specularBorder,
-              borderRadius: 24,
+              borderRadius: '26px 28px 24px 22px',
               padding: 26,
               display: 'flex',
               flexDirection: 'column',
@@ -1136,7 +1175,7 @@ function LandingView({
               backdropFilter: 'blur(36px) saturate(190%)',
               WebkitBackdropFilter: 'blur(36px) saturate(190%)',
               border: specularBorder,
-              borderRadius: 24,
+              borderRadius: '26px 28px 24px 22px',
               padding: 26,
               display: 'flex',
               flexDirection: 'column',
@@ -1171,7 +1210,7 @@ function LandingView({
               backdropFilter: 'blur(36px) saturate(190%)',
               WebkitBackdropFilter: 'blur(36px) saturate(190%)',
               border: specularBorder,
-              borderRadius: 24,
+              borderRadius: '26px 28px 24px 22px',
               padding: 26,
               display: 'flex',
               flexDirection: 'column',
@@ -1210,7 +1249,7 @@ function LandingView({
             backdropFilter: 'blur(40px) saturate(190%)',
             WebkitBackdropFilter: 'blur(40px) saturate(190%)',
             border: specularBorder,
-            borderRadius: 30,
+            borderRadius: '32px 34px 28px 24px',
             padding: '44px 20px',
             textAlign: 'center',
             boxShadow: glassShadow,
@@ -1429,7 +1468,7 @@ function LoginView({
           backdropFilter: 'blur(40px) saturate(190%)',
           WebkitBackdropFilter: 'blur(40px) saturate(190%)',
           border: specularBorder,
-          borderRadius: 30,
+          borderRadius: '32px 34px 28px 24px',
           padding: '36px 24px',
           boxShadow: isDark ? 'inset 0 1px 1px rgba(255,255,255,0.18), 0 30px 80px rgba(0,0,0,0.7)' : 'inset 0 1px 1.5px rgba(255,255,255,0.95), 0 20px 60px rgba(0,0,0,0.08)',
           textAlign: 'center',
@@ -1453,7 +1492,7 @@ function LoginView({
                 placeholder="ejemplo@logifast.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                style={{ width: '100%', height: 48, borderRadius: 14, background: inputBg, border: specularBorder, padding: '0 16px 0 46px', color: textColor, fontSize: 16, outline: 'none', boxSizing: 'border-box' }}
+                style={{ width: '100%', height: 48, borderRadius: '14px 16px 14px 12px', background: inputBg, border: specularBorder, padding: '0 16px 0 46px', color: textColor, fontSize: 16, outline: 'none', boxSizing: 'border-box' }}
               />
             </div>
             {errors.email && <span style={{ fontSize: 11, color: '#FF3B30' }}>{errors.email}</span>}
@@ -1468,7 +1507,7 @@ function LoginView({
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                style={{ width: '100%', height: 48, borderRadius: 14, background: inputBg, border: specularBorder, padding: '0 46px 0 46px', color: textColor, fontSize: 16, outline: 'none', boxSizing: 'border-box' }}
+                style={{ width: '100%', height: 48, borderRadius: '14px 16px 14px 12px', background: inputBg, border: specularBorder, padding: '0 46px 0 46px', color: textColor, fontSize: 16, outline: 'none', boxSizing: 'border-box' }}
               />
               <button
                 type="button"
@@ -1531,7 +1570,7 @@ function LoginView({
                 justifyContent: 'center',
                 gap: 6,
                 padding: '10px 8px',
-                borderRadius: 14,
+                borderRadius: '16px 18px 14px 16px',
                 background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.7)',
                 border: specularBorder,
                 color: textColor,
@@ -1867,7 +1906,7 @@ function RegisterView({
           backdropFilter: 'blur(40px) saturate(190%)',
           WebkitBackdropFilter: 'blur(40px) saturate(190%)',
           border: specularBorder,
-          borderRadius: 30,
+          borderRadius: '32px 34px 28px 24px',
           padding: '36px 24px',
           boxShadow: isDark ? 'inset 0 1px 1px rgba(255,255,255,0.18), 0 30px 80px rgba(0,0,0,0.7)' : 'inset 0 1px 1.5px rgba(255,255,255,0.95), 0 20px 60px rgba(0,0,0,0.08)',
           textAlign: 'center',
@@ -1913,7 +1952,7 @@ function RegisterView({
                 placeholder="María López Vanegas"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                style={{ width: '100%', height: 48, borderRadius: 14, background: inputBg, border: specularBorder, padding: '0 16px', color: textColor, fontSize: 16, outline: 'none', marginTop: 4, boxSizing: 'border-box' }}
+                style={{ width: '100%', height: 48, borderRadius: '14px 16px 14px 12px', background: inputBg, border: specularBorder, padding: '0 16px', color: textColor, fontSize: 16, outline: 'none', marginTop: 4, boxSizing: 'border-box' }}
               />
               {errors.name && <span style={{ fontSize: 11, color: '#FF3B30' }}>{errors.name}</span>}
             </div>
@@ -1925,7 +1964,7 @@ function RegisterView({
                 placeholder="maria@empresa.com"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
-                style={{ width: '100%', height: 48, borderRadius: 14, background: inputBg, border: specularBorder, padding: '0 16px', color: textColor, fontSize: 16, outline: 'none', marginTop: 4, boxSizing: 'border-box' }}
+                style={{ width: '100%', height: 48, borderRadius: '14px 16px 14px 12px', background: inputBg, border: specularBorder, padding: '0 16px', color: textColor, fontSize: 16, outline: 'none', marginTop: 4, boxSizing: 'border-box' }}
               />
               {errors.email && <span style={{ fontSize: 11, color: '#FF3B30' }}>{errors.email}</span>}
             </div>
@@ -1938,7 +1977,7 @@ function RegisterView({
                   placeholder="8888-8888"
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  style={{ width: '100%', height: 48, borderRadius: 14, background: inputBg, border: specularBorder, padding: '0 14px', color: textColor, fontSize: 16, outline: 'none', marginTop: 4, boxSizing: 'border-box' }}
+                  style={{ width: '100%', height: 48, borderRadius: '14px 16px 14px 12px', background: inputBg, border: specularBorder, padding: '0 14px', color: textColor, fontSize: 16, outline: 'none', marginTop: 4, boxSizing: 'border-box' }}
                 />
                 {errors.phone && <span style={{ fontSize: 11, color: '#FF3B30' }}>{errors.phone}</span>}
               </div>
@@ -1950,7 +1989,7 @@ function RegisterView({
                   placeholder="001-120495-0002E"
                   value={form.cedula}
                   onChange={(e) => setForm({ ...form, cedula: e.target.value.toUpperCase() })}
-                  style={{ width: '100%', height: 48, borderRadius: 14, background: inputBg, border: specularBorder, padding: '0 14px', color: textColor, fontSize: 14, outline: 'none', marginTop: 4, boxSizing: 'border-box' }}
+                  style={{ width: '100%', height: 48, borderRadius: '14px 16px 14px 12px', background: inputBg, border: specularBorder, padding: '0 14px', color: textColor, fontSize: 14, outline: 'none', marginTop: 4, boxSizing: 'border-box' }}
                 />
                 {errors.cedula && <span style={{ fontSize: 11, color: '#FF3B30' }}>{errors.cedula}</span>}
               </div>
@@ -1964,7 +2003,7 @@ function RegisterView({
                   placeholder="••••••••"
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  style={{ width: '100%', height: 48, borderRadius: 14, background: inputBg, border: specularBorder, padding: '0 14px', color: textColor, fontSize: 16, outline: 'none', marginTop: 4, boxSizing: 'border-box' }}
+                  style={{ width: '100%', height: 48, borderRadius: '14px 16px 14px 12px', background: inputBg, border: specularBorder, padding: '0 14px', color: textColor, fontSize: 16, outline: 'none', marginTop: 4, boxSizing: 'border-box' }}
                 />
                 {errors.password && <span style={{ fontSize: 11, color: '#FF3B30' }}>{errors.password}</span>}
               </div>
@@ -1976,7 +2015,7 @@ function RegisterView({
                   placeholder="••••••••"
                   value={form.confirm}
                   onChange={(e) => setForm({ ...form, confirm: e.target.value })}
-                  style={{ width: '100%', height: 48, borderRadius: 14, background: inputBg, border: specularBorder, padding: '0 14px', color: textColor, fontSize: 16, outline: 'none', marginTop: 4, boxSizing: 'border-box' }}
+                  style={{ width: '100%', height: 48, borderRadius: '14px 16px 14px 12px', background: inputBg, border: specularBorder, padding: '0 14px', color: textColor, fontSize: 16, outline: 'none', marginTop: 4, boxSizing: 'border-box' }}
                 />
                 {errors.confirm && <span style={{ fontSize: 11, color: '#FF3B30' }}>{errors.confirm}</span>}
               </div>
@@ -2026,7 +2065,7 @@ function RegisterView({
                     const muns = MUNICIPIOS[dep] || [dep];
                     setForm({ ...form, departamento: dep, municipio: muns[0] });
                   }}
-                  style={{ width: '100%', height: 48, borderRadius: 14, background: inputBg, border: specularBorder, padding: '0 12px', color: textColor, fontSize: 14, outline: 'none', marginTop: 4, boxSizing: 'border-box' }}
+                  style={{ width: '100%', height: 48, borderRadius: '14px 16px 14px 12px', background: inputBg, border: specularBorder, padding: '0 12px', color: textColor, fontSize: 14, outline: 'none', marginTop: 4, boxSizing: 'border-box' }}
                 >
                   {DEPARTAMENTOS.map((d) => (
                     <option key={d} value={d} style={{ background: isDark ? '#1C1C24' : '#FFFFFF', color: textColor }}>{d}</option>
@@ -2039,7 +2078,7 @@ function RegisterView({
                 <select
                   value={form.municipio}
                   onChange={(e) => setForm({ ...form, municipio: e.target.value })}
-                  style={{ width: '100%', height: 48, borderRadius: 14, background: inputBg, border: specularBorder, padding: '0 12px', color: textColor, fontSize: 14, outline: 'none', marginTop: 4, boxSizing: 'border-box' }}
+                  style={{ width: '100%', height: 48, borderRadius: '14px 16px 14px 12px', background: inputBg, border: specularBorder, padding: '0 12px', color: textColor, fontSize: 14, outline: 'none', marginTop: 4, boxSizing: 'border-box' }}
                 >
                   {(MUNICIPIOS[form.departamento] || [form.departamento]).map((m) => (
                     <option key={m} value={m} style={{ background: isDark ? '#1C1C24' : '#FFFFFF', color: textColor }}>{m}</option>
@@ -2080,7 +2119,7 @@ function RegisterView({
                 value={form.direccion}
                 onChange={(e) => setForm({ ...form, direccion: e.target.value })}
                 rows={2}
-                style={{ width: '100%', borderRadius: 14, background: inputBg, border: specularBorder, padding: '12px 14px', color: textColor, fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
+                style={{ width: '100%', borderRadius: '14px 16px 14px 12px', background: inputBg, border: specularBorder, padding: '12px 14px', color: textColor, fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
               />
               {errors.direccion && <span style={{ fontSize: 11, color: '#FF3B30' }}>{errors.direccion}</span>}
             </div>
@@ -2124,7 +2163,7 @@ function RegisterView({
                       flexDirection: 'column',
                       alignItems: 'center',
                       padding: '14px 10px',
-                      borderRadius: 18,
+                      borderRadius: '18px 20px 16px 18px',
                       background: form.role === r.value ? (isDark ? 'rgba(0,122,255,0.18)' : 'rgba(0,122,255,0.1)') : inputBg,
                       border: form.role === r.value ? '2px solid #007AFF' : specularBorder,
                       boxShadow: form.role === r.value ? '0 0 16px rgba(0,122,255,0.3)' : 'none',
@@ -2144,7 +2183,7 @@ function RegisterView({
               <div style={{
                 background: isDark ? 'rgba(0,122,255,0.1)' : 'rgba(0,122,255,0.06)',
                 border: '1px solid rgba(0,122,255,0.25)',
-                borderRadius: 18,
+                borderRadius: '18px 20px 16px 18px',
                 padding: '14px 16px',
                 display: 'flex',
                 alignItems: 'center',
@@ -2166,7 +2205,7 @@ function RegisterView({
 
             {/* SECCIÓN REPARTIDOR */}
             {form.role === 'repartidor' && (
-              <div style={{ background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.025)', padding: 14, borderRadius: 18, border: specularBorder, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.025)', padding: 14, borderRadius: '18px 20px 16px 18px', border: specularBorder, display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <div style={{ fontSize: 12, fontWeight: 800, color: '#007AFF' }}>Registro Técnico del Vehículo</div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
@@ -2175,7 +2214,7 @@ function RegisterView({
                     <select
                       value={form.vehiculoTipo}
                       onChange={(e) => setForm({ ...form, vehiculoTipo: e.target.value })}
-                      style={{ width: '100%', height: 40, borderRadius: 12, background: inputBg, border: specularBorder, padding: '0 8px', color: textColor, fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
+                      style={{ width: '100%', height: 40, borderRadius: '12px 14px 12px 10px', background: inputBg, border: specularBorder, padding: '0 8px', color: textColor, fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
                     >
                       <option value="moto" style={{ background: isDark ? '#1C1C24' : '#FFFFFF', color: textColor }}>Moto</option>
                       <option value="bicicleta" style={{ background: isDark ? '#1C1C24' : '#FFFFFF', color: textColor }}>Bicicleta</option>
@@ -2190,7 +2229,7 @@ function RegisterView({
                       placeholder="M-123456"
                       value={form.vehiculoPlaca}
                       onChange={(e) => setForm({ ...form, vehiculoPlaca: e.target.value.toUpperCase() })}
-                      style={{ width: '100%', height: 40, borderRadius: 12, background: inputBg, border: specularBorder, padding: '0 10px', color: textColor, fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
+                      style={{ width: '100%', height: 40, borderRadius: '12px 14px 12px 10px', background: inputBg, border: specularBorder, padding: '0 10px', color: textColor, fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
                     />
                     {errors.vehiculoPlaca && <span style={{ fontSize: 10, color: '#FF3B30' }}>{errors.vehiculoPlaca}</span>}
                   </div>
@@ -2204,7 +2243,7 @@ function RegisterView({
                       placeholder="Honda"
                       value={form.vehiculoMarca}
                       onChange={(e) => setForm({ ...form, vehiculoMarca: e.target.value })}
-                      style={{ width: '100%', height: 38, borderRadius: 10, background: inputBg, border: specularBorder, padding: '0 8px', color: textColor, fontSize: 12, outline: 'none', boxSizing: 'border-box' }}
+                      style={{ width: '100%', height: 38, borderRadius: '10px 12px 10px 10px', background: inputBg, border: specularBorder, padding: '0 8px', color: textColor, fontSize: 12, outline: 'none', boxSizing: 'border-box' }}
                     />
                   </div>
 
@@ -2215,7 +2254,7 @@ function RegisterView({
                       placeholder="Wave"
                       value={form.vehiculoModelo}
                       onChange={(e) => setForm({ ...form, vehiculoModelo: e.target.value })}
-                      style={{ width: '100%', height: 38, borderRadius: 10, background: inputBg, border: specularBorder, padding: '0 8px', color: textColor, fontSize: 12, outline: 'none', boxSizing: 'border-box' }}
+                      style={{ width: '100%', height: 38, borderRadius: '10px 12px 10px 10px', background: inputBg, border: specularBorder, padding: '0 8px', color: textColor, fontSize: 12, outline: 'none', boxSizing: 'border-box' }}
                     />
                   </div>
 

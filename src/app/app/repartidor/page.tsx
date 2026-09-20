@@ -33,6 +33,11 @@ export const DRIVER_SLIDES = [
     subtitle: 'Visualiza tus ingresos por cada entrega, conserva el 100% de tus propinas y retira cuando quieras.',
     widgetType: 'driver_wallet',
   },
+  {
+    title: 'Comisión Justa del 8%',
+    subtitle: 'La tasa tecnológica más baja del mercado. Conservas el 92% de tu tarifa y el 100% de tus propinas.',
+    widgetType: 'driver_rate',
+  },
 ];
 
 export function AppleDriverSlideWidget({ type, isDark }: { type: string; isDark: boolean }) {
@@ -46,7 +51,7 @@ export function AppleDriverSlideWidget({ type, isDark }: { type: string; isDark:
 
   if (type === 'driver_dispatch') {
     return (
-      <div style={{ width: '100%', background: cardBg, backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border, borderRadius: 22, padding: 18, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 14, boxShadow: innerShadow }}>
+      <div style={{ width: '100%', background: cardBg, backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border, borderRadius: '24px 26px 22px 20px', padding: 18, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 14, boxShadow: innerShadow }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 11, fontWeight: 800, color: '#00C853' }}>
             <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#00C853', boxShadow: '0 0 12px #00C853' }} />
@@ -81,7 +86,7 @@ export function AppleDriverSlideWidget({ type, isDark }: { type: string; isDark:
 
   if (type === 'driver_nav') {
     return (
-      <div style={{ width: '100%', background: cardBg, backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border, borderRadius: 22, padding: 18, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 14, boxShadow: innerShadow }}>
+      <div style={{ width: '100%', background: cardBg, backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border, borderRadius: '24px 26px 22px 20px', padding: 18, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 14, boxShadow: innerShadow }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, fontWeight: 700, color: textColor }}>
             <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#007AFF', boxShadow: '0 0 10px #007AFF' }} />
@@ -110,9 +115,49 @@ export function AppleDriverSlideWidget({ type, isDark }: { type: string; isDark:
     );
   }
 
+  if (type === 'driver_rate') {
+    return (
+      <div style={{ width: '100%', background: cardBg, backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border, borderRadius: '24px 26px 22px 20px', padding: 18, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 12, boxShadow: innerShadow }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.12em', color: '#00C853', background: 'rgba(0, 200, 83, 0.15)', border: '1px solid rgba(0,200,83,0.3)', padding: '3px 9px', borderRadius: 100 }}>
+            TASA TECNOLÓGICA FIJA
+          </span>
+          <span style={{ fontSize: 11, fontWeight: 800, color: '#00C853' }}>92% NETO PARA TI</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ fontSize: 10, color: subColor, fontWeight: 700 }}>LOGIFAST RETIENE</div>
+            <div style={{ fontFamily: 'monospace', fontSize: 24, fontWeight: 900, color: '#00C853' }}>Solo 8%</div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: 10, color: subColor, fontWeight: 700 }}>OTRAS APPS</div>
+            <div style={{ fontFamily: 'monospace', fontSize: 16, fontWeight: 700, color: subColor, textDecoration: 'line-through' }}>25% – 30%</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 11, color: textColor }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Check size={14} className="text-[#00C853] flex-shrink-0" />
+            <span>100% de tus propinas sin retenciones</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Check size={14} className="text-[#00C853] flex-shrink-0" />
+            <span>Billetera prepago sin cobros sorpresa</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Check size={14} className="text-[#00C853] flex-shrink-0" />
+            <span>Tarifas transparentes por distancia real</span>
+          </div>
+        </div>
+        <div style={{ fontSize: 11, color: '#007AFF', background: 'rgba(0, 122, 255, 0.1)', border: '1px solid rgba(0,122,255,0.2)', padding: '6px 10px', borderRadius: 12, fontWeight: 700, textAlign: 'center' }}>
+          Tu esfuerzo genera más en la red más justa de Managua
+        </div>
+      </div>
+    );
+  }
+
   // driver_wallet
   return (
-    <div style={{ width: '100%', background: isDark ? 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(0,200,83,0.18) 100%)' : 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(0,200,83,0.1) 100%)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border, borderRadius: 22, padding: 18, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 14, boxShadow: innerShadow }}>
+    <div style={{ width: '100%', background: isDark ? 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(0,200,83,0.18) 100%)' : 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(0,200,83,0.1) 100%)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border, borderRadius: '24px 26px 22px 20px', padding: 18, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 14, boxShadow: innerShadow }}>
       <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.14em', color: '#00C853' }}>BILLETERA CONDUCTOR LOGIFAST</div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
         <div style={{ fontFamily: 'monospace', fontSize: 24, fontWeight: 900, letterSpacing: -0.5, color: textColor }}>C$ 1,480.00</div>
@@ -385,7 +430,7 @@ export default function RepartidorAppPage() {
             width: '100%',
             maxWidth: 400,
             padding: 22,
-            borderRadius: 30,
+            borderRadius: '32px 30px 28px 24px',
             background: glassCardBg,
             backdropFilter: 'blur(40px) saturate(190%)',
             WebkitBackdropFilter: 'blur(40px) saturate(190%)',
