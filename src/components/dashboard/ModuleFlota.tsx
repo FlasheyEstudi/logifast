@@ -22,147 +22,92 @@ const STATUS_CONFIG: Record<MotoStatus, { label: string; color: string; bg: stri
 };
 
 function FlotaMap({ motos: storeMotos, riders, isDark }: { motos: Moto[]; riders: any[]; isDark: boolean }) {
-  const { tiendas, repartidoresPuntos, motos: liveMotos, buscarPuntos } = useMapaPuntos();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const { tiendas, repartidoresPuntos, motos: liveMotos } = useMapaPuntos();
   const [showTiendas, setShowTiendas] = useState(true);
   const [showMotos, setShowMotos] = useState(true);
   const [showRepartidores, setShowRepartidores] = useState(true);
 
   const effectiveMotos = liveMotos;
 
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setSearchResults([]);
-      setShowSearchDropdown(false);
-      return;
-    }
-    const timeout = setTimeout(() => {
-      buscarPuntos(searchQuery).then((res) => {
-        setSearchResults(res);
-        setShowSearchDropdown(true);
-      });
-    }, 250);
-    return () => clearTimeout(timeout);
-  }, [searchQuery, buscarPuntos]);
-
   return (
     <div style={{ height: '100%', borderRadius: 16, overflow: 'hidden', position: 'relative' }}>
-      {/* Top Search & Filter Bar on Map */}
+      {/* Selector de Capas compacto en el mapa */}
       <div
         style={{
           position: 'absolute',
           top: 10,
-          left: 10,
           right: 10,
           zIndex: 100,
           display: 'flex',
-          flexDirection: 'column',
-          gap: 6,
+          gap: 5,
         }}
       >
-        <div
+        <button
+          onClick={() => setShowTiendas((p) => !p)}
+          title="Alternar Tiendas"
           style={{
+            padding: '4px 8px',
+            borderRadius: 8,
+            fontSize: 11,
+            fontWeight: 600,
+            border: '1px solid var(--lf-border, rgba(255,255,255,0.15))',
+            background: showTiendas ? 'var(--lf-accent, #0066FF)' : isDark ? 'rgba(15, 23, 42, 0.85)' : 'rgba(255, 255, 255, 0.85)',
+            color: showTiendas ? '#FFFFFF' : 'var(--lf-text-muted)',
+            backdropFilter: 'blur(12px)',
+            cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            background: isDark ? 'rgba(15, 23, 42, 0.94)' : 'rgba(255, 255, 255, 0.96)',
-            backdropFilter: 'blur(16px)',
-            border: '1px solid var(--border, rgba(255,255,255,0.15))',
-            borderRadius: 12,
-            padding: '4px 10px',
-            boxShadow: '0 6px 20px rgba(0,0,0,0.25)',
+            gap: 4,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
           }}
         >
-          <Search size={14} style={{ color: 'var(--text-muted)', marginRight: 6 }} />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar tienda, moto o repartidor..."
-            style={{
-              flex: 1,
-              background: 'transparent',
-              border: 'none',
-              outline: 'none',
-              color: 'var(--text, #F8FAFC)',
-              fontSize: 12,
-              fontFamily: "'DM Sans', sans-serif",
-            }}
-          />
-          {searchQuery && (
-            <button
-              onClick={() => {
-                setSearchQuery('');
-                setShowSearchDropdown(false);
-              }}
-              style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer', fontSize: 12 }}
-            >
-              ✕
-            </button>
-          )}
-        </div>
-
-        {/* Filter chips */}
-        <div style={{ display: 'flex', gap: 4 }}>
-          <button
-            onClick={() => setShowTiendas((p) => !p)}
-            style={{
-              padding: '4px 10px',
-              borderRadius: 99,
-              fontSize: 11,
-              fontWeight: 700,
-              border: '1px solid var(--border, rgba(255,255,255,0.15))',
-              background: showTiendas ? '#0066FF' : 'rgba(0,0,0,0.4)',
-              color: '#FFFFFF',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-            }}
-          >
-            <Store size={12} />
-            <span>Tiendas ({tiendas.length})</span>
-          </button>
-          <button
-            onClick={() => setShowMotos((p) => !p)}
-            style={{
-              padding: '4px 10px',
-              borderRadius: 99,
-              fontSize: 11,
-              fontWeight: 700,
-              border: '1px solid var(--border, rgba(255,255,255,0.15))',
-              background: showMotos ? '#FF5722' : 'rgba(0,0,0,0.4)',
-              color: '#FFFFFF',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-            }}
-          >
-            <Bike size={12} />
-            <span>Flota ({effectiveMotos.length})</span>
-          </button>
-          <button
-            onClick={() => setShowRepartidores((p) => !p)}
-            style={{
-              padding: '4px 10px',
-              borderRadius: 99,
-              fontSize: 11,
-              fontWeight: 700,
-              border: '1px solid var(--border, rgba(255,255,255,0.15))',
-              background: showRepartidores ? '#10B981' : 'rgba(0,0,0,0.4)',
-              color: '#FFFFFF',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-            }}
-          >
-            <Navigation size={12} />
-            <span>En Vivo ({repartidoresPuntos.length})</span>
-          </button>
-        </div>
+          <Store size={12} />
+          <span>Tiendas ({tiendas.length})</span>
+        </button>
+        <button
+          onClick={() => setShowMotos((p) => !p)}
+          title="Alternar Flota"
+          style={{
+            padding: '4px 8px',
+            borderRadius: 8,
+            fontSize: 11,
+            fontWeight: 600,
+            border: '1px solid var(--lf-border, rgba(255,255,255,0.15))',
+            background: showMotos ? 'var(--lf-accent, #FF5722)' : isDark ? 'rgba(15, 23, 42, 0.85)' : 'rgba(255, 255, 255, 0.85)',
+            color: showMotos ? '#FFFFFF' : 'var(--lf-text-muted)',
+            backdropFilter: 'blur(12px)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Bike size={12} />
+          <span>Flota ({effectiveMotos.length})</span>
+        </button>
+        <button
+          onClick={() => setShowRepartidores((p) => !p)}
+          title="Alternar Repartidores en Vivo"
+          style={{
+            padding: '4px 8px',
+            borderRadius: 8,
+            fontSize: 11,
+            fontWeight: 600,
+            border: '1px solid var(--lf-border, rgba(255,255,255,0.15))',
+            background: showRepartidores ? '#10B981' : isDark ? 'rgba(15, 23, 42, 0.85)' : 'rgba(255, 255, 255, 0.85)',
+            color: showRepartidores ? '#FFFFFF' : 'var(--lf-text-muted)',
+            backdropFilter: 'blur(12px)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          <Navigation size={12} />
+          <span>En Vivo ({repartidoresPuntos.length})</span>
+        </button>
       </div>
 
       <Map

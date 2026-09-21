@@ -115,9 +115,10 @@ function MapInner({
   const [filterRepartidores, setFilterRepartidores] = useState(true);
   const [filterClientes, setFilterClientes] = useState(true);
 
-  // Dropdown de capas
+  // Dropdown de capas y buscador bajo demanda
   const [showLayersMenu, setShowLayersMenu] = useState(false);
   const layersDropdownRef = useRef<HTMLDivElement>(null);
+  const [showSearchBox, setShowSearchBox] = useState(false);
 
   const updateMotoPositions = useStore((s) => s.updateMotoPositions);
   const mapRef = useRef<MapRef | null>(null);
@@ -128,6 +129,7 @@ function MapInner({
     const handleClickOutside = (e: MouseEvent) => {
       if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
         setShowSearchDropdown(false);
+        setShowSearchBox(false);
       }
       if (layersDropdownRef.current && !layersDropdownRef.current.contains(e.target as Node)) {
         setShowLayersMenu(false);
@@ -566,225 +568,7 @@ function MapInner({
           ))}
       </Map>
 
-      {/* ── 1. TOP-LEFT: BUSCADOR INTELIGENTE Y FILTROS DE ENTIDADES ── */}
-      <div
-        ref={searchContainerRef}
-        style={{
-          position: 'absolute',
-          top: 14,
-          left: 14,
-          zIndex: 1000,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 6,
-          maxWidth: 'min(360px, calc(100vw - 120px))',
-        }}
-      >
-        {/* Search input */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            height: 38,
-            background: isDark ? 'rgba(15, 23, 42, 0.92)' : 'rgba(255, 255, 255, 0.94)',
-            backdropFilter: 'blur(16px)',
-            border: '1px solid var(--lf-border, rgba(255,255,255,0.15))',
-            borderRadius: 12,
-            padding: '0 10px',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
-          }}
-        >
-          <Search size={15} style={{ color: 'var(--lf-text-muted, #94A3B8)', marginRight: 8, flexShrink: 0 }} />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar tienda, moto o repartidor..."
-            style={{
-              flex: 1,
-              background: 'transparent',
-              border: 'none',
-              outline: 'none',
-              color: 'var(--lf-text, #F8FAFC)',
-              fontSize: 12.5,
-              fontFamily: "'DM Sans', sans-serif",
-              minWidth: 0,
-            }}
-          />
-          {searchQuery && (
-            <button
-              onClick={() => {
-                setSearchQuery('');
-                setShowSearchDropdown(false);
-              }}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--lf-text-muted, #94A3B8)',
-                cursor: 'pointer',
-                fontSize: 13,
-                padding: '2px 4px',
-              }}
-            >
-              ✕
-            </button>
-          )}
-        </div>
-
-        {/* Quick entity filter chips */}
-        <div style={{ display: 'flex', gap: 5, flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: 2 }}>
-          <button
-            onClick={() => setFilterTiendas((p) => !p)}
-            style={{
-              padding: '4px 9px',
-              height: 28,
-              borderRadius: 99,
-              fontSize: 11,
-              fontWeight: 600,
-              border: '1px solid var(--lf-border, rgba(255,255,255,0.15))',
-              background: filterTiendas ? '#0066FF' : isDark ? 'rgba(15,23,42,0.85)' : 'rgba(255,255,255,0.85)',
-              color: filterTiendas ? '#FFFFFF' : 'var(--lf-text-muted, #94A3B8)',
-              backdropFilter: 'blur(12px)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-              boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
-              whiteSpace: 'nowrap',
-              flexShrink: 0,
-              transition: 'all 0.15s ease',
-            }}
-          >
-            <Store size={12} />
-            <span>Tiendas ({tiendas.length})</span>
-          </button>
-          <button
-            onClick={() => setFilterMotos((p) => !p)}
-            style={{
-              padding: '4px 9px',
-              height: 28,
-              borderRadius: 99,
-              fontSize: 11,
-              fontWeight: 600,
-              border: '1px solid var(--lf-border, rgba(255,255,255,0.15))',
-              background: filterMotos ? '#FF5722' : isDark ? 'rgba(15,23,42,0.85)' : 'rgba(255,255,255,0.85)',
-              color: filterMotos ? '#FFFFFF' : 'var(--lf-text-muted, #94A3B8)',
-              backdropFilter: 'blur(12px)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-              boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
-              whiteSpace: 'nowrap',
-              flexShrink: 0,
-              transition: 'all 0.15s ease',
-            }}
-          >
-            <Bike size={12} />
-            <span>Motos ({effectiveMotos.length})</span>
-          </button>
-          <button
-            onClick={() => setFilterRepartidores((p) => !p)}
-            style={{
-              padding: '4px 9px',
-              height: 28,
-              borderRadius: 99,
-              fontSize: 11,
-              fontWeight: 600,
-              border: '1px solid var(--lf-border, rgba(255,255,255,0.15))',
-              background: filterRepartidores ? '#10B981' : isDark ? 'rgba(15,23,42,0.85)' : 'rgba(255,255,255,0.85)',
-              color: filterRepartidores ? '#FFFFFF' : 'var(--lf-text-muted, #94A3B8)',
-              backdropFilter: 'blur(12px)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-              boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
-              whiteSpace: 'nowrap',
-              flexShrink: 0,
-              transition: 'all 0.15s ease',
-            }}
-          >
-            <Navigation size={12} />
-            <span>Riders ({repartidoresPuntos.length})</span>
-          </button>
-        </div>
-
-        {/* Search results dropdown */}
-        <AnimatePresence>
-          {showSearchDropdown && searchResults.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: -6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              style={{
-                background: isDark ? 'rgba(15, 23, 42, 0.98)' : 'rgba(255, 255, 255, 0.98)',
-                backdropFilter: 'blur(20px)',
-                border: '1px solid var(--lf-border, rgba(255,255,255,0.15))',
-                borderRadius: 14,
-                boxShadow: '0 12px 32px rgba(0,0,0,0.35)',
-                maxHeight: 260,
-                overflowY: 'auto',
-                padding: 6,
-                zIndex: 1010,
-              }}
-            >
-              {searchResults.map((item) => (
-                <div
-                  key={item.id}
-                  onClick={() => handleSelectSearchResult(item)}
-                  style={{
-                    padding: '8px 10px',
-                    borderRadius: 10,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    transition: 'background 0.15s',
-                  }}
-                  className="hover:bg-blue-500/10"
-                >
-                  <div
-                    style={{
-                      width: 26,
-                      height: 26,
-                      borderRadius: '50%',
-                      background: item.color || '#007AFF',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#FFF',
-                      fontSize: 11,
-                      fontWeight: 700,
-                      flexShrink: 0,
-                    }}
-                  >
-                    {item.tipo === 'tienda' ? (
-                      <Store size={13} color="#FFF" />
-                    ) : item.tipo === 'repartidor' ? (
-                      <Navigation size={13} color="#FFF" />
-                    ) : item.tipo === 'moto' ? (
-                      <Bike size={13} color="#FFF" />
-                    ) : (
-                      <MapPin size={13} color="#FFF" />
-                    )}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div className="truncate" style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--lf-text, #F8FAFC)' }}>
-                      {item.titulo}
-                    </div>
-                    <div style={{ fontSize: 11, color: 'var(--lf-text-muted, #94A3B8)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {item.subtitulo}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* ── 2. TOP-CENTER: MINI-HUD OPERATIVO (RESUMEN EN VIVO) ── */}
+      {/* ── 1. TOP-CENTER: MINI-HUD OPERATIVO (RESUMEN EN VIVO) ── */}
       <div
         className="lf-map-mini-hud"
         style={{
@@ -838,9 +622,8 @@ function MapInner({
         )}
       </div>
 
-      {/* ── 3. TOP-RIGHT: BARRA UNIFICADA DE HERRAMIENTAS Y CAPAS ── */}
+      {/* ── 2. TOP-RIGHT: BARRA UNIFICADA DE HERRAMIENTAS Y CAPAS ── */}
       <div
-        ref={layersDropdownRef}
         style={{
           position: 'absolute',
           top: 14,
@@ -852,11 +635,124 @@ function MapInner({
           transition: 'right 0.25s ease',
         }}
       >
+        {/* Buscador bajo demanda */}
+        <div ref={searchContainerRef} style={{ position: 'relative' }}>
+          <button
+            onClick={() => setShowSearchBox((p) => !p)}
+            title="Buscar en el mapa"
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: 10,
+              border: '1px solid var(--lf-border, rgba(255,255,255,0.15))',
+              background: showSearchBox
+                ? 'var(--lf-accent, #FF6600)'
+                : isDark ? 'rgba(22,27,34,0.92)' : 'rgba(255,255,255,0.92)',
+              color: showSearchBox ? '#FFF' : 'var(--lf-text, #F8FAFC)',
+              backdropFilter: 'blur(16px)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+              flexShrink: 0,
+            }}
+          >
+            <Search size={15} />
+          </button>
+
+          {/* Menú emergente de búsqueda bajo demanda */}
+          <AnimatePresence>
+            {showSearchBox && (
+              <motion.div
+                initial={{ opacity: 0, y: -6, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -6, scale: 0.96 }}
+                transition={{ duration: 0.15 }}
+                style={{
+                  position: 'absolute',
+                  top: 44,
+                  right: 0,
+                  width: 280,
+                  background: isDark ? 'rgba(15, 23, 42, 0.98)' : 'rgba(255, 255, 255, 0.98)',
+                  backdropFilter: 'blur(20px)',
+                  border: '1px solid var(--lf-border, rgba(255,255,255,0.15))',
+                  borderRadius: 12,
+                  boxShadow: '0 12px 32px rgba(0,0,0,0.3)',
+                  padding: 8,
+                  zIndex: 1100,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 8px', borderRadius: 8, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }}>
+                  <Search size={13} style={{ color: 'var(--lf-text-muted)' }} />
+                  <input
+                    autoFocus
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Buscar tienda, moto o rider..."
+                    style={{
+                      flex: 1,
+                      background: 'transparent',
+                      border: 'none',
+                      outline: 'none',
+                      color: 'var(--lf-text, #F8FAFC)',
+                      fontSize: 12,
+                      fontFamily: "'DM Sans', sans-serif",
+                    }}
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      style={{ background: 'transparent', border: 'none', color: 'var(--lf-text-muted)', cursor: 'pointer', fontSize: 12 }}
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                {/* Resultados */}
+                {searchResults.length > 0 && (
+                  <div style={{ maxHeight: 200, overflowY: 'auto', marginTop: 6, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {searchResults.map((item) => (
+                      <div
+                        key={item.id}
+                        onClick={() => {
+                          handleSelectSearchResult(item);
+                          setShowSearchBox(false);
+                        }}
+                        style={{
+                          padding: '6px 8px',
+                          borderRadius: 8,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          transition: 'background 0.15s',
+                        }}
+                        className="hover:bg-blue-500/10"
+                      >
+                        <div style={{ width: 22, height: 22, borderRadius: '50%', background: item.color || '#007AFF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFF', flexShrink: 0 }}>
+                          {item.tipo === 'tienda' ? <Store size={11} /> : item.tipo === 'repartidor' ? <Navigation size={11} /> : <Bike size={11} />}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div className="truncate" style={{ fontSize: 12, fontWeight: 600, color: 'var(--lf-text, #F8FAFC)' }}>{item.titulo}</div>
+                          <div style={{ fontSize: 10, color: 'var(--lf-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.subtitulo}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
         {/* Selector de Capas */}
-        <div style={{ position: 'relative' }}>
+        <div ref={layersDropdownRef} style={{ position: 'relative' }}>
           <button
             onClick={() => setShowLayersMenu((p) => !p)}
-            title="Capas del mapa"
+            title="Capas y Elementos del mapa"
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -893,7 +789,7 @@ function MapInner({
                   position: 'absolute',
                   top: 44,
                   right: 0,
-                  width: 200,
+                  width: 220,
                   background: isDark ? 'rgba(15, 23, 42, 0.98)' : 'rgba(255, 255, 255, 0.98)',
                   backdropFilter: 'blur(20px)',
                   border: '1px solid var(--lf-border, rgba(255,255,255,0.15))',
@@ -904,9 +800,12 @@ function MapInner({
                 }}
               >
                 <div style={{ padding: '6px 8px 4px', fontSize: 10, fontWeight: 700, color: 'var(--lf-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  Capas del Mapa
+                  Capas y Elementos
                 </div>
                 {[
+                  { id: 'tiendas', label: `Tiendas (${tiendas.length})`, active: filterTiendas, toggle: () => setFilterTiendas((p) => !p), icon: Store, color: '#0066FF' },
+                  { id: 'motos', label: `Motos (${effectiveMotos.length})`, active: filterMotos, toggle: () => setFilterMotos((p) => !p), icon: Bike, color: '#FF5722' },
+                  { id: 'repartidores', label: `Riders (${repartidoresPuntos.length})`, active: filterRepartidores, toggle: () => setFilterRepartidores((p) => !p), icon: Navigation, color: '#10B981' },
                   { id: 'zonas', label: 'Zonas Cobertura', active: showZones, toggle: () => setShowZones((p) => !p), icon: Layers, color: '#00E5FF' },
                   { id: 'rutas', label: 'Rutas en Vivo', active: showRoutes, toggle: () => setShowRoutes((p) => !p), icon: Route, color: '#FF6600' },
                   { id: 'calor', label: 'Mapa de Calor', active: showHeatmap, toggle: () => setShowHeatmap((p) => !p), icon: Flame, color: '#EF4444' },
