@@ -23,6 +23,7 @@ import {
 } from '@/components/illustrations';
 import AuthRedesign from '@/components/auth/AuthRedesign';
 import { ThemeToggleButton } from '@/components/ui/ThemeToggleButton';
+import { Check } from 'lucide-react';
 
 const RepartidorApp = dynamic(() => import('@/components/repartidor/RepartidorApp'), { ssr: false, loading: () => <RoleLoader role="repartidor" /> });
 const IngenieroApp = dynamic(() => import('@/components/ingeniero/IngenieroApp'), { ssr: false, loading: () => <RoleLoader role="ingeniero" /> });
@@ -1991,19 +1992,19 @@ export default function Home() {
                   </div>
                   <ul className="space-y-3 text-xs text-[var(--text)] mb-8">
                     <li className="flex items-center gap-2">
-                      <span className="text-[#00C853] font-bold">✓</span>
-                      <span>Catálogo digital en app móvil (hasta 30 productos)</span>
+                      <Check size={14} className="text-[#00C853] flex-shrink-0" />
+                      <span>Catálogo digital en app móvil (hasta 10 productos)</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="text-[#00C853] font-bold">✓</span>
+                      <Check size={14} className="text-[#00C853] flex-shrink-0" />
                       <span>Recepción de pedidos a domicilio en vivo</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="text-[#00C853] font-bold">✓</span>
+                      <Check size={14} className="text-[#00C853] flex-shrink-0" />
                       <span>Red de repartidores LogiFast asignada</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="text-[#00C853] font-bold">✓</span>
+                      <Check size={14} className="text-[#00C853] flex-shrink-0" />
                       <span>1 usuario de gestión (propietario)</span>
                     </li>
                   </ul>
@@ -2028,40 +2029,49 @@ export default function Home() {
                   <div className="flex justify-between items-center mb-4 mt-1">
                     <span className="text-xs font-bold text-[#0066FF] uppercase tracking-wider">Plan PRO</span>
                     <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-[#0066FF]/15 border border-[#0066FF]/30 text-[#0066FF]">
-                      0% Comisión en Local
+                      0% Comisión en Local Físico
                     </span>
                   </div>
                   <div className="mb-4">
                     <div className="text-3xl font-extrabold text-[var(--text)] font-mono">C$ 450 <span className="text-xs font-normal text-gray-400">/ mes</span></div>
                     <div className="text-xs text-[#00C853] font-semibold mt-1">Ventas de mostrador físicas: ¡0% de comisión!</div>
+                    <div className="text-[11px] text-gray-400 mt-0.5">(Ventas por la app delivery aplican comisión estándar)</div>
                   </div>
                   <ul className="space-y-3 text-xs text-[var(--text)] mb-8">
                     <li className="flex items-center gap-2">
-                      <span className="text-[#00C853] font-bold">✓</span>
-                      <span><strong>Punto de Venta (POS) Mostrador</strong> ilimitado</span>
+                      <Check size={14} className="text-[#00C853] flex-shrink-0" />
+                      <span><strong>Punto de Venta (POS) Mostrador</strong> sin comisión</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="text-[#00C853] font-bold">✓</span>
+                      <Check size={14} className="text-[#00C853] flex-shrink-0" />
+                      <span><strong>Catálogo digital ilimitado</strong> en app y local</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check size={14} className="text-[#00C853] flex-shrink-0" />
+                      <span>Ventas desde la app con comisión por entrega estándar</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check size={14} className="text-[#00C853] flex-shrink-0" />
                       <span><strong>Pantalla de Cocina (KDS)</strong> en vivo con tiempos</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="text-[#00C853] font-bold">✓</span>
+                      <Check size={14} className="text-[#00C853] flex-shrink-0" />
                       <span>Control de <strong>Kardex, stock y mermas</strong></span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="text-[#00C853] font-bold">✓</span>
+                      <Check size={14} className="text-[#00C853] flex-shrink-0" />
                       <span>Facturación DGI con RUC, logo y serie fiscal</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="text-[#00C853] font-bold">✓</span>
+                      <Check size={14} className="text-[#00C853] flex-shrink-0" />
                       <span>Lector de código de barras por cámara y etiquetas</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="text-[#00C853] font-bold">✓</span>
+                      <Check size={14} className="text-[#00C853] flex-shrink-0" />
                       <span>Hasta 5 empleados con roles (caja, cocina, admin)</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="text-[#00C853] font-bold">✓</span>
+                      <Check size={14} className="text-[#00C853] flex-shrink-0" />
                       <span>Exportación de balances a Excel (.xlsx)</span>
                     </li>
                   </ul>
@@ -2092,27 +2102,27 @@ export default function Home() {
                   </div>
                   <ul className="space-y-3 text-xs text-[var(--text)] mb-8">
                     <li className="flex items-center gap-2">
-                      <span className="text-[#00C853] font-bold">✓</span>
+                      <Check size={14} className="text-[#00C853] flex-shrink-0" />
                       <span>Gestión centralizada de hasta 3 sucursales</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="text-[#00C853] font-bold">✓</span>
+                      <Check size={14} className="text-[#00C853] flex-shrink-0" />
                       <span>Traspaso de stock entre bodegas y tiendas</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="text-[#00C853] font-bold">✓</span>
+                      <Check size={14} className="text-[#00C853] flex-shrink-0" />
                       <span>Cajeros, estaciones KDS y usuarios ilimitados</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="text-[#00C853] font-bold">✓</span>
+                      <Check size={14} className="text-[#00C853] flex-shrink-0" />
                       <span>Espacios publicitarios de banner incluidos al mes</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="text-[#00C853] font-bold">✓</span>
+                      <Check size={14} className="text-[#00C853] flex-shrink-0" />
                       <span>Tarifas corporativas preferenciales en envíos B2B</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="text-[#00C853] font-bold">✓</span>
+                      <Check size={14} className="text-[#00C853] flex-shrink-0" />
                       <span>Soporte prioritario y atención personalizada VIP</span>
                     </li>
                   </ul>

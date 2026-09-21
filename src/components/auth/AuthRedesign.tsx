@@ -1783,7 +1783,7 @@ function LandingView({
                 <div style={{ fontSize: 12, color: subColor, marginTop: 4 }}>Comisión estándar en ventas de delivery app (12% – 15%).</div>
               </div>
               <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 28px', display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13, color: textColor }}>
-                <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ color: '#00C853', fontWeight: 800 }}><Icon.Check /></span><span>Catálogo digital en app móvil (hasta 30 productos)</span></li>
+                <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ color: '#00C853', fontWeight: 800 }}><Icon.Check /></span><span>Catálogo digital en app móvil (hasta 10 productos)</span></li>
                 <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ color: '#00C853', fontWeight: 800 }}><Icon.Check /></span><span>Recepción de pedidos a domicilio en vivo</span></li>
                 <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ color: '#00C853', fontWeight: 800 }}><Icon.Check /></span><span>Red de repartidores LogiFast asignada</span></li>
                 <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ color: '#00C853', fontWeight: 800 }}><Icon.Check /></span><span>1 usuario de gestión (propietario)</span></li>
@@ -1836,7 +1836,7 @@ function LandingView({
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, marginTop: 4 }}>
                 <span style={{ fontSize: 12, fontWeight: 800, color: '#007AFF', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Plan PRO</span>
                 <span style={{ fontSize: 10, fontWeight: 800, padding: '4px 10px', borderRadius: 100, background: 'rgba(0,102,255,0.12)', color: '#007AFF', border: '1px solid rgba(0,102,255,0.25)' }}>
-                  0% Comisión en Local
+                  0% Comisión en Local Físico
                 </span>
               </div>
               <div style={{ marginBottom: 16 }}>
@@ -1844,14 +1844,18 @@ function LandingView({
                   C$ 450 <span style={{ fontSize: 13, fontWeight: 500, color: subColor }}>/ mes</span>
                 </div>
                 <div style={{ fontSize: 12, color: '#00C853', fontWeight: 700, marginTop: 4 }}>Ventas de mostrador físicas: ¡0% de comisión!</div>
+                <div style={{ fontSize: 11, color: subColor, marginTop: 2 }}>(Ventas por la app delivery aplican comisión estándar)</div>
               </div>
               <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 28px', display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13, color: textColor }}>
-                <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ color: '#00C853', fontWeight: 800 }}><Icon.Check /></span><span><strong>Punto de Venta (POS) Mostrador</strong> ilimitado</span></li>
+                <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ color: '#00C853', fontWeight: 800 }}><Icon.Check /></span><span><strong>Punto de Venta (POS) Mostrador</strong> sin comisión</span></li>
+                <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ color: '#00C853', fontWeight: 800 }}><Icon.Check /></span><span><strong>Catálogo digital ilimitado</strong> en app y local</span></li>
+                <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ color: '#00C853', fontWeight: 800 }}><Icon.Check /></span><span>Ventas desde la app con comisión por entrega estándar</span></li>
                 <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ color: '#00C853', fontWeight: 800 }}><Icon.Check /></span><span><strong>Pantalla de Cocina (KDS)</strong> en vivo con tiempos</span></li>
                 <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ color: '#00C853', fontWeight: 800 }}><Icon.Check /></span><span>Control de <strong>Kardex, stock y mermas</strong></span></li>
                 <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ color: '#00C853', fontWeight: 800 }}><Icon.Check /></span><span>Facturación DGI con RUC, logo y serie fiscal</span></li>
                 <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ color: '#00C853', fontWeight: 800 }}><Icon.Check /></span><span>Lector de código de barras por cámara y etiquetas</span></li>
                 <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ color: '#00C853', fontWeight: 800 }}><Icon.Check /></span><span>Hasta 5 empleados con roles (caja, cocina, admin)</span></li>
+                <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ color: '#00C853', fontWeight: 800 }}><Icon.Check /></span><span>Exportación de balances a Excel (.xlsx)</span></li>
               </ul>
             </div>
             <motion.button
