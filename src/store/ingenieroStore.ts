@@ -32,7 +32,7 @@ export interface Mantenimiento {
   motoNombre: string
   motoModelo: string
   motoPlaca?: string | null
-  tipo: 'PREVENTIVO' | 'CORRECTIVO' | 'EMERGENCIA'
+  tipo: 'PREVENTIVO' | 'PREDICTIVO' | 'GENERAL' | 'CORRECTIVO' | 'EMERGENCIA'
   categoria: string
   descripcion: string
   observaciones: string | null

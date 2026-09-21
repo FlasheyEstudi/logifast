@@ -91,7 +91,8 @@ const DEFAULT_RULES: MaintenanceRule[] = [
   { id: 'MR-1', tipo: 'Cambio de Aceite de Motor', umbralKm: 2500, descripcion: 'Reemplazo de aceite sintético 10W-40 y filtro' },
   { id: 'MR-2', tipo: 'Revisión y Ajuste de Frenos', umbralKm: 5000, descripcion: 'Inspección de zapatas, pastillas y líquido de frenos' },
   { id: 'MR-3', tipo: 'Inspección de Llantas y Cadena', umbralKm: 3000, descripcion: 'Calibración de presión, tensión de cadena y lubricación' },
-  { id: 'MR-4', tipo: 'Mantenimiento General / Afinado', umbralKm: 10000, descripcion: 'Ajuste de válvulas, bujía, filtro de aire y carburador' },
+  { id: 'MR-4', tipo: 'Mantenimiento Predictivo / Telemetría', umbralKm: 7500, descripcion: 'Detección temprana de holguras, temperatura y telemetría de ruta' },
+  { id: 'MR-5', tipo: 'Mantenimiento General (>10,000 km)', umbralKm: 10000, descripcion: 'Mantenimiento general se ejecuta cuando la moto ha recorrido un kilometraje mayor a los 10,000 km, eso conlleva cambiar varias cosas (kit de arrastre, bujía, filtro de aire, pastillas/zapatas y calibración)' },
 ];
 
 export default function ModuleConfig() {

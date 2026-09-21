@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 const postSchema = z.object({
   motoId: z.string().min(1, 'motoId requerido'),
-  tipo: z.enum(['PREVENTIVO', 'CORRECTIVO', 'EMERGENCIA']).optional(),
+  tipo: z.enum(['PREVENTIVO', 'PREDICTIVO', 'GENERAL', 'CORRECTIVO', 'EMERGENCIA']).optional(),
   categoria: z.string().optional(),
   descripcion: z.string().min(1, 'descripcion requerida'),
   observaciones: z.string().max(1000).optional().nullable(),

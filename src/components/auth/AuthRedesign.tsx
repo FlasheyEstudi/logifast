@@ -1566,11 +1566,17 @@ function LandingView({
               </div>
               <h3 style={{ fontSize: 19, fontWeight: 800, color: textColor, margin: '0 0 10px', letterSpacing: '-0.02em' }}>Gestión Inteligente de Flota</h3>
               <p style={{ fontSize: 13, color: subColor, margin: 0, lineHeight: 1.6 }}>
-                Programa mantenimientos preventivos, controla el estado de cada motocicleta y reduce tiempos de inactividad mediante alertas automáticas. Controla tu flota, supervisa mantenimientos y administra repuestos desde un solo lugar.
+                Programa mantenimientos preventivos y predictivos según telemetría. El mantenimiento general se ejecuta cuando la moto ha recorrido un kilometraje mayor a los 10,000 km, eso conlleva cambiar varias cosas (kit de arrastre, bujía, fluidos, filtros y afinado completo). Controla tu flota y administra repuestos desde un solo lugar.
               </p>
             </div>
-            <div style={{ marginTop: 20, fontSize: 11, fontWeight: 800, color: '#FF9500', display: 'flex', alignItems: 'center', gap: 7 }}>
-              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#FF9500', boxShadow: '0 0 10px #FF9500' }} /> Telemetría preventiva
+            <div style={{ marginTop: 20, fontSize: 11, fontWeight: 800, color: '#FF9500', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#FF9500', boxShadow: '0 0 10px #FF9500' }} /> Telemetría predictiva
+              </span>
+              <span style={{ color: subColor }}>•</span>
+              <span style={{ color: '#10B981', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#10B981', boxShadow: '0 0 10px #10B981' }} /> Mantenimiento general &gt;10,000 km
+              </span>
             </div>
           </motion.div>
         </div>

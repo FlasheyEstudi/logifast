@@ -33,7 +33,7 @@ interface FormErrors {
 export default function CrearMantenimiento() {
   const store = useIngenieroStore();
   const [motoId, setMotoId] = useState('');
-  const [tipo, setTipo] = useState<'PREVENTIVO' | 'CORRECTIVO' | 'EMERGENCIA'>('PREVENTIVO');
+  const [tipo, setTipo] = useState<'PREVENTIVO' | 'PREDICTIVO' | 'GENERAL' | 'CORRECTIVO' | 'EMERGENCIA'>('PREVENTIVO');
   const [categoria, setCategoria] = useState('GENERAL');
   const [descripcion, setDescripcion] = useState('');
   const [observaciones, setObservaciones] = useState('');
@@ -164,6 +164,8 @@ export default function CrearMantenimiento() {
                 <label className="lf-label">Tipo *</label>
                 <select className="lf-select" value={tipo} disabled={submitting} onChange={e => setTipo(e.target.value as any)}>
                   <option value="PREVENTIVO">Preventivo</option>
+                  <option value="PREDICTIVO">Predictivo</option>
+                  <option value="GENERAL">Mantenimiento General (&gt; 10,000 km)</option>
                   <option value="CORRECTIVO">Correctivo</option>
                   <option value="EMERGENCIA">Emergencia</option>
                 </select>
@@ -171,7 +173,7 @@ export default function CrearMantenimiento() {
               <div className="lf-form-group">
                 <label className="lf-label">Categoria *</label>
                 <select className="lf-select" value={categoria} disabled={submitting} onChange={e => setCategoria(e.target.value)}>
-                  <option value="GENERAL">General</option>
+                  <option value="GENERAL">General (&gt; 10,000 km)</option>
                   <option value="CAMBIO_ACEITE">Cambio de aceite</option>
                   <option value="FRENO">Frenos</option>
                   <option value="LLANTA">Llantas</option>
@@ -182,6 +184,22 @@ export default function CrearMantenimiento() {
                 </select>
               </div>
             </div>
+
+            {(tipo === 'GENERAL' || categoria === 'GENERAL') && (
+              <div style={{
+                padding: '10px 14px',
+                borderRadius: 10,
+                background: 'rgba(16, 185, 129, 0.08)',
+                border: '1px solid rgba(16, 185, 129, 0.25)',
+                fontSize: 12,
+                color: 'var(--lf-text-main, #1a1a2e)',
+                lineHeight: 1.4,
+                marginBottom: 12,
+              }}>
+                <strong style={{ color: '#10B981', display: 'block', marginBottom: 2 }}>Mantenimiento General (&gt; 10,000 km)</strong>
+                El mantenimiento general se ejecuta cuando la moto ha recorrido un kilometraje mayor a los 10,000 km; eso conlleva cambiar varias cosas: reemplazo completo de kit de arrastre (cadena, piñón y corona), bujía, filtro de aire, revisión integral de pastillas/zapatas de freno, cambio de aceite y calibración de válvulas.
+              </div>
+            )}
 
             {/* Descripcion */}
             <div className="lf-form-group">

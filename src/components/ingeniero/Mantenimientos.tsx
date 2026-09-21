@@ -285,7 +285,7 @@ export default function Mantenimientos() {
           <EmptyState
             icono={<Wrench size={36} color="#94A3B8" />}
             titulo="Sin mantenimientos registrados"
-            descripcion="Programa un mantenimiento preventivo o correctivo para una motocicleta de la flota."
+            descripcion="Programa un mantenimiento preventivo, predictivo o general (>10,000 km) para una motocicleta de la flota."
             accionLabel="+ Programar Mantenimiento"
             onAccion={() => store.toggleCrearMantenimiento()}
           />

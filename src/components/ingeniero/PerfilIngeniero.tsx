@@ -730,11 +730,13 @@ export default function PerfilIngeniero({ onLogout, userName }: PerfilIngenieroP
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: 13, color: '#94A3B8', lineHeight: 1.5 }}>
                 <div style={{ padding: 12, borderRadius: 12, background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                  <strong style={{ color: '#F8FAFC', display: 'block', marginBottom: 4 }}>1. Intervalos de Servicio Preventivo</strong>
+                  <strong style={{ color: '#F8FAFC', display: 'block', marginBottom: 4 }}>1. Intervalos de Servicio Preventivo y Predictivo</strong>
                   • <strong>Cada 3,000 km:</strong> Cambio de aceite de motor (10W-40 / 20W-50 1L) y limpieza de filtro.<br />
                   • <strong>Cada 6,000 km:</strong> Reemplazo de bujía (CR7HSA) y calibración de holgura de válvulas.<br />
                   • <strong>Cada 8,000 km:</strong> Inspección y cambio de pastillas/zapatas de frenos.<br />
-                  • <strong>Cada 15,000 km:</strong> Reemplazo de kit de arrastre completo (cadena 428H, piñón y corona).
+                  • <strong>Mantenimiento Predictivo:</strong> Telemetría y diagnóstico continuo de vibraciones, holguras y desgaste antes de averías.<br />
+                  • <strong>Mantenimiento General (&gt; 10,000 km):</strong> Mantenimiento general se ejecuta cuando la moto ha recorrido un kilometraje mayor a los 10,000 km; eso conlleva cambiar varias cosas: reemplazo completo de kit de arrastre (cadena 428H, piñón y corona), bujía nueva, filtro de aire, pastillas/zapatas de frenos, cambio de aceite y afinado integral.<br />
+                  • <strong>Cada 15,000 km:</strong> Inspección mayor de rodamientos de dirección, suspensión y embrague.
                 </div>
 
                 <div style={{ padding: 12, borderRadius: 12, background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>

@@ -327,7 +327,7 @@ export default function Home() {
       };
       case 'ingeniero': return {
         title: "Consola de Mantenimiento",
-        desc: "Monitorea la flota en tiempo real. Asocia hojas de servicio mecánico a cada unidad, controla de forma automática el stock mínimo de repuestos críticos del taller y recibe alertas preventivas predictivas según el kilometraje.",
+        desc: "Monitorea la flota en tiempo real. Asocia hojas de servicio mecánico a cada unidad, controla de forma automática el stock mínimo de repuestos críticos del taller y recibe alertas preventivas predictivas según el kilometraje. Mantenimiento general se ejecuta cuando la moto ha recorrido un kilometraje mayor a los 10,000 km, eso conlleva cambiar varias cosas.",
         kpiLabel: "Alertas de Taller",
         kpiVal: "3 Críticas",
         kpiSub: "Unidades requieren cambio de repuesto"
@@ -1812,10 +1812,11 @@ export default function Home() {
                 </div>
                 <h3 className="apple-bento-title text-[var(--text)]">Mantenimiento de Flota</h3>
                 <p className="apple-bento-desc text-gray-400">
-                  Módulo especializado para ingenieros y mecánicos. Controla el inventario de repuestos críticos, agenda mantenimientos preventivos y asocia hojas de trabajo a las motocicletas del equipo.
+                  Módulo especializado para ingenieros y mecánicos. Controla el inventario de repuestos críticos y alertas predictivas. Mantenimiento general se ejecuta cuando la moto ha recorrido un kilometraje mayor a los 10,000 km, eso conlleva cambiar varias cosas (kit de arrastre, bujías, filtros y revisión completa de fluidos).
                 </p>
-                <div className="mt-auto pt-2 flex gap-2">
+                <div className="mt-auto pt-2 flex gap-2 flex-wrap">
                   <span className="text-[9px] font-bold text-[#A855F7] bg-[#A855F7]/10 px-2.5 py-0.5 rounded-full">Alertas predictivas</span>
+                  <span className="text-[9px] font-bold text-[#10B981] bg-[#10B981]/10 px-2.5 py-0.5 rounded-full">Mantenimiento general &gt;10,000 km</span>
                   <span className="text-[9px] font-bold text-[#A855F7] bg-[#A855F7]/10 px-2.5 py-0.5 rounded-full">Ficha mecánica</span>
                 </div>
               </div>

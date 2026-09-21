@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
 
     const completados = mantenimientosMes.filter(m => m.estado === 'COMPLETADO');
     const totalCompletados = completados.length;
-    const preventivos = mantenimientosMes.filter(m => m.tipo === 'PREVENTIVO').length;
+    const preventivos = mantenimientosMes.filter(m => m.tipo === 'PREVENTIVO' || m.tipo === 'PREDICTIVO' || m.tipo === 'GENERAL').length;
     const correctivos = mantenimientosMes.filter(m => m.tipo === 'CORRECTIVO' || m.tipo === 'EMERGENCIA').length;
     const totalMants = mantenimientosMes.length || 1;
 
