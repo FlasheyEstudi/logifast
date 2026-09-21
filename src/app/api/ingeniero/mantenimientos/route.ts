@@ -3,7 +3,6 @@ import { z } from 'zod';
 import { db as prisma } from '@/lib/db';
 import { requireRole } from '@/lib/auth/session';
 import { handleError } from '@/lib/auth/helpers';
-import { seedIngeniero } from '@/lib/seedIngeniero';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +23,6 @@ const postSchema = z.object({
 export async function GET(req: NextRequest) {
   try {
     await requireRole('ingeniero', 'admin');
-    await seedIngeniero();
     const { searchParams } = new URL(req.url);
     const estado = searchParams.get('estado');
     const motoId = searchParams.get('motoId');

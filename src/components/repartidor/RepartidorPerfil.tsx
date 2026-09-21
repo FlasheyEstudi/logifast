@@ -1055,7 +1055,7 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
               <AlertTriangle size={18} color="#EF4444" style={{ flexShrink: 0, marginTop: 2 }} />
               <div style={{ flex: 1, fontSize: 12.5, lineHeight: 1.45 }}>
                 <strong style={{ color: '#EF4444', display: 'block', fontSize: 13, marginBottom: 2 }}>
-                  ⚠️ Mantenimiento General Requerido (&gt; 10,000 km)
+                  Mantenimiento General Requerido (&gt; 10,000 km)
                 </strong>
                 Tu moto ha acumulado <strong>{(moto?.kmAcumulados ?? 0).toLocaleString('es-NI')} km</strong> mediante los pedidos y entregas completados. Se ha alcanzado el umbral para el <strong>Mantenimiento General Obligatorio</strong>.
                 <div style={{ marginTop: 6, fontSize: 11.5, color: 'var(--text-muted)' }}>

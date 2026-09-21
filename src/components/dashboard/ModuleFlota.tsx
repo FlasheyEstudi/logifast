@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Bike, ChevronDown, ChevronUp, Plus, X, Wrench, MapPin, Search,
 } from '@/components/icons';
-import { Store, Navigation, Phone } from 'lucide-react';
+import { Store, Navigation, Phone, AlertTriangle } from 'lucide-react';
 import { useStore, type Moto, type MotoStatus } from '@/lib/store';
 
 import { Map, MapMarker, MarkerPopup } from '@/components/ui/map';
@@ -324,8 +324,8 @@ export default function ModuleFlota({ isDark }: { isDark: boolean }) {
                   </div>
                   {rider && <span style={{ fontSize: 12, color: 'var(--lf-text-secondary)' }}>{rider.nombre}</span>}
                   {kmVal >= 10000 && (
-                    <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 999, background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#EF4444' }}>
-                      ⚠️ General (&gt;10k km)
+                    <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 999, background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#EF4444', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      <AlertTriangle size={10} /> General (&gt;10k km)
                     </span>
                   )}
                   <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, background: cfg.bg, color: cfg.color }}>{cfg.label}</span>
@@ -349,10 +349,11 @@ export default function ModuleFlota({ isDark }: { isDark: boolean }) {
                             fontWeight: 600,
                             marginBottom: 12,
                             display: 'flex',
-                            alignItems: 'center',
+                            alignItems: 'flex-start',
                             gap: 8,
                           }}>
-                            <span>⚠️ <strong>Alerta de Mantenimiento General (&gt;10,000 km):</strong> Esta motocicleta ha acumulado {kmVal.toLocaleString()} km de recorridos por entregas. Se debe programar el servicio general en taller (kit de arrastre, bujía, filtro de aire, frenos y fluidos).</span>
+                            <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: 2 }} />
+                            <span><strong>Alerta de Mantenimiento General (&gt;10,000 km):</strong> Esta motocicleta ha acumulado {kmVal.toLocaleString()} km de recorridos por entregas. Se debe programar el servicio general en taller (kit de arrastre, bujía, filtro de aire, frenos y fluidos).</span>
                           </div>
                         )}
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 12 }}>

@@ -20,6 +20,7 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Package } from 'lucide-react';
 import { onRealtimeEvent, realtime, getRealtimeUrl } from '@/services/realtime';
 import { BrowserMultiFormatReader } from '@zxing/browser';
 import { BarcodeFormat, DecodeHintType } from '@zxing/library';
@@ -601,7 +602,7 @@ export default function EscanerPage() {
                 {producto.imagenUrl ? (
                   <img src={producto.imagenUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
-                  <span style={{ fontSize: 22 }}>📦</span>
+                  <Package size={24} style={{ color: 'var(--text-muted, #9CA3AF)' }} />
                 )}
               </div>
               <div style={{ minWidth: 0, flex: 1 }}>

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { Bike, ArrowRight } from 'lucide-react';
 
 export default function ManaguaRealMap({ isDark }: { isDark: boolean }) {
   const [activeTab, setActiveTab] = useState<'trafico' | 'rutas' | 'cobertura'>('rutas');
@@ -291,8 +292,8 @@ export default function ManaguaRealMap({ isDark }: { isDark: boolean }) {
           boxShadow: '0 8px 30px rgba(0,0,0,0.25)',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(0, 102, 255, 0.15)', border: '1px solid rgba(0,102,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#007AFF', fontSize: 16 }}>
-              🛵
+            <div style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(0, 102, 255, 0.15)', border: '1px solid rgba(0,102,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Bike size={18} color="#007AFF" />
             </div>
             <div>
               <div style={{ fontSize: 12, fontWeight: 800, color: textColor }}>
@@ -300,7 +301,7 @@ export default function ManaguaRealMap({ isDark }: { isDark: boolean }) {
               </div>
               <div style={{ fontSize: 10, color: subColor, display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span>Burger Boss (Metrocentro)</span>
-                <span>➔</span>
+                <ArrowRight size={11} style={{ opacity: 0.7 }} />
                 <span style={{ color: '#00C853', fontWeight: 700 }}>Los Robles (Etapa II)</span>
               </div>
             </div>

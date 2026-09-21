@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db as prisma } from '@/lib/db';
-import { seedIngeniero } from '@/lib/seedIngeniero';
 import { requireRole } from '@/lib/auth/session';
 import { handleError } from '@/lib/auth/helpers';
 
@@ -30,7 +29,6 @@ const patchSchema = z.object({
 export async function GET(req: NextRequest) {
   try {
     const user = await requireRole('ingeniero', 'admin');
-    await seedIngeniero();
     const motos = await prisma.moto.findMany({
       include: {
         mantenimientos: {

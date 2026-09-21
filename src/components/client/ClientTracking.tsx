@@ -1813,7 +1813,7 @@ export default function ClientTracking({ isDark, onBack, onOpenChat, onRate }: C
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                <span style={{ fontSize: 20 }}>⚠️</span>
+                <AlertTriangle size={20} color="var(--peligro)" />
                 <span
                   style={{
                     fontFamily: "'Syne', sans-serif",

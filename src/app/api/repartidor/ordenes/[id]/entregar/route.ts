@@ -224,7 +224,7 @@ export async function PATCH(
                   data: {
                     repartidorId: profile.id,
                     tipo: 'ALERTA_MANTENIMIENTO',
-                    titulo: '🔧 Mantenimiento General Requerido (>10,000 km)',
+                    titulo: 'Mantenimiento General Requerido (>10,000 km)',
                     contenido: `Tu moto ${motoActualizada.nombre} ha superado los 10,000 km (${Math.round(kmActual).toLocaleString()} km) en entregas. Agenda tu cita en taller para cambio de kit de arrastre, bujía, filtros y frenos.`,
                     leido: false,
                     ordenId: id,

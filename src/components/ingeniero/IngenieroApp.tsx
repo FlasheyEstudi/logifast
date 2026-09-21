@@ -49,7 +49,7 @@ export default function IngenieroApp({ onLogout, userName, isDark, toggleTheme }
     const cleanupAlerta = onRealtimeEvent('ingeniero:alerta:nueva', (data: any) => {
       store.cargarDatos();
       notify.warning(
-        `🚨 Alerta de ${data?.repartidor || 'Repartidor'}: ${data?.descripcion || 'Incidencia reportada'}`
+        `Alerta de ${data?.repartidor || 'Repartidor'}: ${data?.descripcion || 'Incidencia reportada'}`
       );
     });
 

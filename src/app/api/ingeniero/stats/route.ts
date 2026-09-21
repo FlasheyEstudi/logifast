@@ -2,14 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db as prisma } from '@/lib/db';
 import { requireRole } from '@/lib/auth/session';
 import { handleError } from '@/lib/auth/helpers';
-import { seedIngeniero } from '@/lib/seedIngeniero';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
     await requireRole('ingeniero', 'admin');
-    await seedIngeniero();
     const inicioMes = new Date();
     inicioMes.setDate(1);
     inicioMes.setHours(0, 0, 0, 0);
