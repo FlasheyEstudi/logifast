@@ -132,6 +132,10 @@ export async function PATCH(
     const tiempoTotal = rawTiempo > 0 ? rawTiempo : (orden.tiempoTotal || orden.tiempoEstimado || 15);
     const comision = Math.round(orden.ganancia * 0.15);
 
+    // Variables para capturar alerta generada y emitirla en tiempo real
+    let alertaGenerada: any = null;
+    let motoActualizada: any = null;
+
     // Ejecutar actualización de orden + conductor atómicamente con guard de idempotencia (VULN-06)
     try {
       await db.$transaction(async (tx) => {
@@ -165,15 +169,72 @@ export async function PATCH(
           },
         });
 
-        // Actualizar moto: sumar km y volver a DISPONIBLE
+        // Actualizar moto: sumar km acumulados y evaluar umbral de mantenimiento
+
         if (profile.motoId) {
-          await tx.moto.update({
-            where: { id: profile.motoId },
-            data: {
-              estado: 'DISPONIBLE',
-              kmAcumulados: { increment: kmRecorridos },
-            },
-          }).catch(() => null);
+          try {
+            motoActualizada = await tx.moto.update({
+              where: { id: profile.motoId },
+              data: {
+                estado: 'DISPONIBLE',
+                kmAcumulados: { increment: kmRecorridos },
+              },
+            });
+
+            // Sincronizar también MotoAsignada del perfil
+            await tx.motoAsignada.updateMany({
+              where: { repartidorId: profile.id },
+              data: {
+                estado: 'DISPONIBLE',
+                kmAcumulados: { increment: kmRecorridos },
+              },
+            }).catch(() => null);
+
+            // EVALUAR UMBRAL DE MANTENIMIENTO GENERAL (> 10,000 KM)
+            const kmActual = motoActualizada.kmAcumulados || 0;
+            if (kmActual >= 10000) {
+              const alertaExistente = await tx.alertaMantenimiento.findFirst({
+                where: {
+                  motoId: motoActualizada.id,
+                  activa: true,
+                  OR: [
+                    { descripcion: { contains: '10,000' } },
+                    { descripcion: { contains: 'General' } },
+                  ],
+                },
+              });
+
+              if (!alertaExistente) {
+                alertaGenerada = await tx.alertaMantenimiento.create({
+                  data: {
+                    motoId: motoActualizada.id,
+                    tipo: 'KM',
+                    descripcion: `Mantenimiento General (>10,000 km): La unidad ${motoActualizada.nombre} (${motoActualizada.placa || 'Sin placa'}) superó los 10,000 km (${Math.round(kmActual).toLocaleString()} km). Requiere cambio de kit de arrastre, bujía, filtro de aire, pastillas/zapatas y fluidos.`,
+                    kmTrigger: 10000,
+                    activa: true,
+                  },
+                });
+
+                await tx.motoAsignada.updateMany({
+                  where: { repartidorId: profile.id },
+                  data: { alertaMantenimiento: true },
+                }).catch(() => null);
+
+                await tx.notificacionRepartidor.create({
+                  data: {
+                    repartidorId: profile.id,
+                    tipo: 'ALERTA_MANTENIMIENTO',
+                    titulo: '🔧 Mantenimiento General Requerido (>10,000 km)',
+                    contenido: `Tu moto ${motoActualizada.nombre} ha superado los 10,000 km (${Math.round(kmActual).toLocaleString()} km) en entregas. Agenda tu cita en taller para cambio de kit de arrastre, bujía, filtros y frenos.`,
+                    leido: false,
+                    ordenId: id,
+                  },
+                }).catch(() => null);
+              }
+            }
+          } catch (e) {
+            console.warn('[entregar/actualizarMotoKm]', e);
+          }
         }
 
         // Actualizar OrdenCompra asociada (si aplica)
@@ -229,6 +290,44 @@ export async function PATCH(
         event: 'repartidor:orden:tomada',
         data: { ordenId: id, repartidorId: profile.id },
       });
+
+      // Si se generó alerta de mantenimiento general (>10k km), notificar en tiempo real a todas las partes
+      if (alertaGenerada && motoActualizada) {
+        emitirEventoRealtime({
+          room: 'admin',
+          event: 'admin:alerta:mantenimiento',
+          data: {
+            alertaId: alertaGenerada.id,
+            motoId: motoActualizada.id,
+            motoNombre: motoActualizada.nombre,
+            km: motoActualizada.kmAcumulados,
+            tipo: 'GENERAL',
+            descripcion: alertaGenerada.descripcion,
+          },
+        });
+        emitirEventoRealtime({
+          room: 'ingeniero',
+          event: 'mantenimiento:alerta',
+          data: {
+            alertaId: alertaGenerada.id,
+            motoId: motoActualizada.id,
+            motoNombre: motoActualizada.nombre,
+            km: motoActualizada.kmAcumulados,
+            tipo: 'GENERAL',
+            descripcion: alertaGenerada.descripcion,
+          },
+        });
+        emitirEventoRealtime({
+          room: `repartidor:${profile.id}`,
+          event: 'repartidor:moto:alerta',
+          data: {
+            motoId: motoActualizada.id,
+            km: motoActualizada.kmAcumulados,
+            alertaMantenimiento: true,
+            descripcion: alertaGenerada.descripcion,
+          },
+        });
+      }
     } catch {}
 
     return NextResponse.json({

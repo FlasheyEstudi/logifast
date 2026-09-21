@@ -1244,7 +1244,14 @@ export default function ModuleOverview({ isDark }: { isDark: boolean }) {
                   <div style={{ width: 8, height: 8, borderRadius: '50%', background: STATUS_COLORS[moto.status] }} />
                   <span style={{ fontSize: 13, fontWeight: 600 }}>{moto.nombre}</span>
                 </div>
-                <span style={{ fontSize: 12, color: 'var(--lf-text-muted)' }}>{(moto.km ?? (moto as any).kmAcumulados ?? 0).toLocaleString()} km</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {((moto.km ?? (moto as any).kmAcumulados ?? 0) >= 10000) && (
+                    <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 4, background: 'rgba(239, 68, 68, 0.15)', color: '#EF4444' }}>
+                      &gt;10k km
+                    </span>
+                  )}
+                  <span style={{ fontSize: 12, color: 'var(--lf-text-muted)' }}>{(moto.km ?? (moto as any).kmAcumulados ?? 0).toLocaleString()} km</span>
+                </div>
               </div>
             ))}
           </div>

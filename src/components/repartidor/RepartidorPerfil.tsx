@@ -1035,7 +1035,63 @@ export default function RepartidorPerfil({ onLogout, userName }: RepartidorPerfi
             </div>
           </div>
         </div>
-        {moto.alertaMantenimiento && (
+        {/* Alerta prioritaria de Mantenimiento General (> 10,000 km acumulados) */}
+        {(moto?.kmAcumulados ?? 0) >= 10000 && (
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{
+              marginTop: 12,
+              padding: 14,
+              borderRadius: 14,
+              background: 'rgba(239, 68, 68, 0.08)',
+              border: '1.5px solid #EF4444',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 10,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+              <AlertTriangle size={18} color="#EF4444" style={{ flexShrink: 0, marginTop: 2 }} />
+              <div style={{ flex: 1, fontSize: 12.5, lineHeight: 1.45 }}>
+                <strong style={{ color: '#EF4444', display: 'block', fontSize: 13, marginBottom: 2 }}>
+                  ⚠️ Mantenimiento General Requerido (&gt; 10,000 km)
+                </strong>
+                Tu moto ha acumulado <strong>{(moto?.kmAcumulados ?? 0).toLocaleString('es-NI')} km</strong> mediante los pedidos y entregas completados. Se ha alcanzado el umbral para el <strong>Mantenimiento General Obligatorio</strong>.
+                <div style={{ marginTop: 6, fontSize: 11.5, color: 'var(--text-muted)' }}>
+                  • <strong>Recambios requeridos:</strong> Kit de arrastre completo (cadena 428H, piñón y corona), bujía nueva, filtro de aire, pastillas/zapatas de freno, cambio de aceite y calibración de motor.
+                </div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <button
+                onClick={() => {
+                  setPrioridadProblema('ALTA');
+                  setCategoriaProblema('GENERAL');
+                  setDescripcionProblema('Solicitud de Mantenimiento General obligatorio (>10,000 km acumulados por entregas).');
+                  setShowReportarMotoModal(true);
+                }}
+                style={{
+                  padding: '7px 14px',
+                  borderRadius: 8,
+                  background: '#EF4444',
+                  color: '#fff',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
+                <Wrench size={13} /> Solicitar Mantenimiento General
+              </button>
+            </div>
+          </motion.div>
+        )}
+
+        {moto.alertaMantenimiento && (moto?.kmAcumulados ?? 0) < 10000 && (
           <motion.div
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}

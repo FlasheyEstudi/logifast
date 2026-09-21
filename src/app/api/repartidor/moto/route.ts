@@ -127,7 +127,28 @@ export async function GET() {
     const ultimoMant = moto.mantenimientos?.[0];
     const alertasActivas = moto.alertas || [];
     const kmActual = moto.kmAcumulados || 0;
-    const proximoKm = Math.ceil((kmActual + 1) / 3000) * 3000;
+    
+    // Intervalos técnicos de mantenimiento acumulado
+    let proximoKm = 3000;
+    let proximoTipo = 'Cambio de Aceite (3,000 km)';
+    const esMayor10k = kmActual >= 10000;
+
+    if (kmActual >= 10000) {
+      proximoKm = 10000;
+      proximoTipo = 'Mantenimiento General (> 10,000 km)';
+    } else if (kmActual >= 7500) {
+      proximoKm = 10000;
+      proximoTipo = 'Mantenimiento General (> 10,000 km)';
+    } else if (kmActual >= 5000) {
+      proximoKm = 7500;
+      proximoTipo = 'Mantenimiento Predictivo / Telemetría (7,500 km)';
+    } else if (kmActual >= 2500) {
+      proximoKm = 5000;
+      proximoTipo = 'Revisión y Ajuste de Frenos (5,000 km)';
+    } else {
+      proximoKm = 3000;
+      proximoTipo = 'Cambio de Aceite de Motor (3,000 km)';
+    }
 
     const result = {
       id: moto.id,
@@ -141,7 +162,9 @@ export async function GET() {
         ? `${ultimoMant.tipo} (${ultimoMant.categoria}): ${ultimoMant.descripcion}`
         : 'Sin registros',
       proximoMantenimientoKm: proximoKm,
-      alertaMantenimiento: alertasActivas.length > 0 || moto.estado === 'EN_MANTENIMIENTO',
+      proximoTipoMantenimiento: proximoTipo,
+      requiereMantenimientoGeneral: esMayor10k,
+      alertaMantenimiento: alertasActivas.length > 0 || moto.estado === 'EN_MANTENIMIENTO' || esMayor10k,
       alertas: alertasActivas.map((a) => ({
         id: a.id,
         tipo: a.tipo,

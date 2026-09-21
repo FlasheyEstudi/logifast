@@ -323,6 +323,11 @@ export default function ModuleFlota({ isDark }: { isDark: boolean }) {
                     <span style={{ fontSize: 12, color: 'var(--lf-text-muted)' }}>{moto.modelo}</span>
                   </div>
                   {rider && <span style={{ fontSize: 12, color: 'var(--lf-text-secondary)' }}>{rider.nombre}</span>}
+                  {kmVal >= 10000 && (
+                    <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 999, background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#EF4444' }}>
+                      ⚠️ General (&gt;10k km)
+                    </span>
+                  )}
                   <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, background: cfg.bg, color: cfg.color }}>{cfg.label}</span>
                   <span className="font-mono" style={{ fontSize: 12, color: 'var(--lf-text-muted)' }}>{kmVal.toLocaleString()} km</span>
                   {isExpanded ? <ChevronUp size={16} style={{ color: 'var(--lf-text-muted)' }} /> : <ChevronDown size={16} style={{ color: 'var(--lf-text-muted)' }} />}
@@ -333,6 +338,23 @@ export default function ModuleFlota({ isDark }: { isDark: boolean }) {
                   {isExpanded && (
                     <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} style={{ overflow: 'hidden' }}>
                       <div style={{ padding: '0 14px 14px', borderTop: '1px solid var(--lf-border)', paddingTop: 12 }}>
+                        {kmVal >= 10000 && (
+                          <div style={{
+                            padding: '10px 12px',
+                            borderRadius: 10,
+                            background: 'rgba(239, 68, 68, 0.08)',
+                            border: '1px solid rgba(239, 68, 68, 0.25)',
+                            color: '#EF4444',
+                            fontSize: 12,
+                            fontWeight: 600,
+                            marginBottom: 12,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8,
+                          }}>
+                            <span>⚠️ <strong>Alerta de Mantenimiento General (&gt;10,000 km):</strong> Esta motocicleta ha acumulado {kmVal.toLocaleString()} km de recorridos por entregas. Se debe programar el servicio general en taller (kit de arrastre, bujía, filtro de aire, frenos y fluidos).</span>
+                          </div>
+                        )}
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 12 }}>
                           <div><span style={{ fontSize: 11, fontWeight: 600, color: 'var(--lf-text-muted)', textTransform: 'uppercase' }}>Placa</span><div style={{ fontSize: 13, fontWeight: 600 }}>{moto.placa}</div></div>
                           <div><span style={{ fontSize: 11, fontWeight: 600, color: 'var(--lf-text-muted)', textTransform: 'uppercase' }}>Año</span><div style={{ fontSize: 13 }}>{moto.anio}</div></div>
