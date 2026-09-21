@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Package, DollarSign, Bike, AlertTriangle, UserCheck, X,
-  ChevronRight, Plus, BarChart3, Layers, Crosshair,
+  ChevronRight, Plus, Minus, ChevronDown, BarChart3, Layers, Crosshair,
   Maximize2, Minimize2, Eye, EyeOff, Route, Flame, Satellite, Search,
 } from '@/components/icons';
 import { Store, Navigation, MapPin, Phone, Check, Star } from 'lucide-react';
@@ -44,7 +44,7 @@ const satelliteStyle = {
       type: 'raster' as const,
       source: 'satellite-tiles',
       minzoom: 0,
-      maxzoom: 22
+      maxzoom: 19
     }
   ]
 };
@@ -56,22 +56,43 @@ function MapInner({
   activeOrders,
   zonePolygons,
   showZones,
+  setShowZones,
   showRoutes,
+  setShowRoutes,
   showHeatmap,
+  setShowHeatmap,
   showSatellite,
+  setShowSatellite,
   panelOpen,
+  setPanelOpen,
   orders,
+  isFullscreen,
+  onToggleFullscreen,
+  hudMetrics,
 }: {
   isDark: boolean;
   motos: Moto[];
   activeOrders: Order[];
   zonePolygons: ZonePolygon[];
   showZones: boolean;
+  setShowZones: (val: boolean | ((p: boolean) => boolean)) => void;
   showRoutes: boolean;
+  setShowRoutes: (val: boolean | ((p: boolean) => boolean)) => void;
   showHeatmap: boolean;
+  setShowHeatmap: (val: boolean | ((p: boolean) => boolean)) => void;
   showSatellite: boolean;
+  setShowSatellite: (val: boolean | ((p: boolean) => boolean)) => void;
   panelOpen: boolean;
+  setPanelOpen: (val: boolean | ((p: boolean) => boolean)) => void;
   orders: Order[];
+  isFullscreen: boolean;
+  onToggleFullscreen: () => void;
+  hudMetrics: {
+    activeCount: number;
+    availableMotos: number;
+    revenueToday: number;
+    alertsCount: number;
+  };
 }) {
   const {
     tiendas,
@@ -94,15 +115,22 @@ function MapInner({
   const [filterRepartidores, setFilterRepartidores] = useState(true);
   const [filterClientes, setFilterClientes] = useState(true);
 
+  // Dropdown de capas
+  const [showLayersMenu, setShowLayersMenu] = useState(false);
+  const layersDropdownRef = useRef<HTMLDivElement>(null);
+
   const updateMotoPositions = useStore((s) => s.updateMotoPositions);
   const mapRef = useRef<MapRef | null>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
-  // Close search dropdown on click outside
+  // Close search dropdown and layers dropdown on click outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
         setShowSearchDropdown(false);
+      }
+      if (layersDropdownRef.current && !layersDropdownRef.current.contains(e.target as Node)) {
+        setShowLayersMenu(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -220,6 +248,18 @@ function MapInner({
     });
     map.fitBounds([[minLng, minLat], [maxLng, maxLat]], { padding: 60, duration: 1500 });
   }, [tiendas]);
+
+  const handleZoomIn = useCallback(() => {
+    if (mapRef.current) {
+      mapRef.current.zoomTo(mapRef.current.getZoom() + 1, { duration: 300 });
+    }
+  }, []);
+
+  const handleZoomOut = useCallback(() => {
+    if (mapRef.current) {
+      mapRef.current.zoomTo(mapRef.current.getZoom() - 1, { duration: 300 });
+    }
+  }, []);
 
   // Heatmap data
   const heatmapPoints = useMemo(() => {
@@ -526,18 +566,18 @@ function MapInner({
           ))}
       </Map>
 
-      {/* ── INTELLIGENT SEARCH BAR & FILTERS OVERLAY ── */}
+      {/* ── 1. TOP-LEFT: BUSCADOR INTELIGENTE Y FILTROS DE ENTIDADES ── */}
       <div
         ref={searchContainerRef}
         style={{
           position: 'absolute',
-          top: 12,
-          left: 12,
+          top: 14,
+          left: 14,
           zIndex: 1000,
           display: 'flex',
           flexDirection: 'column',
-          gap: 8,
-          maxWidth: 'min(380px, calc(100% - 100px))',
+          gap: 6,
+          maxWidth: 'min(360px, calc(100vw - 120px))',
         }}
       >
         {/* Search input */}
@@ -545,29 +585,30 @@ function MapInner({
           style={{
             display: 'flex',
             alignItems: 'center',
-            background: isDark ? 'rgba(15, 23, 42, 0.94)' : 'rgba(255, 255, 255, 0.96)',
+            height: 38,
+            background: isDark ? 'rgba(15, 23, 42, 0.92)' : 'rgba(255, 255, 255, 0.94)',
             backdropFilter: 'blur(16px)',
-            border: '1px solid var(--border, rgba(255,255,255,0.15))',
-            borderRadius: 14,
-            padding: '4px 12px',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+            border: '1px solid var(--lf-border, rgba(255,255,255,0.15))',
+            borderRadius: 12,
+            padding: '0 10px',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
           }}
         >
-          <Search size={16} style={{ color: 'var(--text-muted)', marginRight: 8 }} />
+          <Search size={15} style={{ color: 'var(--lf-text-muted, #94A3B8)', marginRight: 8, flexShrink: 0 }} />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar tienda, moto, repartidor o lugar..."
+            placeholder="Buscar tienda, moto o repartidor..."
             style={{
               flex: 1,
               background: 'transparent',
               border: 'none',
               outline: 'none',
-              color: 'var(--text, #F8FAFC)',
-              fontSize: 13,
+              color: 'var(--lf-text, #F8FAFC)',
+              fontSize: 12.5,
               fontFamily: "'DM Sans', sans-serif",
-              padding: '6px 0',
+              minWidth: 0,
             }}
           />
           {searchQuery && (
@@ -579,15 +620,94 @@ function MapInner({
               style={{
                 background: 'transparent',
                 border: 'none',
-                color: 'var(--text-muted, #94A3B8)',
+                color: 'var(--lf-text-muted, #94A3B8)',
                 cursor: 'pointer',
-                fontSize: 14,
+                fontSize: 13,
                 padding: '2px 4px',
               }}
             >
               ✕
             </button>
           )}
+        </div>
+
+        {/* Quick entity filter chips */}
+        <div style={{ display: 'flex', gap: 5, flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: 2 }}>
+          <button
+            onClick={() => setFilterTiendas((p) => !p)}
+            style={{
+              padding: '4px 9px',
+              height: 28,
+              borderRadius: 99,
+              fontSize: 11,
+              fontWeight: 600,
+              border: '1px solid var(--lf-border, rgba(255,255,255,0.15))',
+              background: filterTiendas ? '#0066FF' : isDark ? 'rgba(15,23,42,0.85)' : 'rgba(255,255,255,0.85)',
+              color: filterTiendas ? '#FFFFFF' : 'var(--lf-text-muted, #94A3B8)',
+              backdropFilter: 'blur(12px)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <Store size={12} />
+            <span>Tiendas ({tiendas.length})</span>
+          </button>
+          <button
+            onClick={() => setFilterMotos((p) => !p)}
+            style={{
+              padding: '4px 9px',
+              height: 28,
+              borderRadius: 99,
+              fontSize: 11,
+              fontWeight: 600,
+              border: '1px solid var(--lf-border, rgba(255,255,255,0.15))',
+              background: filterMotos ? '#FF5722' : isDark ? 'rgba(15,23,42,0.85)' : 'rgba(255,255,255,0.85)',
+              color: filterMotos ? '#FFFFFF' : 'var(--lf-text-muted, #94A3B8)',
+              backdropFilter: 'blur(12px)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <Bike size={12} />
+            <span>Motos ({effectiveMotos.length})</span>
+          </button>
+          <button
+            onClick={() => setFilterRepartidores((p) => !p)}
+            style={{
+              padding: '4px 9px',
+              height: 28,
+              borderRadius: 99,
+              fontSize: 11,
+              fontWeight: 600,
+              border: '1px solid var(--lf-border, rgba(255,255,255,0.15))',
+              background: filterRepartidores ? '#10B981' : isDark ? 'rgba(15,23,42,0.85)' : 'rgba(255,255,255,0.85)',
+              color: filterRepartidores ? '#FFFFFF' : 'var(--lf-text-muted, #94A3B8)',
+              backdropFilter: 'blur(12px)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <Navigation size={12} />
+            <span>Riders ({repartidoresPuntos.length})</span>
+          </button>
         </div>
 
         {/* Search results dropdown */}
@@ -600,12 +720,13 @@ function MapInner({
               style={{
                 background: isDark ? 'rgba(15, 23, 42, 0.98)' : 'rgba(255, 255, 255, 0.98)',
                 backdropFilter: 'blur(20px)',
-                border: '1px solid var(--border, rgba(255,255,255,0.15))',
+                border: '1px solid var(--lf-border, rgba(255,255,255,0.15))',
                 borderRadius: 14,
                 boxShadow: '0 12px 32px rgba(0,0,0,0.35)',
-                maxHeight: 280,
+                maxHeight: 260,
                 overflowY: 'auto',
                 padding: 6,
+                zIndex: 1010,
               }}
             >
               {searchResults.map((item) => (
@@ -613,7 +734,7 @@ function MapInner({
                   key={item.id}
                   onClick={() => handleSelectSearchResult(item)}
                   style={{
-                    padding: '8px 12px',
+                    padding: '8px 10px',
                     borderRadius: 10,
                     cursor: 'pointer',
                     display: 'flex',
@@ -625,34 +746,34 @@ function MapInner({
                 >
                   <div
                     style={{
-                      width: 28,
-                      height: 28,
+                      width: 26,
+                      height: 26,
                       borderRadius: '50%',
                       background: item.color || '#007AFF',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       color: '#FFF',
-                      fontSize: 12,
+                      fontSize: 11,
                       fontWeight: 700,
                       flexShrink: 0,
                     }}
                   >
                     {item.tipo === 'tienda' ? (
-                      <Store size={14} color="#FFF" />
+                      <Store size={13} color="#FFF" />
                     ) : item.tipo === 'repartidor' ? (
-                      <Navigation size={14} color="#FFF" />
+                      <Navigation size={13} color="#FFF" />
                     ) : item.tipo === 'moto' ? (
-                      <Bike size={14} color="#FFF" />
+                      <Bike size={13} color="#FFF" />
                     ) : (
-                      <MapPin size={14} color="#FFF" />
+                      <MapPin size={13} color="#FFF" />
                     )}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div className="truncate" style={{ fontSize: 13, fontWeight: 700, color: 'var(--text, #F8FAFC)' }}>
+                    <div className="truncate" style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--lf-text, #F8FAFC)' }}>
                       {item.titulo}
                     </div>
-                    <div style={{ fontSize: 11, color: 'var(--text-muted, #94A3B8)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <div style={{ fontSize: 11, color: 'var(--lf-text-muted, #94A3B8)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {item.subtitulo}
                     </div>
                   </div>
@@ -661,91 +782,193 @@ function MapInner({
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Quick filter chips */}
-        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-          <button
-            onClick={() => setFilterTiendas((p) => !p)}
-            style={{
-              padding: '4px 10px',
-              minHeight: 44,
-              borderRadius: 99,
-              fontSize: 11,
-              fontWeight: 700,
-              border: '1px solid var(--border, rgba(255,255,255,0.15))',
-              background: filterTiendas ? '#0066FF' : isDark ? 'rgba(15,23,42,0.8)' : 'rgba(255,255,255,0.8)',
-              color: filterTiendas ? '#FFFFFF' : 'var(--text-muted, #94A3B8)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-            }}
-          >
-            <Store size={12} />
-            <span>Tiendas ({tiendas.length})</span>
-          </button>
-          <button
-            onClick={() => setFilterRepartidores((p) => !p)}
-            style={{
-              padding: '4px 10px',
-              minHeight: 44,
-              borderRadius: 99,
-              fontSize: 11,
-              fontWeight: 700,
-              border: '1px solid var(--border, rgba(255,255,255,0.15))',
-              background: filterRepartidores ? '#10B981' : isDark ? 'rgba(15,23,42,0.8)' : 'rgba(255,255,255,0.8)',
-              color: filterRepartidores ? '#FFFFFF' : 'var(--text-muted, #94A3B8)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-            }}
-          >
-            <Navigation size={12} />
-            <span>Repartidores ({repartidoresPuntos.length})</span>
-          </button>
-          <button
-            onClick={() => setFilterMotos((p) => !p)}
-            style={{
-              padding: '4px 10px',
-              minHeight: 44,
-              borderRadius: 99,
-              fontSize: 11,
-              fontWeight: 700,
-              border: '1px solid var(--border, rgba(255,255,255,0.15))',
-              background: filterMotos ? '#FF5722' : isDark ? 'rgba(15,23,42,0.8)' : 'rgba(255,255,255,0.8)',
-              color: filterMotos ? '#FFFFFF' : 'var(--text-muted, #94A3B8)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-            }}
-          >
-            <Bike size={12} />
-            <span>Motos ({effectiveMotos.length})</span>
-          </button>
-        </div>
       </div>
 
-      {/* Custom map controls - top right */}
+      {/* ── 2. TOP-CENTER: MINI-HUD OPERATIVO (RESUMEN EN VIVO) ── */}
       <div
+        className="lf-map-mini-hud"
         style={{
           position: 'absolute',
-          top: 12,
-          right: panelOpen ? 404 : 12,
-          zIndex: 1000,
+          top: 14,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 900,
           display: 'flex',
-          flexDirection: 'column',
-          gap: 6,
+          alignItems: 'center',
+          gap: 12,
+          padding: '6px 14px',
+          height: 38,
+          borderRadius: 999,
+          background: isDark ? 'rgba(15, 23, 42, 0.88)' : 'rgba(255, 255, 255, 0.92)',
+          backdropFilter: 'blur(16px)',
+          border: '1px solid var(--lf-border, rgba(255,255,255,0.15))',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+          whiteSpace: 'nowrap',
+          pointerEvents: 'none',
         }}
       >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#00E676', boxShadow: '0 0 8px #00E676' }} />
+          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--lf-text-main, #F8FAFC)' }}>
+            {hudMetrics.activeCount} <span style={{ fontWeight: 500, fontSize: 11, color: 'var(--lf-text-muted)' }}>en ruta</span>
+          </span>
+        </div>
+        <div style={{ width: 1, height: 14, background: 'var(--lf-border, rgba(255,255,255,0.15))' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <Bike size={13} style={{ color: '#16A34A' }} />
+          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--lf-text-main, #F8FAFC)' }}>
+            {hudMetrics.availableMotos} <span style={{ fontWeight: 500, fontSize: 11, color: 'var(--lf-text-muted)' }}>disp.</span>
+          </span>
+        </div>
+        <div style={{ width: 1, height: 14, background: 'var(--lf-border, rgba(255,255,255,0.15))' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <DollarSign size={13} style={{ color: '#10B981' }} />
+          <span className="font-mono" style={{ fontSize: 12, fontWeight: 700, color: 'var(--lf-text-main, #F8FAFC)' }}>
+            C${hudMetrics.revenueToday.toLocaleString()}
+          </span>
+        </div>
+        {hudMetrics.alertsCount > 0 && (
+          <>
+            <div style={{ width: 1, height: 14, background: 'var(--lf-border, rgba(255,255,255,0.15))' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(220,38,38,0.15)', color: '#EF4444', padding: '2px 6px', borderRadius: 6, fontSize: 11, fontWeight: 700 }}>
+              <AlertTriangle size={11} />
+              <span>{hudMetrics.alertsCount}</span>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* ── 3. TOP-RIGHT: BARRA UNIFICADA DE HERRAMIENTAS Y CAPAS ── */}
+      <div
+        ref={layersDropdownRef}
+        style={{
+          position: 'absolute',
+          top: 14,
+          right: panelOpen ? 396 : 14,
+          zIndex: 950,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          transition: 'right 0.25s ease',
+        }}
+      >
+        {/* Selector de Capas */}
+        <div style={{ position: 'relative' }}>
+          <button
+            onClick={() => setShowLayersMenu((p) => !p)}
+            title="Capas del mapa"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '0 10px',
+              height: 38,
+              borderRadius: 10,
+              border: '1px solid var(--lf-border, rgba(255,255,255,0.15))',
+              background: showLayersMenu
+                ? 'var(--lf-accent, #FF6600)'
+                : isDark ? 'rgba(22,27,34,0.92)' : 'rgba(255,255,255,0.92)',
+              color: showLayersMenu ? '#FFF' : 'var(--lf-text, #F8FAFC)',
+              backdropFilter: 'blur(16px)',
+              cursor: 'pointer',
+              fontSize: 12,
+              fontWeight: 600,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+            }}
+          >
+            <Layers size={14} />
+            <span className="hidden sm:inline">Capas</span>
+            <ChevronDown size={12} style={{ opacity: 0.8, transform: showLayersMenu ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+          </button>
+
+          {/* Menú flotante de capas */}
+          <AnimatePresence>
+            {showLayersMenu && (
+              <motion.div
+                initial={{ opacity: 0, y: -6, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -6, scale: 0.96 }}
+                transition={{ duration: 0.15 }}
+                style={{
+                  position: 'absolute',
+                  top: 44,
+                  right: 0,
+                  width: 200,
+                  background: isDark ? 'rgba(15, 23, 42, 0.98)' : 'rgba(255, 255, 255, 0.98)',
+                  backdropFilter: 'blur(20px)',
+                  border: '1px solid var(--lf-border, rgba(255,255,255,0.15))',
+                  borderRadius: 12,
+                  boxShadow: '0 12px 32px rgba(0,0,0,0.3)',
+                  padding: 6,
+                  zIndex: 1100,
+                }}
+              >
+                <div style={{ padding: '6px 8px 4px', fontSize: 10, fontWeight: 700, color: 'var(--lf-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  Capas del Mapa
+                </div>
+                {[
+                  { id: 'zonas', label: 'Zonas Cobertura', active: showZones, toggle: () => setShowZones((p) => !p), icon: Layers, color: '#00E5FF' },
+                  { id: 'rutas', label: 'Rutas en Vivo', active: showRoutes, toggle: () => setShowRoutes((p) => !p), icon: Route, color: '#FF6600' },
+                  { id: 'calor', label: 'Mapa de Calor', active: showHeatmap, toggle: () => setShowHeatmap((p) => !p), icon: Flame, color: '#EF4444' },
+                  { id: 'satelite', label: 'Vista Satélite', active: showSatellite, toggle: () => setShowSatellite((p) => !p), icon: Satellite, color: '#3B82F6' },
+                ].map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={item.toggle}
+                      style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '7px 9px',
+                        borderRadius: 8,
+                        border: 'none',
+                        background: item.active ? (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)') : 'transparent',
+                        color: 'var(--lf-text, #F8FAFC)',
+                        fontSize: 12,
+                        fontWeight: 500,
+                        cursor: 'pointer',
+                        transition: 'background 0.15s',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Icon size={14} style={{ color: item.color }} />
+                        <span>{item.label}</span>
+                      </div>
+                      <div
+                        style={{
+                          width: 16,
+                          height: 16,
+                          borderRadius: 4,
+                          border: `1.5px solid ${item.active ? 'var(--lf-accent, #FF6600)' : 'var(--lf-border, #64748B)'}`,
+                          background: item.active ? 'var(--lf-accent, #FF6600)' : 'transparent',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        {item.active && <Check size={11} color="#FFF" />}
+                      </div>
+                    </button>
+                  );
+                })}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Separador */}
+        <div style={{ width: 1, height: 18, background: 'var(--lf-border, rgba(255,255,255,0.15))' }} />
+
+        {/* Controles de Cámara */}
         <button
           onClick={centerMap}
           title="Centrar en Managua"
-          className="lf-map-ctrl-btn"
           style={{
-            width: 44,
-            height: 44,
+            width: 38,
+            height: 38,
             borderRadius: 10,
             border: '1px solid var(--lf-border, rgba(255,255,255,0.15))',
             background: isDark ? 'rgba(22,27,34,0.92)' : 'rgba(255,255,255,0.92)',
@@ -755,18 +978,18 @@ function MapInner({
             alignItems: 'center',
             justifyContent: 'center',
             color: 'var(--lf-text, #F8FAFC)',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+            flexShrink: 0,
           }}
         >
-          <Crosshair size={17} />
+          <Crosshair size={15} />
         </button>
         <button
           onClick={showAllMotos}
           title="Enfocar todas las motos"
-          className="lf-map-ctrl-btn"
           style={{
-            width: 44,
-            height: 44,
+            width: 38,
+            height: 38,
             borderRadius: 10,
             border: '1px solid var(--lf-border, rgba(255,255,255,0.15))',
             background: isDark ? 'rgba(22,27,34,0.92)' : 'rgba(255,255,255,0.92)',
@@ -776,18 +999,18 @@ function MapInner({
             alignItems: 'center',
             justifyContent: 'center',
             color: 'var(--lf-text, #F8FAFC)',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+            flexShrink: 0,
           }}
         >
-          <Bike size={17} />
+          <Bike size={15} />
         </button>
         <button
           onClick={showAllTiendas}
           title="Enfocar todas las tiendas"
-          className="lf-map-ctrl-btn"
           style={{
-            width: 44,
-            height: 44,
+            width: 38,
+            height: 38,
             borderRadius: 10,
             border: '1px solid var(--lf-border, rgba(255,255,255,0.15))',
             background: isDark ? 'rgba(22,27,34,0.92)' : 'rgba(255,255,255,0.92)',
@@ -797,10 +1020,153 @@ function MapInner({
             alignItems: 'center',
             justifyContent: 'center',
             color: 'var(--lf-text, #F8FAFC)',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+            flexShrink: 0,
           }}
         >
-          <Store size={17} />
+          <Store size={15} />
+        </button>
+
+        {/* Botón para reabrir el panel si está cerrado */}
+        {!panelOpen && (
+          <>
+            <div style={{ width: 1, height: 18, background: 'var(--lf-border, rgba(255,255,255,0.15))' }} />
+            <button
+              onClick={() => setPanelOpen(true)}
+              title="Abrir panel lateral"
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: 10,
+                border: 'none',
+                background: 'var(--lf-accent, #FF6600)',
+                color: '#FFF',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 4px 12px rgba(255,102,0,0.3)',
+                flexShrink: 0,
+              }}
+            >
+              <ChevronRight size={16} style={{ transform: 'rotate(180deg)' }} />
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* ── 4. BOTTOM-LEFT: LEYENDA COMPACTA DEL MAPA ── */}
+      <div
+        className="lf-map-bottom-legend"
+        style={{
+          position: 'absolute',
+          bottom: 16,
+          left: 16,
+          zIndex: 900,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          padding: '5px 11px',
+          borderRadius: 8,
+          border: '1px solid var(--lf-border, rgba(255,255,255,0.15))',
+          background: isDark ? 'rgba(22,27,34,0.88)' : 'rgba(255,255,255,0.88)',
+          backdropFilter: 'blur(16px)',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+        }}
+      >
+        {[
+          { color: '#16A34A', label: 'Disp.' },
+          { color: '#FF6600', label: 'En servicio' },
+          { color: '#DC2626', label: 'Mantenimiento' },
+        ].map((it) => (
+          <div key={it.label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <div style={{ width: 7, height: 7, borderRadius: '50%', background: it.color }} />
+            <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--lf-text-muted)' }}>{it.label}</span>
+          </div>
+        ))}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <div style={{ width: 14, height: 2.5, borderRadius: 2, background: '#FF6600' }} />
+          <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--lf-text-muted)' }}>Ruta</span>
+        </div>
+        {showHeatmap && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <Flame size={12} color="#EF4444" />
+            <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--lf-text-muted)' }}>Calor</span>
+          </div>
+        )}
+      </div>
+
+      {/* ── 5. BOTTOM-RIGHT: DOCK VERTICAL DE NAVEGACIÓN Y PANTALLA COMPLETA ── */}
+      <div
+        className="lf-map-nav-dock"
+        style={{
+          position: 'absolute',
+          bottom: 16,
+          right: panelOpen ? 396 : 16,
+          zIndex: 900,
+          display: 'flex',
+          flexDirection: 'column',
+          borderRadius: 10,
+          overflow: 'hidden',
+          border: '1px solid var(--lf-border, rgba(255,255,255,0.15))',
+          background: isDark ? 'rgba(22,27,34,0.92)' : 'rgba(255,255,255,0.92)',
+          backdropFilter: 'blur(16px)',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+          transition: 'right 0.25s ease',
+        }}
+      >
+        <button
+          onClick={handleZoomIn}
+          title="Acercar (+)"
+          style={{
+            width: 36,
+            height: 36,
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--lf-text, #F8FAFC)',
+          }}
+        >
+          <Plus size={15} />
+        </button>
+        <div style={{ height: 1, background: 'var(--lf-border, rgba(255,255,255,0.1))' }} />
+        <button
+          onClick={handleZoomOut}
+          title="Alejar (-)"
+          style={{
+            width: 36,
+            height: 36,
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--lf-text, #F8FAFC)',
+          }}
+        >
+          <Minus size={15} />
+        </button>
+        <div style={{ height: 1, background: 'var(--lf-border, rgba(255,255,255,0.1))' }} />
+        <button
+          onClick={onToggleFullscreen}
+          title={isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
+          style={{
+            width: 36,
+            height: 36,
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--lf-text, #F8FAFC)',
+          }}
+        >
+          {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
         </button>
       </div>
     </div>
@@ -830,19 +1196,6 @@ const statusBadge = (status: string) => {
   const s = c[status] || { bg: 'rgba(107,114,128,0.1)', color: '#6B7280' };
   return <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, background: s.bg, color: s.color }}>{l[status] || status}</span>;
 };
-
-/* ─── Toggle button style helper ─── */
-const toggleBtnStyle = (active: boolean, isDark: boolean): React.CSSProperties => ({
-  display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px',
-  minHeight: 44,
-  borderRadius: 10,
-  background: isDark ? 'rgba(22,27,34,0.9)' : 'rgba(255,255,255,0.9)',
-  backdropFilter: 'blur(16px)',
-  border: `1px solid ${active ? 'var(--lf-accent)' : 'var(--lf-border)'}`,
-  boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-  cursor: 'pointer', color: active ? 'var(--lf-accent)' : 'var(--lf-text-muted)',
-  fontSize: 12, fontWeight: 600, transition: 'all 0.2s',
-});
 
 /* ─── Main ModuleOverview ─── */
 export default function ModuleOverview({ isDark }: { isDark: boolean }) {
@@ -898,6 +1251,13 @@ export default function ModuleOverview({ isDark }: { isDark: boolean }) {
     return () => document.removeEventListener('fullscreenchange', handler);
   }, []);
 
+  const hudMetrics = useMemo(() => ({
+    activeCount: activeOrders.length,
+    availableMotos,
+    revenueToday: todayRevenue,
+    alertsCount: alerts.filter((a) => a.severidad === 'alta').length,
+  }), [activeOrders.length, availableMotos, todayRevenue, alerts]);
+
   return (
     <div id="lf-overview-container" style={{ display: 'flex', height: '100%', position: 'relative' }}>
       {/* MAP */}
@@ -908,138 +1268,28 @@ export default function ModuleOverview({ isDark }: { isDark: boolean }) {
           activeOrders={activeOrders}
           zonePolygons={zonePolygons}
           showZones={showZones}
+          setShowZones={setShowZones}
           showRoutes={showRoutes}
+          setShowRoutes={setShowRoutes}
           showHeatmap={showHeatmap}
+          setShowHeatmap={setShowHeatmap}
           showSatellite={showSatellite}
+          setShowSatellite={setShowSatellite}
           panelOpen={panelOpen}
+          setPanelOpen={setPanelOpen}
           orders={orders}
+          isFullscreen={isFullscreen}
+          onToggleFullscreen={handleFullscreen}
+          hudMetrics={hudMetrics}
         />
-
-        {/* KPI Strip */}
-        <div className="lf-kpi-strip" style={{
-          position: 'absolute', top: 12, left: 12, right: panelOpen ? 392 : 12, zIndex: 1000,
-          display: 'flex', gap: 8, flexWrap: 'wrap',
-        }}>
-          {kpis.map((kpi, i) => {
-            const Icon = kpi.icon;
-            return (
-              <div key={i} style={{
-                display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px',
-                borderRadius: 10,
-                background: isDark ? 'rgba(22,27,34,0.9)' : 'rgba(255,255,255,0.9)',
-                backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
-                border: '1px solid var(--lf-border)', boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-              }}>
-                <Icon size={13} style={{ color: kpi.color }} />
-                <span className="font-mono" style={{ fontWeight: 700, fontSize: 13, color: 'var(--lf-text-main)' }}>{kpi.value}</span>
-                <span style={{ fontSize: 10, color: 'var(--lf-text-muted)' }}>{kpi.label}</span>
-                {kpi.trend && <span style={{ fontSize: 9, fontWeight: 600, color: 'var(--lf-success)' }}>{kpi.trend}</span>}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Map Controls - Zones, Routes, Heatmap, Satellite toggles */}
-        <div style={{
-          position: 'absolute', top: 12, left: 12, zIndex: 1000, display: 'flex', gap: 6, marginTop: 50,
-        }}>
-          <button
-            onClick={() => setShowZones(!showZones)}
-            title={showZones ? 'Ocultar zonas' : 'Mostrar zonas'}
-            style={toggleBtnStyle(showZones, isDark)}
-          >
-            <Layers size={13} />
-            <span>Zonas</span>
-          </button>
-          <button
-            onClick={() => setShowRoutes(!showRoutes)}
-            title={showRoutes ? 'Ocultar rutas' : 'Mostrar rutas'}
-            style={toggleBtnStyle(showRoutes, isDark)}
-          >
-            <Route size={13} />
-            <span>Rutas</span>
-          </button>
-          <button
-            onClick={() => setShowHeatmap(!showHeatmap)}
-            title={showHeatmap ? 'Ocultar mapa de calor' : 'Mostrar mapa de calor'}
-            style={toggleBtnStyle(showHeatmap, isDark)}
-          >
-            <Flame size={13} />
-            <span>Calor</span>
-          </button>
-          <button
-            onClick={() => setShowSatellite(!showSatellite)}
-            title={showSatellite ? 'Vista mapa' : 'Vista satélite'}
-            style={toggleBtnStyle(showSatellite, isDark)}
-          >
-            <Satellite size={13} />
-            <span>Satélite</span>
-          </button>
-        </div>
-
-        {/* Map Legend */}
-        <div style={{
-          position: 'absolute', bottom: 16, left: 16, zIndex: 1000, display: 'flex', gap: 12,
-          flexWrap: 'wrap', maxWidth: 'calc(100% - 32px)',
-          padding: '6px 12px', borderRadius: 8,
-          background: isDark ? 'rgba(22,27,34,0.9)' : 'rgba(255,255,255,0.9)',
-          backdropFilter: 'blur(16px)', border: '1px solid var(--lf-border)',
-        }}>
-          {[{ color: '#16A34A', label: 'Disponible' }, { color: '#FF6600', label: 'En servicio' }, { color: '#DC2626', label: 'Mantenimiento' }].map((it) => (
-            <div key={it.label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <div style={{ width: 8, height: 8, borderRadius: '50%', background: it.color }} />
-              <span style={{ fontSize: 11, color: 'var(--lf-text-muted)' }}>{it.label}</span>
-            </div>
-          ))}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <div style={{ width: 16, height: 2, background: '#FF6600' }} />
-            <span style={{ fontSize: 11, color: 'var(--lf-text-muted)' }}>Activa</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <div style={{ width: 16, height: 2, background: 'repeating-linear-gradient(90deg, #FF6600 0px, #FF6600 4px, transparent 4px, transparent 8px)' }} />
-            <span style={{ fontSize: 11, color: 'var(--lf-text-muted)' }}>Planificada</span>
-          </div>
-          {showHeatmap && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'rgba(255,102,0,0.3)', boxShadow: '0 0 4px rgba(255,102,0,0.4)' }} />
-              <span style={{ fontSize: 11, color: 'var(--lf-text-muted)' }}>Calor</span>
-            </div>
-          )}
-        </div>
-
-        {/* Fullscreen toggle */}
-        <button
-          onClick={handleFullscreen}
-          title={isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
-          style={{
-            position: 'absolute', bottom: 16, right: panelOpen ? 396 : 16, zIndex: 1000,
-            width: 34, height: 34, borderRadius: 8, border: '1px solid var(--lf-border)',
-            background: isDark ? 'rgba(22,27,34,0.9)' : 'rgba(255,255,255,0.9)',
-            backdropFilter: 'blur(16px)', cursor: 'pointer', display: 'flex',
-            alignItems: 'center', justifyContent: 'center', color: 'var(--lf-text-muted)',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-          }}
-        >
-          {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
-        </button>
-
-        {/* Panel toggle */}
-        {!panelOpen && (
-          <button onClick={() => setPanelOpen(true)} style={{
-            position: 'absolute', top: 12, right: 12, zIndex: 1000, width: 44, height: 44,
-            borderRadius: 8, border: '1px solid var(--lf-border)', background: 'var(--lf-surface)',
-            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'var(--lf-text-muted)', boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-          }}><ChevronRight size={16} /></button>
-        )}
 
         {/* Mobile FAB */}
         <button onClick={() => setMobileSheetOpen(true)} className="lf-mobile-fab-btn" style={{
-          display: 'none', position: 'absolute', bottom: 24, right: 16, width: 52, height: 52,
+          display: 'none', position: 'absolute', bottom: 20, right: 16, width: 48, height: 48,
           borderRadius: '50%', background: 'var(--lf-accent)', color: '#fff', border: 'none',
           boxShadow: '0 4px 16px rgba(255,102,0,0.4)', cursor: 'pointer', zIndex: 1000,
           alignItems: 'center', justifyContent: 'center',
-        }}><ChevronRight size={24} /></button>
+        }}><ChevronRight size={22} /></button>
       </div>
 
       {/* RIGHT PANEL (desktop) */}
@@ -1197,10 +1447,14 @@ export default function ModuleOverview({ isDark }: { isDark: boolean }) {
       </AnimatePresence>
 
       <style dangerouslySetInnerHTML={{ __html: `
+        @media (max-width: 1180px) {
+          .lf-map-mini-hud { display: none !important; }
+        }
         @media (max-width: 768px) {
-          .lf-kpi-strip { right: 12px !important; flex-wrap: wrap; }
           .lf-overview-panel-desktop { display: none !important; }
           .lf-mobile-fab-btn { display: flex !important; }
+          .lf-map-nav-dock { bottom: 76px !important; right: 16px !important; }
+          .lf-map-bottom-legend { display: none !important; }
         }
       ` }} />
     </div>
